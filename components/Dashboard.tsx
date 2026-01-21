@@ -1,5 +1,5 @@
-import React from 'react';
-import { TrendingUp, Award, Share2, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { TrendingUp, Award, Share2, Users, Swords, Skull, Info } from 'lucide-react';
 import { PlayerState, Difficulty, DifficultySetting } from '../types';
 import { DIFFICULTY_SETTINGS } from '../services/mathService';
 
@@ -8,8 +8,9 @@ interface DashboardProps {
   dailyStreak: number;
   friendCode: string;
   onStartGame: (diff: Difficulty) => void;
-  onNavigate: (screen: 'shop' | 'leaderboard' | 'achievements') => void;
+  onNavigate: (screen: 'shop' | 'leaderboard' | 'achievements' | 'privacy') => void;
   onShare: () => void;
+  onJoinChallenge: (code: string) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -18,10 +19,13 @@ const Dashboard: React.FC<DashboardProps> = ({
   friendCode,
   onStartGame,
   onNavigate,
-  onShare
+  onShare,
+  onJoinChallenge
 }) => {
+  const [challengeInput, setChallengeInput] = useState('');
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4 pb-12">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
@@ -66,23 +70,56 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Game Modes */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {(Object.entries(DIFFICULTY_SETTINGS) as [Difficulty, DifficultySetting][]).map(([key, settings]) => (
             <button
               key={key}
               onClick={() => onStartGame(key)}
-              className={`${settings.color} hover:brightness-110 active:scale-95 transform transition-all rounded-3xl p-6 text-white shadow-xl border-b-4 border-black/20`}
+              className={`${settings.color} hover:brightness-110 active:scale-95 transform transition-all rounded-3xl p-4 text-white shadow-xl border-b-4 border-black/20 flex flex-col items-center justify-center min-h-[160px] relative overflow-hidden`}
             >
-              <div className="text-5xl mb-3 drop-shadow-md">
-                {key === 'easy' ? '⭐' : key === 'medium' ? '🚀' : '🏆'}
+              {key === 'survival' && (
+                <div className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-bl-xl">
+                  NEW!
+                </div>
+              )}
+              <div className="text-4xl mb-3 drop-shadow-md">
+                {key === 'easy' ? '⭐' : key === 'medium' ? '🚀' : key === 'hard' ? '🏆' : <Skull className="w-10 h-10 animate-pulse" />}
               </div>
-              <h3 className="text-xl font-bold mb-2">{settings.name}</h3>
-              <p className="text-sm opacity-90 font-medium">
-                {key === 'easy' ? '➕➖ Add & Subtract' : key === 'medium' ? '✖️➗ Multiply & Divide' : '🧮 Mixed Operations'}
+              <h3 className="text-lg font-bold mb-1">{settings.name}</h3>
+              <p className="text-xs opacity-90 font-medium text-center">
+                {key === 'easy' ? 'Add & Subtract' : key === 'medium' ? 'Multiply & Divide' : key === 'hard' ? 'Mixed Operations' : '10 Waves of Chaos!'}
               </p>
-              {settings.time && <p className="text-xs mt-3 bg-black/20 inline-block px-2 py-1 rounded-lg">⏱️ {settings.time}s per Q</p>}
+              {settings.time && <p className="text-[10px] mt-2 bg-black/20 px-2 py-1 rounded-lg">⏱️ {settings.time}s</p>}
             </button>
           ))}
+        </div>
+
+        {/* Challenge Section */}
+        <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-2xl p-6 mb-8 border border-orange-400/30">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex-1">
+              <h3 className="text-white font-bold text-xl flex items-center gap-2">
+                <Swords className="w-6 h-6 text-orange-400" /> Challenge a Friend
+              </h3>
+              <p className="text-gray-300 text-sm mt-1">Enter a friend's code to play the <b>exact same questions</b> they did!</p>
+            </div>
+            <div className="flex gap-2 w-full md:w-auto">
+              <input 
+                type="text" 
+                value={challengeInput}
+                onChange={(e) => setChallengeInput(e.target.value.toUpperCase())}
+                placeholder="ENTER CODE"
+                className="bg-black/30 border-2 border-white/20 rounded-xl px-4 py-2 text-white placeholder-gray-500 outline-none focus:border-orange-400 w-full font-mono uppercase"
+              />
+              <button 
+                onClick={() => challengeInput && onJoinChallenge(challengeInput)}
+                disabled={!challengeInput}
+                className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-2 rounded-xl transition-all"
+              >
+                VS
+              </button>
+            </div>
+          </div>
         </div>
 
         {/* Action Buttons */}
@@ -91,23 +128,33 @@ const Dashboard: React.FC<DashboardProps> = ({
             onClick={() => onNavigate('achievements')}
             className="bg-purple-500/30 hover:bg-purple-500/40 border border-purple-500/30 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex items-center justify-center gap-2 hover:scale-105 transition-all"
           >
-            <Award className="w-6 h-6" /> Achievements ({player.achievements.length}/4)
+            <Award className="w-6 h-6" /> Achievements
           </button>
           <button
             onClick={onShare}
             className="bg-pink-500/30 hover:bg-pink-500/40 border border-pink-500/30 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex items-center justify-center gap-2 hover:scale-105 transition-all"
           >
-            <Share2 className="w-6 h-6" /> Share
+            <Share2 className="w-6 h-6" /> Share Code
           </button>
         </div>
 
         {/* Friend Code */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-white border border-white/10">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-white border border-white/10 relative">
           <h3 className="font-bold mb-2 flex items-center gap-2 justify-center text-lg">
             <Users className="w-5 h-5" /> Your Friend Code
           </h3>
-          <p className="text-3xl font-bold text-yellow-300 text-center py-2 tracking-widest">{friendCode}</p>
-          <p className="text-sm text-center opacity-75">Share to challenge friends!</p>
+          <p className="text-3xl font-bold text-yellow-300 text-center py-2 tracking-widest font-mono">{friendCode}</p>
+          <p className="text-sm text-center opacity-75">Send this code to friends so they can challenge you!</p>
+
+          <div className="absolute top-4 right-4">
+            <button 
+              onClick={() => onNavigate('privacy')}
+              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+              title="Privacy Policy"
+            >
+              <Info className="w-4 h-4 text-white/70" />
+            </button>
+          </div>
         </div>
       </div>
     </div>

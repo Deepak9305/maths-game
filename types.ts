@@ -1,6 +1,6 @@
-export type ScreenState = 'splash' | 'dashboard' | 'game' | 'complete' | 'leaderboard' | 'achievements' | 'shop';
+export type ScreenState = 'splash' | 'dashboard' | 'game' | 'complete' | 'leaderboard' | 'achievements' | 'shop' | 'privacy';
 
-export type Difficulty = 'easy' | 'medium' | 'hard';
+export type Difficulty = 'easy' | 'medium' | 'hard' | 'survival';
 
 export interface DifficultySetting {
   name: string;
@@ -20,6 +20,7 @@ export interface RocketItem {
   icon: string;
   name: string;
   cost: number;
+  perk: string;
 }
 
 export interface AchievementItem {
@@ -37,8 +38,10 @@ export interface PlayerState {
   totalScore: number;
   achievements: string[];
   equippedRocket: string;
+  ownedRockets: string[]; // Track which rockets the player has purchased
   powerUps: {
     hint: number;
     timeFreeze: number;
   };
+  lastRewardDate: string | null; // Tracks the last date a daily bonus was claimed
 }

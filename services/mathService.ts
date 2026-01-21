@@ -1,47 +1,103 @@
-import { Difficulty, Question } from '../types';
+import { Difficulty, Question, DifficultySetting } from '../types';
 
-export const generateQuestion = (diff: Difficulty): Question => {
+export const DIFFICULTY_SETTINGS: Record<Difficulty, DifficultySetting> = {
+  easy: { name: 'Rookie', time: null, questions: 10, color: 'bg-green-500', xp: 1 },
+  medium: { name: 'Pilot', time: 15, questions: 15, color: 'bg-blue-500', xp: 2 },
+  hard: { name: 'Commander', time: 10, questions: 20, color: 'bg-purple-600', xp: 3 },
+  survival: { name: 'Survival', time: 12, questions: 50, color: 'bg-red-600', xp: 5 }
+};
+
+// Simple seeded random number generator (Mulberry32)
+export const createSeededRandom = (seedStr: string) => {
+  let seed = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    seed = ((seed << 5) - seed) + seedStr.charCodeAt(i);
+    seed |= 0;
+  }
+  
+  return () => {
+    let t = seed += 0x6D2B79F5;
+    t = Math.imul(t ^ t >>> 15, t | 1);
+    t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+};
+
+export const generateQuestion = (diff: Difficulty, rng: () => number = Math.random, wave: number = 1): Question => {
   let num1: number, num2: number, operation: string, answer: number, display: string;
   let visualAid: number | null = null;
 
-  if (diff === 'easy') {
-    num1 = Math.floor(Math.random() * 20) + 1;
-    num2 = Math.floor(Math.random() * 20) + 1;
-    operation = Math.random() > 0.5 ? '+' : '-';
-    if (operation === '-' && num2 > num1) {
-      [num1, num2] = [num2, num1];
-    }
-    answer = operation === '+' ? num1 + num2 : num1 - num2;
-    display = `${num1} ${operation} ${num2}`;
-    visualAid = num1; 
-  } else if (diff === 'medium') {
-    num1 = Math.floor(Math.random() * 12) + 1;
-    num2 = Math.floor(Math.random() * 12) + 1;
-    operation = Math.random() > 0.5 ? '×' : '÷';
-    if (operation === '÷') {
-      answer = num1;
-      num1 = num1 * num2;
+  // Helper to get random integer between min and max (inclusive) using provided RNG
+  const randomInt = (min: number, max: number) => Math.floor(rng() * (max - min + 1)) + min;
+
+  // Determine effective difficulty parameters based on Mode and Wave
+  let mode = diff;
+  let maxNum = 10;
+  
+  if (diff === 'survival') {
+    // Survival Scaling
+    if (wave <= 2) {
+      mode = 'easy';
+      maxNum = 10 + (wave * 2);
+    } else if (wave <= 5) {
+      mode = 'medium';
+      maxNum = 12 + (wave * 2); 
+    } else if (wave <= 8) {
+      mode = 'hard';
+      maxNum = 20 + (wave * 2);
     } else {
-      answer = num1 * num2;
+      // Waves 9-10: Extreme
+      mode = 'hard';
+      maxNum = 50; 
     }
-    display = `${num1} ${operation} ${num2}`;
   } else {
-    // Hard
-    num1 = Math.floor(Math.random() * 30) + 10;
-    num2 = Math.floor(Math.random() * 20) + 5;
-    const ops = ['+', '-', '×'];
-    operation = ops[Math.floor(Math.random() * ops.length)];
-    if (operation === '+') answer = num1 + num2;
-    else if (operation === '-') answer = num1 - num2;
-    else answer = num1 * num2;
-    display = `${num1} ${operation} ${num2}`;
+    // Standard Scaling
+    maxNum = diff === 'easy' ? 12 : diff === 'medium' ? 20 : 50;
+  }
+
+  const ops = [];
+  if (mode === 'easy') ops.push('+', '-');
+  else if (mode === 'medium') ops.push('*', '/');
+  else ops.push('+', '-', '*', '/');
+
+  operation = ops[randomInt(0, ops.length - 1)];
+
+  switch (operation) {
+    case '+':
+      num1 = randomInt(1, maxNum);
+      num2 = randomInt(1, maxNum);
+      answer = num1 + num2;
+      display = `${num1} + ${num2}`;
+      if (mode === 'easy' && num1 + num2 <= 10) visualAid = num1 + num2; 
+      break;
+    case '-':
+      num1 = randomInt(1, maxNum);
+      num2 = randomInt(1, num1); // Ensure positive result
+      answer = num1 - num2;
+      display = `${num1} - ${num2}`;
+      break;
+    case '*':
+      if (mode === 'medium') {
+        num1 = randomInt(2, 9);
+        num2 = randomInt(2, 9);
+      } else {
+        // Harder multiplication
+        num1 = randomInt(3, 12);
+        num2 = randomInt(3, 12);
+      }
+      answer = num1 * num2;
+      display = `${num1} × ${num2}`;
+      break;
+    case '/':
+      // Generate multiplication first to ensure clean division
+      num2 = randomInt(2, mode === 'medium' ? 9 : 12);
+      answer = randomInt(2, mode === 'medium' ? 9 : 12);
+      num1 = num2 * answer;
+      display = `${num1} ÷ ${num2}`;
+      break;
+    default:
+      num1 = 1; num2 = 1; answer = 2; display = '1 + 1';
   }
 
   return { display, answer, visualAid };
-};
-
-export const DIFFICULTY_SETTINGS: Record<Difficulty, { name: string; time: number | null; questions: number; color: string; xp: number }> = {
-  easy: { name: 'Easy Explorer', time: null, questions: 10, color: 'bg-green-500', xp: 1 },
-  medium: { name: 'Space Cadet', time: 20, questions: 10, color: 'bg-blue-500', xp: 1.5 },
-  hard: { name: 'Galaxy Master', time: 10, questions: 10, color: 'bg-purple-500', xp: 2 }
 };

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Math Quest</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@400;600;700&display=swap" rel="stylesheet">
@@ -11,6 +11,17 @@
             font-family: 'Lexend', sans-serif;
             margin: 0;
             overflow-x: hidden;
+            background-color: #312e81; /* Fallback for safe areas */
+            overscroll-behavior: none; /* Prevents pull-to-refresh on mobile */
+            /* Respect Safe Area for notches */
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+            min-height: 100vh;
+        }
+        #root {
+            min-height: 100vh;
         }
         @keyframes fall {
             to {

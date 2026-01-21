@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X } from 'lucide-react';
+import { X, Skull } from 'lucide-react';
 import { Question, Difficulty, PlayerState } from '../types';
 import Confetti from './Confetti';
 
@@ -19,6 +19,8 @@ interface GameScreenProps {
   feedback: string;
   shake: boolean;
   showConfetti: boolean;
+  currentWave?: number;
+  isWaveTransition?: boolean;
 }
 
 const GameScreen: React.FC<GameScreenProps> = ({
@@ -36,16 +38,20 @@ const GameScreen: React.FC<GameScreenProps> = ({
   onExit,
   feedback,
   shake,
-  showConfetti
+  showConfetti,
+  currentWave,
+  isWaveTransition
 }) => {
   const [userAnswer, setUserAnswer] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Focus input on mount and question change
   useEffect(() => {
-    inputRef.current?.focus();
-    setUserAnswer('');
-  }, [question]);
+    if (!isWaveTransition) {
+      inputRef.current?.focus();
+      setUserAnswer('');
+    }
+  }, [question, isWaveTransition]);
 
   const handleSubmit = () => {
     if (userAnswer) {
@@ -59,19 +65,50 @@ const GameScreen: React.FC<GameScreenProps> = ({
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    // Allow digits and a single minus sign at the start
+    if (val === '' || val === '-' || /^-?\d*$/.test(val)) {
+      setUserAnswer(val);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4 font-['Lexend']">
+    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4 font-['Lexend'] flex flex-col relative overflow-hidden">
       {showConfetti && <Confetti />}
-      <div className="max-w-2xl mx-auto">
+      
+      {/* Wave Transition Overlay */}
+      {isWaveTransition && (
+        <div className="absolute inset-0 z-50 bg-black/80 flex items-center justify-center animate-fade-in">
+           <div className="text-center">
+              <h2 className="text-6xl md:text-8xl font-black text-yellow-400 mb-4 animate-bounce drop-shadow-[0_5px_5px_rgba(255,255,0,0.5)]">
+                 WAVE {currentWave}
+              </h2>
+              <p className="text-2xl text-white font-bold tracking-widest uppercase">Approaching...</p>
+           </div>
+        </div>
+      )}
+
+      <div className="max-w-2xl mx-auto w-full flex-1 flex flex-col relative z-10">
         
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-6">
           <button onClick={onExit} className="bg-red-500 hover:bg-red-600 transition-colors p-3 rounded-full shadow-lg">
             <X className="w-6 h-6 text-white" />
           </button>
-          <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-full text-white font-bold text-xl border border-white/10 shadow-lg">
-            Score: {score}
+          
+          <div className="flex gap-2">
+             <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-full text-white font-bold text-xl border border-white/10 shadow-lg">
+               Score: {score}
+             </div>
+             {/* Survival Mode Wave Indicator */}
+             {difficulty === 'survival' && (
+                <div className="bg-red-600 px-4 py-3 rounded-full text-white font-bold text-xl border border-red-400 shadow-lg flex items-center gap-2">
+                  <Skull className="w-5 h-5" /> Wave {currentWave}/10
+                </div>
+             )}
           </div>
+
           {timer !== null && (
             <div className={`bg-white/20 backdrop-blur-md px-6 py-3 rounded-full text-white font-bold text-xl border border-white/10 shadow-lg transition-all duration-300 ${timer <= 5 ? 'animate-pulse bg-red-500/50 text-red-100' : ''}`}>
               ⏱️ {timer}s
@@ -121,14 +158,14 @@ const GameScreen: React.FC<GameScreenProps> = ({
           </div>
           <div className="w-full bg-black/30 rounded-full h-4 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-green-400 to-blue-500 h-full rounded-full transition-all duration-500 ease-out"
+              className={`h-full rounded-full transition-all duration-500 ease-out ${difficulty === 'survival' ? 'bg-gradient-to-r from-red-500 to-orange-500' : 'bg-gradient-to-r from-green-400 to-blue-500'}`}
               style={{ width: `${progress}%` }}
             />
           </div>
         </div>
 
         {/* Question Card */}
-        <div className={`bg-white rounded-3xl p-8 shadow-2xl text-center border-b-8 border-gray-200 ${shake ? 'animate-shake' : ''}`}>
+        <div className={`bg-white rounded-3xl p-6 md:p-8 shadow-2xl text-center border-b-8 border-gray-200 ${shake ? 'animate-shake' : ''} flex-1 flex flex-col justify-center`}>
           
           {question.visualAid && (
             <div className="flex justify-center gap-2 mb-6 flex-wrap">
@@ -138,29 +175,42 @@ const GameScreen: React.FC<GameScreenProps> = ({
             </div>
           )}
 
-          <div className="text-7xl font-bold text-gray-800 mb-8 font-mono tracking-tighter">
+          <div className="text-6xl md:text-8xl font-black text-gray-800 mb-8 font-mono tracking-tighter">
             {question.display}
           </div>
+
+          {/* New Hint Location - Visible and Persistent */}
+          {feedback.includes('💡') && (
+            <div className="mb-6 bg-blue-100 border-l-8 border-blue-500 text-blue-900 p-4 rounded-xl shadow-lg animate-pulse">
+               <p className="text-2xl font-bold">{feedback}</p>
+            </div>
+          )}
           
-          <input
-            ref={inputRef}
-            type="number"
-            value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full text-5xl text-center p-6 rounded-2xl border-4 border-purple-200 focus:border-purple-500 focus:ring-4 focus:ring-purple-200 outline-none mb-6 font-bold text-gray-700 placeholder-gray-300 transition-all"
-            placeholder="?"
-          />
+          <div className="relative w-full max-w-xs mx-auto">
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="decimal"
+              pattern="[0-9-]*"
+              value={userAnswer}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              className="w-full text-6xl text-center py-6 px-4 rounded-3xl border-4 border-indigo-100 bg-indigo-50 focus:border-indigo-500 focus:bg-white focus:ring-4 focus:ring-indigo-200/50 outline-none mb-6 font-black text-indigo-900 placeholder-indigo-200 transition-all shadow-inner tracking-widest"
+              placeholder="?"
+              autoComplete="off"
+            />
+          </div>
           
           <button
             onClick={handleSubmit}
-            disabled={!userAnswer}
-            className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-2xl font-bold py-6 rounded-2xl transition-all transform hover:scale-[1.02] shadow-xl active:scale-[0.98]"
+            disabled={!userAnswer && userAnswer !== '0'}
+            className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-2xl font-bold py-5 rounded-2xl transition-all transform hover:scale-[1.02] shadow-xl active:scale-[0.98] border-b-4 border-green-700/30"
           >
             Submit 🚀
           </button>
           
-          {feedback && (
+          {/* Only show Success/Error feedback here (Hint is shown above) */}
+          {feedback && !feedback.includes('💡') && (
             <div className={`mt-6 text-xl font-bold animate-bounce ${feedback.includes('Oops') ? 'text-red-500' : 'text-green-500'}`}>
               {feedback}
             </div>
