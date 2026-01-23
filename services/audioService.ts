@@ -63,12 +63,19 @@ export const playSound = {
 };
 
 export const music = {
-  startSurvivalTheme: () => {
+  startGameMusic: (difficulty: string) => {
     if (musicInterval) return; // Already playing
     
     const ctx = initAudio();
     let step = 0;
-    const tempo = 110; // Slower, heavier tempo for tension
+    
+    // Dynamic tempo based on difficulty
+    let tempo = 105;
+    if (difficulty === 'easy') tempo = 95;
+    if (difficulty === 'medium') tempo = 110;
+    if (difficulty === 'hard') tempo = 125;
+    if (difficulty === 'survival') tempo = 115;
+
     const stepTime = (60 / tempo) * 1000 / 4; // 16th notes
     
     // Create a master volume for music so it doesn't overpower sfx

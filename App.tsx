@@ -26,6 +26,7 @@ const ROCKETS: RocketItem[] = [
 ];
 
 const ACHIEVEMENTS_LIST: AchievementItem[] = [
+  // --- EXISTING ---
   { id: 'first_win', name: 'First Victory', icon: '🎯', reward: 50 },
   { id: 'streak_10', name: 'Streak Master', icon: '🔥', reward: 200 },
   { id: 'speed_demon', name: 'Speed Demon', icon: '⚡', reward: 100 },
@@ -34,7 +35,41 @@ const ACHIEVEMENTS_LIST: AchievementItem[] = [
   { id: 'coin_1000', name: 'Treasure Hunter', icon: '💎', reward: 250 },
   { id: 'score_5000', name: 'Brainiac', icon: '🧠', reward: 400 },
   { id: 'combo_10', name: 'Combo King', icon: '👑', reward: 150 },
-  { id: 'wave_20', name: 'Survivor', icon: '🛡️', reward: 500 }
+  { id: 'wave_20', name: 'Survivor', icon: '🛡️', reward: 500 },
+
+  // --- NEW (20 Added) ---
+  
+  // Progression
+  { id: 'level_10', name: 'Commander', icon: '👨‍✈️', reward: 500 },
+  { id: 'level_20', name: 'Admiral', icon: '🎖️', reward: 1000 },
+  { id: 'level_50', name: 'Galactic Emperor', icon: '👑', reward: 5000 },
+  
+  // Lifetime Score
+  { id: 'total_score_10k', name: 'Math Whiz', icon: '🎓', reward: 1000 },
+  { id: 'total_score_50k', name: 'Calculus King', icon: '📐', reward: 2500 },
+  { id: 'total_score_100k', name: 'Omniscient', icon: '👁️', reward: 5000 },
+
+  // Economy
+  { id: 'hoarder_coins', name: 'Banker', icon: '🏦', reward: 500 }, // 2000 coins
+  { id: 'wealthy_coins', name: 'Tycoon', icon: '💰', reward: 1000 }, // 5000 coins
+  { id: 'rocket_collector', name: 'Fleet Admiral', icon: '🚀', reward: 2000 }, // Own all rockets
+
+  // Skill & Streaks
+  { id: 'streak_25', name: 'On Fire', icon: '🚒', reward: 500 },
+  { id: 'streak_50', name: 'Unstoppable', icon: '🛑', reward: 1000 },
+  { id: 'streak_100', name: 'Math God', icon: '😇', reward: 2500 },
+  { id: 'combo_20', name: 'Flow State', icon: '🌊', reward: 500 },
+  { id: 'score_game_5000', name: 'Epic Run', icon: '🏃', reward: 1000 }, // Single Game Score
+
+  // Modes
+  { id: 'wave_5', name: 'Survivor I', icon: '🌵', reward: 200 },
+  { id: 'wave_10', name: 'Survivor II', icon: '🌴', reward: 500 },
+  { id: 'wave_30', name: 'Void Walker', icon: '👻', reward: 2000 },
+  { id: 'hard_streak_20', name: 'Hardcore', icon: '💀', reward: 1000 },
+
+  // Daily Habits
+  { id: 'daily_streak_3', name: 'Consistent', icon: '📅', reward: 100 },
+  { id: 'daily_streak_7', name: 'Dedicated', icon: '📆', reward: 500 }
 ];
 
 const QUESTIONS_PER_WAVE = 5;
@@ -138,8 +173,8 @@ const App: React.FC = () => {
 
   // Handle Music
   useEffect(() => {
-    if (screen === 'game' && difficulty === 'survival' && !isWaveTransition && !isPaused && !powerUpAdTarget) {
-      music.startSurvivalTheme();
+    if (screen === 'game' && !isWaveTransition && !isPaused && !powerUpAdTarget) {
+      music.startGameMusic(difficulty);
     } else {
       music.stop();
     }
@@ -273,6 +308,10 @@ const App: React.FC = () => {
            lastRewardDate: today
         }));
 
+        // Check Daily Streak Achievements
+        if (newStreak >= 3) unlockAchievement('daily_streak_3');
+        if (newStreak >= 7) unlockAchievement('daily_streak_7');
+
         setTimeout(() => {
            playSound.levelUp();
            nativeService.haptics.notificationSuccess();
@@ -383,8 +422,50 @@ const App: React.FC = () => {
       });
 
       const achievementsToUnlock: string[] = [];
+      
+      // Existing Checks
       if (newStreak === 10) achievementsToUnlock.push('streak_10');
       if (difficulty === 'survival' && currentWave === 20) achievementsToUnlock.push('wave_20');
+      if (newCombo >= 10) achievementsToUnlock.push('combo_10');
+      if (newLevel >= 5) achievementsToUnlock.push('level_5');
+      if (newCoins >= 1000) achievementsToUnlock.push('coin_1000');
+      if (newTotalScore >= 5000) achievementsToUnlock.push('score_5000');
+      if (difficulty === 'hard' && timer && timer > 5) achievementsToUnlock.push('speed_demon');
+
+      // --- NEW ACHIEVEMENT CHECKS ---
+      // Progression
+      if (newLevel >= 10) achievementsToUnlock.push('level_10');
+      if (newLevel >= 20) achievementsToUnlock.push('level_20');
+      if (newLevel >= 50) achievementsToUnlock.push('level_50');
+
+      // Streaks & Combos
+      if (newStreak === 25) achievementsToUnlock.push('streak_25');
+      if (newStreak === 50) achievementsToUnlock.push('streak_50');
+      if (newStreak === 100) achievementsToUnlock.push('streak_100');
+      if (newCombo === 20) achievementsToUnlock.push('combo_20');
+      
+      // Hard Mode
+      if (difficulty === 'hard' && newStreak === 20) achievementsToUnlock.push('hard_streak_20');
+
+      // Survival Waves
+      if (difficulty === 'survival') {
+          if (currentWave === 5) achievementsToUnlock.push('wave_5');
+          if (currentWave === 10) achievementsToUnlock.push('wave_10');
+          if (currentWave === 30) achievementsToUnlock.push('wave_30');
+      }
+
+      // Single Game Score
+      if (newScore >= 5000) achievementsToUnlock.push('score_game_5000');
+
+      // Lifetime Score
+      if (newTotalScore >= 10000) achievementsToUnlock.push('total_score_10k');
+      if (newTotalScore >= 50000) achievementsToUnlock.push('total_score_50k');
+      if (newTotalScore >= 100000) achievementsToUnlock.push('total_score_100k');
+
+      // Wealth
+      if (newCoins >= 2000) achievementsToUnlock.push('hoarder_coins');
+      if (newCoins >= 5000) achievementsToUnlock.push('wealthy_coins');
+
       
       const nextQ = questionsAnswered + 1;
       let isGameComplete = false;
@@ -413,6 +494,11 @@ const App: React.FC = () => {
             setFeedback(`${['Awesome!', 'Perfect!', 'Amazing!'][Math.floor(Math.random() * 3)]} +${points}`);
             setShowConfetti(true);
             setTimeout(() => setShowConfetti(false), 2000);
+            
+            // Process achievements before returning
+            if (achievementsToUnlock.length > 0) {
+                achievementsToUnlock.forEach(id => unlockAchievement(id));
+            }
             return; 
          }
       } else {
@@ -425,13 +511,6 @@ const App: React.FC = () => {
          setProgress((nextQ / settings.questions) * 100);
          setQuestionsAnswered(nextQ);
       }
-
-      if (difficulty === 'hard' && timer && timer > 5) achievementsToUnlock.push('speed_demon');
-      if (newCombo >= 10) achievementsToUnlock.push('combo_10');
-      
-      if (newLevel >= 5) achievementsToUnlock.push('level_5');
-      if (newCoins >= 1000) achievementsToUnlock.push('coin_1000');
-      if (newTotalScore >= 5000) achievementsToUnlock.push('score_5000');
 
       if (achievementsToUnlock.length > 0) {
         achievementsToUnlock.forEach(id => unlockAchievement(id));
@@ -575,12 +654,21 @@ const App: React.FC = () => {
       nativeService.haptics.impactLight();
     } else {
       if (player.coins >= rocket.cost) {
-        setPlayer(prev => ({
-          ...prev,
-          coins: prev.coins - rocket.cost,
-          ownedRockets: [...prev.ownedRockets, rocket.icon],
-          equippedRocket: rocket.icon 
-        }));
+        setPlayer(prev => {
+           const newOwned = [...prev.ownedRockets, rocket.icon];
+           
+           // Check Rocket Collector Achievement
+           if (newOwned.length === ROCKETS.length && !prev.achievements.includes('rocket_collector')) {
+             setTimeout(() => unlockAchievement('rocket_collector'), 500);
+           }
+
+           return {
+            ...prev,
+            coins: prev.coins - rocket.cost,
+            ownedRockets: newOwned,
+            equippedRocket: rocket.icon 
+           };
+        });
         playSound.levelUp();
         nativeService.haptics.notificationSuccess();
       }

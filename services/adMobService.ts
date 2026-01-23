@@ -1,20 +1,37 @@
-import { AdMob, AdOptions, RewardAdOptions, RewardAdPluginEvents, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
+import { AdMob, AdOptions, RewardAdOptions, RewardAdPluginEvents } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
+
+// ==========================================
+// ⚠️ IMPORTANT: NATIVE CONFIGURATION REQUIRED
+// ==========================================
+// To prevent the app from crashing, you MUST add an App ID to your native files.
+// For development, use these Google Test App IDs:
+//
+// 1. ANDROID (android/app/src/main/AndroidManifest.xml):
+//    Add this inside the <application> tag:
+//    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>
+//
+// 2. iOS (ios/App/App/Info.plist):
+//    Add these keys:
+//    <key>GADApplicationIdentifier</key>
+//    <string>ca-app-pub-3940256099942544~1458002511</string>
+// ==========================================
 
 // Helper to safely check platform
 const isNative = () => Capacitor.isNativePlatform();
 
-// REPLACE WITH YOUR REAL AD UNIT IDS FOR PRODUCTION
+// GOOGLE TEST AD UNITS (Safe for development)
+// When you release to the store, replace these with your real Ad Unit IDs.
 const AD_UNITS = {
   android: {
-    banner: 'ca-app-pub-3940256099942544/6300978111', // Test ID
-    interstitial: 'ca-app-pub-3940256099942544/1033173712', // Test ID
-    reward: 'ca-app-pub-3940256099942544/5224354917', // Test ID
+    banner: 'ca-app-pub-3940256099942544/6300978111',       // Test Banner
+    interstitial: 'ca-app-pub-3940256099942544/1033173712', // Test Interstitial
+    reward: 'ca-app-pub-3940256099942544/5224354917',       // Test Reward
   },
   ios: {
-    banner: 'ca-app-pub-3940256099942544/2934735716',
-    interstitial: 'ca-app-pub-3940256099942544/4411468910',
-    reward: 'ca-app-pub-3940256099942544/1712485313',
+    banner: 'ca-app-pub-3940256099942544/2934735716',       // Test Banner
+    interstitial: 'ca-app-pub-3940256099942544/4411468910', // Test Interstitial
+    reward: 'ca-app-pub-3940256099942544/1712485313',       // Test Reward
   }
 };
 
@@ -28,10 +45,18 @@ export const adMobService = {
   initialize: async () => {
     if (isNative()) {
       try {
+        // iOS: Request tracking permission (ATT) before initializing
+        if (Capacitor.getPlatform() === 'ios') {
+            try {
+                await AdMob.requestTrackingAuthorization();
+            } catch (e) {
+                console.log('Tracking authorization skipped or failed', e);
+            }
+        }
+
+        // Initialize AdMob
         await AdMob.initialize({
-          // requestTrackingAuthorization: true, // Removed to fix build error
-          // testingDevices: ['2077ef9a63d2b398840261c8221a0c9b'], // Add device IDs here
-          initializeForTesting: true,
+          initializeForTesting: true, // Ensures test mode behavior
         });
         console.log('AdMob Initialized');
       } catch (e) {
@@ -52,9 +77,8 @@ export const adMobService = {
           await AdMob.prepareInterstitial(options);
           await AdMob.showInterstitial();
           
-          // AdMob doesn't strictly provide a "closed" promise for showInterstitial in all versions 
-          // easily, but typically the game pauses. For simplicity, we resolve immediately 
-          // or you can add a listener for 'onAdDismissed'.
+          // AdMob operations are async, but often we just want to fire and forget or wait for close.
+          // Resolving immediately ensures game flow isn't blocked indefinitely if ad fails.
           resolve();
         } catch (e) {
           console.error("AdMob Interstitial Failed", e);
@@ -87,10 +111,12 @@ export const adMobService = {
            };
            await AdMob.prepareRewardVideoAd(options);
            
+           // Listen for the reward event
            const rewardListener = await AdMob.addListener(RewardAdPluginEvents.Rewarded, (reward) => {
               resolve(true);
            });
            
+           // Listen for failure
            const failedListener = await AdMob.addListener(RewardAdPluginEvents.FailedToLoad, (info) => {
              resolve(false);
            });
