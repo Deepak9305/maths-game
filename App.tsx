@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { App as CapacitorApp } from '@capacitor/app';
 import SplashScreen from './components/SplashScreen';
 import Dashboard from './components/Dashboard';
 import GameScreen from './components/GameScreen';
@@ -8,10 +9,14 @@ import Achievements from './components/Achievements';
 import Shop from './components/Shop';
 import DailyRewardModal from './components/DailyRewardModal';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import PauseModal from './components/PauseModal';
+import PowerUpAdModal from './components/PowerUpAdModal';
 import { PlayerState, ScreenState, Difficulty, Question, RocketItem, AchievementItem } from './types';
 import { generateQuestion, DIFFICULTY_SETTINGS, createSeededRandom } from './services/mathService';
 import { playSound, music } from './services/audioService';
 import { adMobService } from './services/adMobService';
+import { nativeService } from './services/nativeService';
+import { storageService } from './services/storageService';
 
 // Constants
 const ROCKETS: RocketItem[] = [
@@ -28,18 +33,17 @@ const ACHIEVEMENTS_LIST: AchievementItem[] = [
   { id: 'level_5', name: 'High Flyer', icon: '🦅', reward: 300 },
   { id: 'coin_1000', name: 'Treasure Hunter', icon: '💎', reward: 250 },
   { id: 'score_5000', name: 'Brainiac', icon: '🧠', reward: 400 },
-  { id: 'combo_10', name: 'Combo King', icon: '👑', reward: 150 }
+  { id: 'combo_10', name: 'Combo King', icon: '👑', reward: 150 },
+  { id: 'wave_20', name: 'Survivor', icon: '🛡️', reward: 500 }
 ];
 
-const STORAGE_KEY = 'math-quest-data-v1';
 const QUESTIONS_PER_WAVE = 5;
-const MAX_WAVES = 10;
 
 const App: React.FC = () => {
   // Navigation State
   const [screen, setScreen] = useState<ScreenState>('splash');
   const [isLoaded, setIsLoaded] = useState(false);
-  const [lastScreen, setLastScreen] = useState<ScreenState>('splash'); // Track where we came from for Privacy Policy
+  const [lastScreen, setLastScreen] = useState<ScreenState>('splash'); 
   
   // Game Configuration State
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -68,6 +72,7 @@ const App: React.FC = () => {
   const [combo, setCombo] = useState(0);
   const [progress, setProgress] = useState(0);
   const [questionsAnswered, setQuestionsAnswered] = useState(0);
+  const [currentLives, setCurrentLives] = useState<number | null>(null);
   
   // Survival Mode State
   const [currentWave, setCurrentWave] = useState(1);
@@ -83,83 +88,99 @@ const App: React.FC = () => {
   const [showConfetti, setShowConfetti] = useState(false);
   const [activePowerUp, setActivePowerUp] = useState<'timeFreeze' | null>(null);
   const [timer, setTimer] = useState<number | null>(null);
+  
+  // Pause & Ad State
+  const [isPaused, setIsPaused] = useState(false);
+  const [powerUpAdTarget, setPowerUpAdTarget] = useState<'hint' | 'timeFreeze' | null>(null);
 
   // --- Effects ---
 
-  // Load Data
+  // Initialization
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Migration support
-        if (!parsed.player.ownedRockets) parsed.player.ownedRockets = ['🚀'];
-        if (parsed.player.lastRewardDate === undefined) parsed.player.lastRewardDate = null;
+    const init = async () => {
+      await nativeService.initialize();
+      await adMobService.initialize();
+
+      const savedData = await storageService.loadData();
+      if (savedData) {
+        const p = savedData.player;
+        if (!p.ownedRockets) p.ownedRockets = ['🚀'];
+        if (p.lastRewardDate === undefined) p.lastRewardDate = null;
         
-        setPlayer(parsed.player);
-        setDailyStreak(parsed.dailyStreak);
-      } catch (e) {
-        console.error("Failed to load save data");
+        setPlayer(p);
+        setDailyStreak(savedData.dailyStreak);
       }
-    }
-    setIsLoaded(true);
-    
-    // Initialize Ads
-    adMobService.initialize();
+      
+      setIsLoaded(true);
+    };
+
+    init();
   }, []);
+
+  // Auto-pause on background
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && screen === 'game') {
+        setIsPaused(true);
+        music.stop();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [screen]);
 
   // Save Data
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        player,
-        dailyStreak
-      }));
+      storageService.saveData(player, dailyStreak);
     }
   }, [player, dailyStreak, isLoaded]);
 
-  // Handle Music for Survival Mode
+  // Handle Music
   useEffect(() => {
-    if (screen === 'game' && difficulty === 'survival' && !isWaveTransition) {
+    if (screen === 'game' && difficulty === 'survival' && !isWaveTransition && !isPaused && !powerUpAdTarget) {
       music.startSurvivalTheme();
     } else {
       music.stop();
     }
     return () => music.stop();
-  }, [screen, difficulty, isWaveTransition]);
+  }, [screen, difficulty, isWaveTransition, isPaused, powerUpAdTarget]);
 
-  // Handle Android Hardware Back Button
+  // Handle Android Back Button
   useEffect(() => {
-    // We check if the Capacitor global exists (it will in a native app)
-    const cap = (window as any).Capacitor;
-    if (cap && cap.Plugins && cap.Plugins.App) {
-      const { App } = cap.Plugins;
-      
-      const handleBackButton = async () => {
-        // If we are on dashboard, exit app (or minimize)
-        if (screen === 'dashboard' || screen === 'splash') {
-           App.exitApp();
-        } else {
-           // Otherwise, go back to dashboard
-           setScreen('dashboard');
-           music.stop();
-        }
-      };
+    let listener: any;
+    
+    const setupBackButton = async () => {
+      try {
+        listener = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+          if (screen === 'game') {
+            setIsPaused(true);
+          } else if (screen === 'dashboard' || screen === 'splash') {
+            CapacitorApp.exitApp();
+          } else {
+            setScreen('dashboard');
+            music.stop();
+          }
+        });
+      } catch (e) {
+        console.warn('Back button setup failed', e);
+      }
+    };
 
-      const listener = App.addListener('backButton', handleBackButton);
-      return () => {
-        if (listener && typeof listener.remove === 'function') {
-           listener.remove();
-        }
-      };
-    }
+    setupBackButton();
+    
+    return () => {
+      if (listener) {
+        listener.remove();
+      }
+    };
   }, [screen]);
 
   // --- Handlers ---
 
   const navigate = (newScreen: ScreenState) => {
     playSound.click();
-    // Don't update lastScreen if we are just going to privacy
+    nativeService.haptics.impactLight();
     if (newScreen !== 'privacy') {
         setLastScreen(screen);
     }
@@ -170,6 +191,10 @@ const App: React.FC = () => {
     playSound.click();
     setLastScreen(screen);
     setScreen('privacy');
+  };
+
+  const calculateSurvivalTime = (wave: number) => {
+    return Math.max(3, 10 - Math.floor((wave - 1) * 0.5));
   };
 
   const startGame = (diff: Difficulty, challengeCode?: string) => {
@@ -194,16 +219,25 @@ const App: React.FC = () => {
     // Survival Setup
     setCurrentWave(1);
     setIsWaveTransition(false);
+    setIsPaused(false);
+    setPowerUpAdTarget(null);
     
+    const settings = DIFFICULTY_SETTINGS[diff];
+    setCurrentLives(settings.lives);
+
     setQuestion(generateQuestion(diff, rngRef.current, 1));
     setFeedback('');
     setShowConfetti(false);
     setActivePowerUp(null);
     setScreen('game');
     
-    const settings = DIFFICULTY_SETTINGS[diff];
-    if (settings.time) setTimer(settings.time);
-    else setTimer(null);
+    if (diff === 'survival') {
+       setTimer(calculateSurvivalTime(1));
+    } else if (settings.time) {
+       setTimer(settings.time);
+    } else {
+       setTimer(null);
+    }
   };
 
   const handleJoinChallenge = (code: string) => {
@@ -211,13 +245,11 @@ const App: React.FC = () => {
   };
 
   const handleGameCompletion = useCallback(async () => {
-     // Check for First Victory
      if (!player.achievements.includes('first_win')) {
         unlockAchievement('first_win');
      }
 
-     // --- Daily Reward Logic ---
-     const today = new Date().toDateString(); // e.g. "Fri Oct 27 2023"
+     const today = new Date().toDateString();
      
      if (player.lastRewardDate !== today) {
         const yesterday = new Date();
@@ -226,17 +258,14 @@ const App: React.FC = () => {
 
         let newStreak = dailyStreak;
         
-        // If last reward was yesterday, increment streak. Otherwise reset to 1.
         if (player.lastRewardDate === yesterdayString) {
            newStreak = dailyStreak + 1;
         } else {
-           // If it's null (first time) or older than yesterday, reset
            newStreak = 1;
         }
 
         const bonusCoins = newStreak * 10;
         
-        // Update State
         setDailyStreak(newStreak);
         setPlayer(prev => ({
            ...prev,
@@ -244,15 +273,13 @@ const App: React.FC = () => {
            lastRewardDate: today
         }));
 
-        // Show Reward Modal
         setTimeout(() => {
            playSound.levelUp();
+           nativeService.haptics.notificationSuccess();
            setDailyRewardInfo({ streak: newStreak, bonus: bonusCoins });
         }, 800);
      }
-     // --------------------------
 
-     // Trigger Interstitial Ad logic
      try {
        await adMobService.showInterstitial();
      } catch (e) {
@@ -278,6 +305,7 @@ const App: React.FC = () => {
       });
       
       playSound.levelUp();
+      nativeService.haptics.notificationSuccess();
     }
   };
 
@@ -287,6 +315,7 @@ const App: React.FC = () => {
     if (success) {
       setPlayer(prev => ({ ...prev, coins: prev.coins + 50 }));
       playSound.levelUp();
+      nativeService.haptics.notificationSuccess();
     }
   };
 
@@ -298,25 +327,22 @@ const App: React.FC = () => {
 
     if (correct) {
       playSound.correct();
+      nativeService.haptics.impactMedium();
       
       const streakMult = difficulty === 'hard' ? Math.floor(streak / 3) + 1 : 1;
       const comboBonus = combo >= 5 ? 2 : 1;
       let points = 10 * streakMult * comboBonus;
       
       if (difficulty === 'survival') {
-        points = Math.floor(points * (1 + (currentWave * 0.2))); // Bonus points for higher waves
+        points = Math.floor(points * (1 + (currentWave * 0.2)));
       }
 
-      // Base calculation
       let earnedCoins = Math.floor(points / 10);
       let earnedXP = points * settings.xp;
 
-      // --- APPLY ROCKET PERKS ---
       if (player.equippedRocket === '⭐') {
-         // Speed Star: 50% XP Boost
          earnedXP = Math.floor(earnedXP * 1.5);
       } else if (player.equippedRocket === '🛸') {
-         // Mega Blaster: 2x Coins
          earnedCoins = earnedCoins * 2;
       }
 
@@ -342,7 +368,10 @@ const App: React.FC = () => {
       
       setPlayer(prev => {
          if (leveledUp) {
-            setTimeout(() => playSound.levelUp(), 500);
+            setTimeout(() => {
+              playSound.levelUp();
+              nativeService.haptics.notificationSuccess();
+            }, 500);
          }
          return {
            ...prev,
@@ -354,46 +383,39 @@ const App: React.FC = () => {
       });
 
       const achievementsToUnlock: string[] = [];
-
       if (newStreak === 10) achievementsToUnlock.push('streak_10');
+      if (difficulty === 'survival' && currentWave === 20) achievementsToUnlock.push('wave_20');
       
       const nextQ = questionsAnswered + 1;
-      
       let isGameComplete = false;
       
       if (difficulty === 'survival') {
-         // Survival Mode Logic
          const questionsInWave = nextQ % QUESTIONS_PER_WAVE;
          const waveProgress = ((questionsInWave === 0 ? QUESTIONS_PER_WAVE : questionsInWave) / QUESTIONS_PER_WAVE) * 100;
          setProgress(waveProgress);
          setQuestionsAnswered(nextQ);
 
          if (questionsInWave === 0) {
-            // Wave Complete
-            if (currentWave >= MAX_WAVES) {
-               isGameComplete = true;
-            } else {
-               // Next Wave
-               setIsWaveTransition(true);
-               music.stop(); // Stop music briefly for effect
-               setTimeout(() => {
-                 setCurrentWave(w => w + 1);
-                 setIsWaveTransition(false);
-                 setQuestion(generateQuestion(difficulty, rngRef.current, currentWave + 1));
-                 setFeedback('');
-                 setActivePowerUp(null);
-                 if (settings.time) setTimer(settings.time);
-               }, 3000); // 3 seconds transition
+            const nextWave = currentWave + 1;
+            setIsWaveTransition(true);
+            music.stop(); 
+            nativeService.haptics.notificationSuccess();
+            
+            setTimeout(() => {
+              setCurrentWave(nextWave);
+              setIsWaveTransition(false);
+              setQuestion(generateQuestion(difficulty, rngRef.current, nextWave));
+              setFeedback('');
+              setActivePowerUp(null);
+              setTimer(calculateSurvivalTime(nextWave)); 
+            }, 3000); 
                
-               // Return early to skip standard generation
-               setFeedback(`${['Awesome!', 'Perfect!', 'Amazing!'][Math.floor(Math.random() * 3)]} +${points}`);
-               setShowConfetti(true);
-               setTimeout(() => setShowConfetti(false), 2000);
-               return; 
-            }
+            setFeedback(`${['Awesome!', 'Perfect!', 'Amazing!'][Math.floor(Math.random() * 3)]} +${points}`);
+            setShowConfetti(true);
+            setTimeout(() => setShowConfetti(false), 2000);
+            return; 
          }
       } else {
-         // Standard Mode Logic
          if (nextQ === settings.questions && newStreak === settings.questions) {
            achievementsToUnlock.push('perfect_game');
          }
@@ -426,33 +448,56 @@ const App: React.FC = () => {
           setQuestion(generateQuestion(difficulty, rngRef.current, currentWave));
           setFeedback('');
           setActivePowerUp(null);
-          if (settings.time) setTimer(settings.time);
+          if (difficulty === 'survival') {
+             setTimer(calculateSurvivalTime(currentWave));
+          } else if (settings.time) {
+             setTimer(settings.time);
+          }
         }, 1500);
       }
     } else {
       playSound.wrong();
+      nativeService.haptics.notificationError();
       setStreak(0);
       setCombo(0);
       setFeedback(`Oops! Answer: ${question.answer}`);
       setShake(true);
       setTimeout(() => setShake(false), 500);
+
+      // Lives Logic
+      let isGameOver = false;
+      if (currentLives !== null) {
+        const newLives = currentLives - 1;
+        setCurrentLives(newLives);
+        if (newLives <= 0) {
+           isGameOver = true;
+        }
+      }
       
       setTimeout(() => {
-        // For survival, we don't reset wave on wrong answer, just continue
-        setQuestion(generateQuestion(difficulty, rngRef.current, currentWave));
-        setFeedback('');
-        if (settings.time) setTimer(settings.time);
-      }, 2000);
+         if (isGameOver) {
+             handleGameCompletion();
+         } else {
+            setQuestion(generateQuestion(difficulty, rngRef.current, currentWave));
+            setFeedback('');
+            if (difficulty === 'survival') {
+                setTimer(calculateSurvivalTime(currentWave));
+            } else if (settings.time) {
+                setTimer(settings.time);
+            }
+         }
+      }, isGameOver ? 1500 : 2000);
     }
-  }, [question, difficulty, streak, combo, player.achievements, player.level, player.xp, player.coins, player.totalScore, questionsAnswered, timer, handleGameCompletion, player.equippedRocket, currentWave]);
+  }, [question, difficulty, streak, combo, player.achievements, player.level, player.xp, player.coins, player.totalScore, questionsAnswered, timer, handleGameCompletion, player.equippedRocket, currentWave, currentLives]);
 
   useEffect(() => {
-    if (timer !== null && timer > 0 && screen === 'game' && activePowerUp !== 'timeFreeze' && !isWaveTransition) {
+    // Only run timer if not paused AND not watching powerup ad
+    if (timer !== null && timer > 0 && screen === 'game' && activePowerUp !== 'timeFreeze' && !isWaveTransition && !isPaused && !powerUpAdTarget) {
       const interval = setInterval(() => {
         setTimer(t => {
           if (t === null) return null;
           if (t <= 1) {
-             checkAnswer('-999999');
+             checkAnswer('-999999'); 
              return null;
           }
           return t - 1;
@@ -460,12 +505,13 @@ const App: React.FC = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [timer, screen, activePowerUp, checkAnswer, isWaveTransition]);
+  }, [timer, screen, activePowerUp, checkAnswer, isWaveTransition, isPaused, powerUpAdTarget]);
 
   const handleUsePowerUp = (type: 'hint' | 'timeFreeze') => {
     if (player.powerUps[type] <= 0) return;
     
     playSound.powerUp();
+    nativeService.haptics.impactLight();
     setPlayer(prev => ({
       ...prev,
       powerUps: { ...prev.powerUps, [type]: prev.powerUps[type] - 1 }
@@ -479,7 +525,30 @@ const App: React.FC = () => {
     }
   };
 
-  const handleShare = () => {
+  const handleRequestMorePowerUps = (type: 'hint' | 'timeFreeze') => {
+    playSound.click();
+    setPowerUpAdTarget(type);
+  };
+
+  const handleWatchPowerUpAd = async () => {
+    if (!powerUpAdTarget) return;
+    
+    const success = await adMobService.showRewardVideo();
+    if (success) {
+        setPlayer(prev => ({
+            ...prev,
+            powerUps: {
+                ...prev.powerUps,
+                [powerUpAdTarget]: prev.powerUps[powerUpAdTarget] + 3
+            }
+        }));
+        nativeService.haptics.notificationSuccess();
+        playSound.powerUp();
+    }
+    setPowerUpAdTarget(null);
+  };
+
+  const handleShare = async () => {
     playSound.click();
     let text = `🚀 I scored ${player.totalScore} in Math Quest! Level ${player.level}\n`;
     if (activeChallengeCode) {
@@ -489,39 +558,35 @@ const App: React.FC = () => {
     }
     text += `#MathQuest`;
 
-    if (navigator.share) {
-      navigator.share({ title: 'Math Quest', text }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(text);
+    const shared = await nativeService.share('Math Quest', text);
+    if (!shared) {
+      await nativeService.copyToClipboard(text);
       alert('Score & Code copied to clipboard!');
     }
   };
 
-  // Logic to BUY or EQUIP
   const handleSelectRocket = (rocket: RocketItem) => {
     playSound.click();
     
-    // Check if owned
     const isOwned = player.ownedRockets.includes(rocket.icon);
 
     if (isOwned) {
-      // Just Equip
       setPlayer(prev => ({ ...prev, equippedRocket: rocket.icon }));
+      nativeService.haptics.impactLight();
     } else {
-      // Try to Buy
       if (player.coins >= rocket.cost) {
         setPlayer(prev => ({
           ...prev,
           coins: prev.coins - rocket.cost,
           ownedRockets: [...prev.ownedRockets, rocket.icon],
-          equippedRocket: rocket.icon // Auto equip on buy
+          equippedRocket: rocket.icon 
         }));
-        playSound.levelUp(); // Celebration sound for purchase
+        playSound.levelUp();
+        nativeService.haptics.notificationSuccess();
       }
     }
   };
   
-  // Logic to Buy Power Ups
   const handleBuyPowerUp = (type: 'hint' | 'timeFreeze', cost: number) => {
     playSound.click();
     if (player.coins >= cost) {
@@ -534,7 +599,20 @@ const App: React.FC = () => {
         }
       }));
       playSound.powerUp();
+      nativeService.haptics.impactMedium();
     }
+  };
+
+  const handleResume = () => {
+    playSound.click();
+    setIsPaused(false);
+  };
+
+  const handleQuitGame = () => {
+    playSound.click();
+    setIsPaused(false);
+    navigate('dashboard');
+    music.stop();
   };
 
   if (!isLoaded) return null;
@@ -546,6 +624,21 @@ const App: React.FC = () => {
           streak={dailyRewardInfo.streak}
           bonus={dailyRewardInfo.bonus}
           onClose={() => setDailyRewardInfo(null)}
+        />
+      )}
+
+      {isPaused && (
+        <PauseModal 
+          onResume={handleResume} 
+          onQuit={handleQuitGame} 
+        />
+      )}
+
+      {powerUpAdTarget && (
+        <PowerUpAdModal
+            type={powerUpAdTarget}
+            onWatch={handleWatchPowerUpAd}
+            onClose={() => setPowerUpAdTarget(null)}
         />
       )}
 
@@ -581,12 +674,14 @@ const App: React.FC = () => {
           streak={streak}
           combo={combo}
           timer={timer}
+          currentLives={currentLives}
           progress={progress}
           equippedRocket={player.equippedRocket}
           powerUps={player.powerUps}
           onAnswer={checkAnswer}
           onUsePowerUp={handleUsePowerUp}
-          onExit={() => navigate('dashboard')}
+          onRequestMorePowerUps={handleRequestMorePowerUps}
+          onExit={() => setIsPaused(true)}
           feedback={feedback}
           shake={shake}
           showConfetti={showConfetti}

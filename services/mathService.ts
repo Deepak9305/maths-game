@@ -1,10 +1,10 @@
 import { Difficulty, Question, DifficultySetting } from '../types';
 
 export const DIFFICULTY_SETTINGS: Record<Difficulty, DifficultySetting> = {
-  easy: { name: 'Rookie', time: null, questions: 10, color: 'bg-green-500', xp: 1 },
-  medium: { name: 'Pilot', time: 15, questions: 15, color: 'bg-blue-500', xp: 2 },
-  hard: { name: 'Commander', time: 10, questions: 20, color: 'bg-purple-600', xp: 3 },
-  survival: { name: 'Survival', time: 12, questions: 50, color: 'bg-red-600', xp: 5 }
+  easy: { name: 'Rookie', time: null, questions: 10, color: 'bg-green-500', xp: 1, lives: null },
+  medium: { name: 'Pilot', time: 15, questions: 15, color: 'bg-blue-500', xp: 2, lives: 3 },
+  hard: { name: 'Commander', time: 10, questions: 20, color: 'bg-purple-600', xp: 3, lives: 3 },
+  survival: { name: 'Survival', time: 10, questions: 9999, color: 'bg-red-600', xp: 5, lives: 1 }
 };
 
 // Simple seeded random number generator (Mulberry32)
@@ -35,20 +35,18 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
   let maxNum = 10;
   
   if (diff === 'survival') {
-    // Survival Scaling
+    // INFINITE SCALING LOGIC
+    // Base difficulty increases with waves
     if (wave <= 2) {
       mode = 'easy';
-      maxNum = 10 + (wave * 2);
+      maxNum = 10 + wave;
     } else if (wave <= 5) {
       mode = 'medium';
-      maxNum = 12 + (wave * 2); 
-    } else if (wave <= 8) {
-      mode = 'hard';
-      maxNum = 20 + (wave * 2);
+      maxNum = 15 + wave; 
     } else {
-      // Waves 9-10: Extreme
       mode = 'hard';
-      maxNum = 50; 
+      // Continuously increase number range as waves progress
+      maxNum = 20 + (wave * 2);
     }
   } else {
     // Standard Scaling
@@ -58,13 +56,21 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
   const ops = [];
   if (mode === 'easy') ops.push('+', '-');
   else if (mode === 'medium') ops.push('*', '/');
-  else ops.push('+', '-', '*', '/');
+  else ops.push('+', '-', '*', '/'); // Hard mode includes all
+
+  // In very high waves (15+), remove easy operations to force difficulty
+  if (diff === 'survival' && wave > 15) {
+     const easyIndex = ops.indexOf('+');
+     if (easyIndex > -1) ops.splice(easyIndex, 1);
+     const minusIndex = ops.indexOf('-');
+     if (minusIndex > -1) ops.splice(minusIndex, 1);
+  }
 
   operation = ops[randomInt(0, ops.length - 1)];
 
   switch (operation) {
     case '+':
-      num1 = randomInt(1, maxNum);
+      num1 = randomInt(Math.floor(maxNum/2), maxNum);
       num2 = randomInt(1, maxNum);
       answer = num1 + num2;
       display = `${num1} + ${num2}`;
@@ -81,17 +87,19 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
         num1 = randomInt(2, 9);
         num2 = randomInt(2, 9);
       } else {
-        // Harder multiplication
-        num1 = randomInt(3, 12);
-        num2 = randomInt(3, 12);
+        // Harder multiplication scaling with wave
+        const limit = diff === 'survival' ? Math.min(12 + Math.floor(wave/2), 30) : 12;
+        num1 = randomInt(3, limit);
+        num2 = randomInt(3, limit);
       }
       answer = num1 * num2;
       display = `${num1} × ${num2}`;
       break;
     case '/':
       // Generate multiplication first to ensure clean division
-      num2 = randomInt(2, mode === 'medium' ? 9 : 12);
-      answer = randomInt(2, mode === 'medium' ? 9 : 12);
+      const divLimit = diff === 'survival' ? Math.min(12 + Math.floor(wave/2), 30) : 12;
+      num2 = randomInt(2, mode === 'medium' ? 9 : divLimit);
+      answer = randomInt(2, mode === 'medium' ? 9 : divLimit);
       num1 = num2 * answer;
       display = `${num1} ÷ ${num2}`;
       break;

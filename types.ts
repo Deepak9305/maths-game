@@ -8,6 +8,7 @@ export interface DifficultySetting {
   questions: number;
   color: string;
   xp: number;
+  lives: number | null; // null represents unlimited lives
 }
 
 export interface Question {

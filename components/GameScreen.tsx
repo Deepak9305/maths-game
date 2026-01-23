@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Skull } from 'lucide-react';
+import { Pause, Skull, Heart, Infinity } from 'lucide-react';
 import { Question, Difficulty, PlayerState } from '../types';
 import Confetti from './Confetti';
 
@@ -10,11 +10,13 @@ interface GameScreenProps {
   streak: number;
   combo: number;
   timer: number | null;
+  currentLives: number | null;
   progress: number;
   equippedRocket: string;
   powerUps: PlayerState['powerUps'];
   onAnswer: (answer: string) => void;
   onUsePowerUp: (type: 'hint' | 'timeFreeze') => void;
+  onRequestMorePowerUps: (type: 'hint' | 'timeFreeze') => void;
   onExit: () => void;
   feedback: string;
   shake: boolean;
@@ -30,11 +32,13 @@ const GameScreen: React.FC<GameScreenProps> = ({
   streak,
   combo,
   timer,
+  currentLives,
   progress,
   equippedRocket,
   powerUps,
   onAnswer,
   onUsePowerUp,
+  onRequestMorePowerUps,
   onExit,
   feedback,
   shake,
@@ -93,18 +97,40 @@ const GameScreen: React.FC<GameScreenProps> = ({
         
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-6">
-          <button onClick={onExit} className="bg-red-500 hover:bg-red-600 transition-colors p-3 rounded-full shadow-lg">
-            <X className="w-6 h-6 text-white" />
+          <button onClick={onExit} className="bg-white/20 hover:bg-white/30 transition-colors p-3 rounded-full shadow-lg active:scale-95 border border-white/20">
+            <Pause className="w-6 h-6 text-white" />
           </button>
           
           <div className="flex gap-2">
-             <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-full text-white font-bold text-xl border border-white/10 shadow-lg">
-               Score: {score}
+             <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-full text-white font-bold text-xl border border-white/10 shadow-lg flex items-center gap-3">
+               <span>{score}</span>
+               
+               {/* Lives Indicator */}
+               <div className="h-6 w-px bg-white/20"></div>
+               <div className="flex items-center gap-1">
+                  {currentLives === null ? (
+                    <div className="flex items-center gap-1 text-red-400">
+                      <Heart className="w-5 h-5 fill-red-400" />
+                      <Infinity className="w-4 h-4" />
+                    </div>
+                  ) : (
+                    Array.from({ length: currentLives }).map((_, i) => (
+                       <Heart key={i} className="w-5 h-5 text-red-400 fill-red-400 animate-pulse-slow" />
+                    ))
+                  )}
+                  {/* Show empty placeholder hearts for lost lives (max 3 for consistent layout) if limited and less than 3 */}
+                  {currentLives !== null && currentLives < 3 && difficulty !== 'survival' && (
+                     Array.from({ length: 3 - currentLives }).map((_, i) => (
+                        <Heart key={`lost-${i}`} className="w-5 h-5 text-red-900/50" />
+                     ))
+                  )}
+               </div>
+
              </div>
              {/* Survival Mode Wave Indicator */}
              {difficulty === 'survival' && (
                 <div className="bg-red-600 px-4 py-3 rounded-full text-white font-bold text-xl border border-red-400 shadow-lg flex items-center gap-2">
-                  <Skull className="w-5 h-5" /> Wave {currentWave}/10
+                  <Skull className="w-5 h-5" /> {currentWave}
                 </div>
              )}
           </div>
@@ -128,18 +154,32 @@ const GameScreen: React.FC<GameScreenProps> = ({
         {/* Power Ups */}
         <div className="flex gap-4 mb-6">
           <button
-            onClick={() => onUsePowerUp('hint')}
-            disabled={powerUps.hint <= 0}
-            className="flex-1 bg-blue-500/30 hover:bg-blue-500/40 border border-blue-400/30 backdrop-blur-md p-3 rounded-xl text-white font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            onClick={() => {
+               if (powerUps.hint > 0) onUsePowerUp('hint');
+               else onRequestMorePowerUps('hint');
+            }}
+            className={`flex-1 backdrop-blur-md p-3 rounded-xl font-bold transition-all active:scale-95 border ${
+               powerUps.hint > 0 
+                  ? 'bg-blue-500/30 hover:bg-blue-500/40 border-blue-400/30 text-white' 
+                  : 'bg-gray-800/40 hover:bg-gray-800/60 border-gray-600/40 text-gray-300'
+            }`}
           >
-            💡 Hint ({powerUps.hint})
+            {powerUps.hint > 0 ? `💡 Hint (${powerUps.hint})` : `📺 Free Hints`}
           </button>
+          
           <button
-            onClick={() => onUsePowerUp('timeFreeze')}
-            disabled={powerUps.timeFreeze <= 0 || !timer}
-            className="flex-1 bg-purple-500/30 hover:bg-purple-500/40 border border-purple-400/30 backdrop-blur-md p-3 rounded-xl text-white font-bold disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            onClick={() => {
+               if (powerUps.timeFreeze > 0) onUsePowerUp('timeFreeze');
+               else onRequestMorePowerUps('timeFreeze');
+            }}
+            disabled={!timer} // Only fully disabled if time freeze is useless (no timer)
+            className={`flex-1 backdrop-blur-md p-3 rounded-xl font-bold transition-all active:scale-95 border disabled:opacity-30 disabled:cursor-not-allowed ${
+               powerUps.timeFreeze > 0 
+                  ? 'bg-purple-500/30 hover:bg-purple-500/40 border-purple-400/30 text-white' 
+                  : 'bg-gray-800/40 hover:bg-gray-800/60 border-gray-600/40 text-gray-300'
+            }`}
           >
-            ⏱️ Freeze ({powerUps.timeFreeze})
+            {powerUps.timeFreeze > 0 ? `⏱️ Freeze (${powerUps.timeFreeze})` : `📺 Free Freeze`}
           </button>
         </div>
 
