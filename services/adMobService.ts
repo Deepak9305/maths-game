@@ -29,7 +29,7 @@ export const adMobService = {
     if (isNative()) {
       try {
         await AdMob.initialize({
-          requestTrackingAuthorization: true,
+          // requestTrackingAuthorization: true, // Removed to fix build error
           // testingDevices: ['2077ef9a63d2b398840261c8221a0c9b'], // Add device IDs here
           initializeForTesting: true,
         });
