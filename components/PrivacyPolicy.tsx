@@ -76,7 +76,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
               Contact Us
             </h2>
             <p className="text-slate-600 leading-relaxed text-sm md:text-base">
-              If you have any questions about this Privacy Policy, please contact us.
+              If you have any questions about this Privacy Policy, please contact us at <a href="mailto:rizzmasterhelpteam@gmail.com" className="text-indigo-600 font-bold hover:underline">rizzmasterhelpteam@gmail.com</a>.
             </p>
           </section>
           

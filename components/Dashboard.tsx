@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TrendingUp, Award, Share2, Users, Swords, Skull, Info } from 'lucide-react';
+import { TrendingUp, Award, Share2, Users, Swords, Skull, Shield, CheckCircle, Zap } from 'lucide-react';
 import { PlayerState, Difficulty, DifficultySetting } from '../types';
 import { DIFFICULTY_SETTINGS } from '../services/mathService';
 
@@ -11,6 +11,7 @@ interface DashboardProps {
   onNavigate: (screen: 'shop' | 'leaderboard' | 'achievements' | 'privacy') => void;
   onShare: () => void;
   onJoinChallenge: (code: string) => void;
+  onClaimChallenge: (id: string) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -20,7 +21,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   onStartGame,
   onNavigate,
   onShare,
-  onJoinChallenge
+  onJoinChallenge,
+  onClaimChallenge
 }) => {
   const [challengeInput, setChallengeInput] = useState('');
 
@@ -61,12 +63,64 @@ const Dashboard: React.FC<DashboardProps> = ({
           />
         </div>
 
-        {/* Daily Streak */}
-        <div className="bg-yellow-400/20 backdrop-blur-md rounded-2xl p-4 mb-8 text-center border border-yellow-400/30 transform hover:scale-[1.02] transition-transform">
-          <p className="text-white font-bold text-lg flex justify-center items-center gap-2">
-            🔥 Daily Streak: {dailyStreak} days!
-          </p>
-          <p className="text-yellow-300 text-sm mt-1">+{dailyStreak * 10} bonus coins today</p>
+        {/* Daily Streak & Challenges Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Streak Card */}
+          <div className="bg-yellow-400/20 backdrop-blur-md rounded-2xl p-4 text-center border border-yellow-400/30 transform hover:scale-[1.02] transition-transform">
+            <p className="text-white font-bold text-lg flex justify-center items-center gap-2">
+              🔥 Streak: {dailyStreak} days!
+            </p>
+            <p className="text-yellow-300 text-sm mt-1">+{dailyStreak * 10} bonus coins today</p>
+          </div>
+
+          {/* Daily Challenges Section */}
+          <div className="md:col-span-2 bg-indigo-500/20 backdrop-blur-md rounded-2xl p-4 border border-indigo-400/30">
+            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-yellow-400" /> Daily Missions
+            </h3>
+            <div className="space-y-3">
+              {player.dailyChallenges && player.dailyChallenges.map((challenge) => (
+                <div key={challenge.id} className="bg-black/20 rounded-xl p-3 flex items-center justify-between">
+                  <div className="flex-1 mr-4">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-white font-bold">{challenge.description}</span>
+                      <span className={challenge.completed ? "text-green-400" : "text-gray-400"}>
+                        {Math.min(challenge.current, challenge.target)}/{challenge.target}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-black/40 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full transition-all duration-500 ${challenge.completed ? 'bg-green-500' : 'bg-blue-500'}`}
+                        style={{ width: `${Math.min((challenge.current / challenge.target) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  <div>
+                    {challenge.claimed ? (
+                      <span className="text-gray-500 text-xs font-bold flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4" /> Done
+                      </span>
+                    ) : (
+                      <button
+                        disabled={!challenge.completed}
+                        onClick={() => onClaimChallenge(challenge.id)}
+                        className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${
+                          challenge.completed 
+                            ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500 shadow-lg animate-pulse' 
+                            : 'bg-white/10 text-white/50 cursor-not-allowed'
+                        }`}
+                      >
+                         {challenge.completed ? 'Claim' : `+${challenge.reward}`}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {(!player.dailyChallenges || player.dailyChallenges.length === 0) && (
+                <p className="text-white/50 text-sm text-center">No active missions.</p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Game Modes */}
@@ -139,23 +193,25 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         {/* Friend Code */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-white border border-white/10 relative">
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-white border border-white/10 relative text-center">
           <h3 className="font-bold mb-2 flex items-center gap-2 justify-center text-lg">
             <Users className="w-5 h-5" /> Your Friend Code
           </h3>
-          <p className="text-3xl font-bold text-yellow-300 text-center py-2 tracking-widest font-mono">{friendCode}</p>
-          <p className="text-sm text-center opacity-75">Send this code to friends so they can challenge you!</p>
-
-          <div className="absolute top-4 right-4">
-            <button 
-              onClick={() => onNavigate('privacy')}
-              className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
-              title="Privacy Policy"
-            >
-              <Info className="w-4 h-4 text-white/70" />
-            </button>
-          </div>
+          <p className="text-3xl font-bold text-yellow-300 py-2 tracking-widest font-mono">{friendCode}</p>
+          <p className="text-sm opacity-75">Send this code to friends so they can challenge you!</p>
         </div>
+
+        {/* Footer */}
+        <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-3">
+          <button 
+            onClick={() => onNavigate('privacy')}
+            className="flex items-center gap-2 text-white/50 hover:text-white transition-colors text-sm font-bold bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full"
+          >
+            <Shield className="w-4 h-4" /> Privacy Policy
+          </button>
+          <p className="text-white/20 text-xs font-mono">v1.0.0 • Math Quest</p>
+        </div>
+
       </div>
     </div>
   );

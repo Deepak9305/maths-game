@@ -31,6 +31,20 @@ export interface AchievementItem {
   reward: number;
 }
 
+export type ChallengeType = 'total_score' | 'high_streak' | 'total_answers' | 'survival_wave';
+
+export interface DailyChallenge {
+  id: string;
+  type: ChallengeType;
+  description: string;
+  target: number;
+  current: number;
+  reward: number;
+  completed: boolean;
+  claimed: boolean;
+  icon: string;
+}
+
 export interface PlayerState {
   name: string;
   coins: number;
@@ -45,4 +59,8 @@ export interface PlayerState {
     timeFreeze: number;
   };
   lastRewardDate: string | null; // Tracks the last date a daily bonus was claimed
+  
+  // Daily Challenges
+  dailyChallenges: DailyChallenge[];
+  lastChallengeDate: string | null;
 }

@@ -1,4 +1,4 @@
-import { Difficulty, Question, DifficultySetting } from '../types';
+import { Difficulty, Question, DifficultySetting, DailyChallenge } from '../types';
 
 export const DIFFICULTY_SETTINGS: Record<Difficulty, DifficultySetting> = {
   easy: { name: 'Rookie', time: null, questions: 10, color: 'bg-green-500', xp: 1, lives: null },
@@ -108,4 +108,53 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
   }
 
   return { display, answer, visualAid };
+};
+
+export const generateDailyChallenges = (): DailyChallenge[] => {
+  const challenges: DailyChallenge[] = [];
+  const rng = Math.random; // Could seed this with date if we wanted identical challenges for all users
+
+  // Challenge 1: Score/Accumulation
+  const scoreTarget = [500, 1000, 2000][Math.floor(rng() * 3)];
+  challenges.push({
+    id: `score_${Date.now()}_1`,
+    type: 'total_score',
+    description: `Earn ${scoreTarget} Total Points`,
+    target: scoreTarget,
+    current: 0,
+    reward: Math.floor(scoreTarget / 10),
+    completed: false,
+    claimed: false,
+    icon: '⭐'
+  });
+
+  // Challenge 2: Precision/Streak
+  const streakTarget = [5, 10, 15, 20][Math.floor(rng() * 4)];
+  challenges.push({
+    id: `streak_${Date.now()}_2`,
+    type: 'high_streak',
+    description: `Get a streak of ${streakTarget}`,
+    target: streakTarget,
+    current: 0,
+    reward: streakTarget * 10,
+    completed: false,
+    claimed: false,
+    icon: '🔥'
+  });
+
+  // Challenge 3: Volume
+  const answerTarget = [20, 40, 60][Math.floor(rng() * 3)];
+  challenges.push({
+    id: `answers_${Date.now()}_3`,
+    type: 'total_answers',
+    description: `Answer ${answerTarget} Questions Correctly`,
+    target: answerTarget,
+    current: 0,
+    reward: 100 + (answerTarget * 2),
+    completed: false,
+    claimed: false,
+    icon: '📝'
+  });
+
+  return challenges;
 };

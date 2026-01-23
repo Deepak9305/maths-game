@@ -12,7 +12,7 @@ import PrivacyPolicy from './components/PrivacyPolicy';
 import PauseModal from './components/PauseModal';
 import PowerUpAdModal from './components/PowerUpAdModal';
 import { PlayerState, ScreenState, Difficulty, Question, RocketItem, AchievementItem } from './types';
-import { generateQuestion, DIFFICULTY_SETTINGS, createSeededRandom } from './services/mathService';
+import { generateQuestion, DIFFICULTY_SETTINGS, createSeededRandom, generateDailyChallenges } from './services/mathService';
 import { playSound, music } from './services/audioService';
 import { adMobService } from './services/adMobService';
 import { nativeService } from './services/nativeService';
@@ -95,7 +95,9 @@ const App: React.FC = () => {
     equippedRocket: '🚀',
     ownedRockets: ['🚀'],
     powerUps: { hint: 3, timeFreeze: 2 },
-    lastRewardDate: null
+    lastRewardDate: null,
+    dailyChallenges: [],
+    lastChallengeDate: null
   });
   const [dailyStreak, setDailyStreak] = useState(1);
   const [dailyRewardInfo, setDailyRewardInfo] = useState<{ streak: number; bonus: number } | null>(null);
@@ -141,9 +143,24 @@ const App: React.FC = () => {
         const p = savedData.player;
         if (!p.ownedRockets) p.ownedRockets = ['🚀'];
         if (p.lastRewardDate === undefined) p.lastRewardDate = null;
+        if (!p.dailyChallenges) p.dailyChallenges = [];
         
+        // Check if we need to generate new challenges
+        const today = new Date().toDateString();
+        if (p.lastChallengeDate !== today) {
+           p.dailyChallenges = generateDailyChallenges();
+           p.lastChallengeDate = today;
+        }
+
         setPlayer(p);
         setDailyStreak(savedData.dailyStreak);
+      } else {
+        // First launch, generate challenges
+        setPlayer(prev => ({
+           ...prev,
+           dailyChallenges: generateDailyChallenges(),
+           lastChallengeDate: new Date().toDateString()
+        }));
       }
       
       setIsLoaded(true);
@@ -412,12 +429,44 @@ const App: React.FC = () => {
               nativeService.haptics.notificationSuccess();
             }, 500);
          }
+
+         // Update Daily Challenge Progress
+         const updatedChallenges = prev.dailyChallenges.map(challenge => {
+            if (challenge.completed) return challenge;
+
+            let newCurrent = challenge.current;
+            switch(challenge.type) {
+                case 'total_score':
+                    newCurrent += points;
+                    break;
+                case 'total_answers':
+                    newCurrent += 1;
+                    break;
+                case 'high_streak':
+                    newCurrent = Math.max(challenge.current, newStreak);
+                    break;
+            }
+
+            const isNowComplete = newCurrent >= challenge.target;
+            if (isNowComplete && !challenge.completed) {
+                // Notify user subtly (could add visual toast later)
+                setTimeout(() => playSound.levelUp(), 200);
+            }
+
+            return {
+                ...challenge,
+                current: newCurrent,
+                completed: isNowComplete
+            };
+         });
+
          return {
            ...prev,
            coins: newCoins,
            totalScore: newTotalScore,
            level: newLevel,
-           xp: newXp
+           xp: newXp,
+           dailyChallenges: updatedChallenges
          };
       });
 
@@ -691,6 +740,28 @@ const App: React.FC = () => {
     }
   };
 
+  const handleClaimChallenge = (id: string) => {
+    setPlayer(prev => {
+        const challengeIndex = prev.dailyChallenges.findIndex(c => c.id === id);
+        if (challengeIndex === -1) return prev;
+        
+        const challenge = prev.dailyChallenges[challengeIndex];
+        if (!challenge.completed || challenge.claimed) return prev;
+        
+        const newChallenges = [...prev.dailyChallenges];
+        newChallenges[challengeIndex] = { ...challenge, claimed: true };
+        
+        playSound.levelUp();
+        nativeService.haptics.notificationSuccess();
+
+        return {
+            ...prev,
+            coins: prev.coins + challenge.reward,
+            dailyChallenges: newChallenges
+        };
+    });
+  };
+
   const handleResume = () => {
     playSound.click();
     setIsPaused(false);
@@ -751,6 +822,7 @@ const App: React.FC = () => {
           }}
           onShare={handleShare}
           onJoinChallenge={handleJoinChallenge}
+          onClaimChallenge={handleClaimChallenge}
         />
       )}
 
