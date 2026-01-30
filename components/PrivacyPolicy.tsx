@@ -31,7 +31,7 @@ const PrivacyPolicy: React.FC<PrivacyPolicyProps> = ({ onBack }) => {
               Overview
             </h2>
             <p className="text-slate-600 leading-relaxed text-sm md:text-base">
-              Math Quest ("we", "our", or "us") is committed to protecting your privacy. This Privacy Policy explains how we handle information in our application. We believe in keeping your data safe and simple.
+              Math Quest ('we') is committed to protecting your privacy. This Privacy Policy explains how we handle information in our application. We believe in keeping your data safe and simple.
             </p>
           </section>
 
