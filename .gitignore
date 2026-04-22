@@ -1,7 +1,30 @@
+# Dependencies
 node_modules/
+
+# Build output
 dist/
-android_backup/
-graphify-out/
-migrated_prompt_history/
+
+# Android build artifacts
+android/.gradle/
+android/.kotlin/
+android/build/
+android/app/build/
+android/app/release/
+android/local.properties
+android/gradlew_out.log
+
+# Android IDE files
+android/.idea/
+
+# Logs
 *.log
+
+# Tool artifacts
 .graphify_python
+graphify-out/
+
+# Backups & junk
+android_backup/
+migrated_prompt_history/
+metadata.json
+quest/
