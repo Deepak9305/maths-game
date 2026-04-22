@@ -67,14 +67,14 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
                 }
               }}
               disabled={isDoubling}
-              className="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg flex items-center justify-center gap-2"
+              className={`w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:opacity-50 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 ${isDoubling ? 'cursor-wait' : 'disabled:cursor-not-allowed'}`}
             >
               {isDoubling ? 'Loading Ad...' : '📺 Double Coins!'}
             </button>
           )}
           <button
             onClick={onPlayAgain}
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg"
+            className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg ring-4 ring-green-400/30"
           >
             Play Again 🔄
           </button>
@@ -86,7 +86,7 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
           </button>
           <button
             onClick={onDashboard}
-            className="w-full bg-gradient-to-r from-green-500 to-teal-500 hover:from-green-600 hover:to-teal-600 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg"
+            className="w-full bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg"
           >
             Dashboard 🏠
           </button>

@@ -245,7 +245,9 @@ const App: React.FC = () => {
   // Save Data
   useEffect(() => {
     if (isLoaded) {
-      storageService.saveData(player, dailyStreak).catch(e => console.error('Save failed', e));
+      storageService.saveData(player, dailyStreak).then(ok => {
+        if (!ok) nativeService.ui.showToast('Warning: Progress could not be saved.');
+      });
     }
   }, [player, dailyStreak, isLoaded]);
 
@@ -802,7 +804,7 @@ const App: React.FC = () => {
     const shared = await nativeService.share('Math Quest', text);
     if (!shared) {
       await nativeService.copyToClipboard(text);
-      alert('Score & Code copied to clipboard!');
+      await nativeService.ui.showToast('Score & code copied to clipboard!');
     }
   };
 

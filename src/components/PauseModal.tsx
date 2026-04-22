@@ -12,7 +12,7 @@ const PauseModal: React.FC<PauseModalProps> = ({ onResume, onQuit, showAnimation
   const [confirmQuit, setConfirmQuit] = useState(false);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div role="dialog" aria-modal="true" aria-label="Game paused" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border-4 border-indigo-500 animate-bounce-in">
         <h2 className="text-4xl font-black text-indigo-900 mb-6">PAUSED</h2>
 
@@ -46,6 +46,7 @@ const PauseModal: React.FC<PauseModalProps> = ({ onResume, onQuit, showAnimation
 
             <button
               onClick={onToggleAnimations}
+              aria-pressed={showAnimations}
               className="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-900 text-xl font-bold py-4 rounded-2xl shadow-sm transition-transform hover:scale-105 active:scale-95"
             >
               {showAnimations ? '✨ Effects: ON' : '✨ Effects: OFF'}

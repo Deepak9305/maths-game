@@ -51,8 +51,9 @@ const StreakBoard: React.FC<StreakBoardProps> = ({ streak }) => {
         
         <div className="flex justify-between gap-1.5">
           {days.map((day) => {
-            const isCompleted = day <= (progress === 0 && streak > 0 ? 7 : progress);
-            const isToday = day === (progress === 0 && streak > 0 ? 7 : progress + 1);
+            const weekDone = progress === 0 && streak > 0;
+            const isCompleted = day <= (weekDone ? 7 : progress);
+            const isToday = !weekDone && day === progress + 1;
             const isMilestone = day === 7;
             
             return (

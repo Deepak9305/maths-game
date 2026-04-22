@@ -45,8 +45,7 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
       maxNum = 30 + (wave * 3); 
     } else {
       mode = 'hard';
-      // Continuously increase number range as waves progress
-      maxNum = 50 + (wave * 5);
+      maxNum = Math.min(200, 50 + (wave * 5));
     }
   } else {
     // Standard Scaling

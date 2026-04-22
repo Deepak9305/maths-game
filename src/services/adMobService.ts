@@ -113,10 +113,12 @@ export const adMobService = {
       return new Promise<boolean>((resolve) => {
         let resolved = false;
         let rewardHandle: any, failHandle: any, dismissHandle: any;
+        let timeoutHandle: ReturnType<typeof setTimeout>;
 
         const safeResolve = (value: boolean) => {
           if (!resolved) {
             resolved = true;
+            clearTimeout(timeoutHandle);
             // Remove all listeners to prevent memory leaks and double-resolve
             try { rewardHandle?.remove(); } catch (_) { }
             try { failHandle?.remove(); } catch (_) { }
@@ -124,6 +126,12 @@ export const adMobService = {
             resolve(value);
           }
         };
+
+        // Hard 30-second timeout — if the ad never fires any event, unblock the game
+        timeoutHandle = setTimeout(() => {
+          console.warn('AdMob reward video timed out after 30s');
+          safeResolve(false);
+        }, 30000);
 
         const run = async () => {
           try {

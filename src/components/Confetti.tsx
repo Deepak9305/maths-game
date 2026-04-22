@@ -1,19 +1,27 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+
+const EMOJIS = ['⭐', '🚀', '✨', '🌟'] as const;
 
 const Confetti: React.FC = () => {
+  const particles = useMemo(() =>
+    [...Array(40)].map((_, i) => ({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      duration: `${1 + Math.random() * 2}s`,
+      emoji: EMOJIS[Math.floor(Math.random() * EMOJIS.length)],
+    })),
+    []
+  );
+
   return (
-    <div className="fixed inset-0 pointer-events-none z-50">
-      {[...Array(40)].map((_, i) => (
+    <div className="fixed inset-0 pointer-events-none z-50" aria-hidden="true" role="presentation">
+      {particles.map(p => (
         <div
-          key={i}
+          key={p.id}
           className="absolute text-2xl"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: '-20px',
-            animation: `fall ${1 + Math.random() * 2}s linear`,
-          }}
+          style={{ left: p.left, top: '-20px', animation: `fall ${p.duration} linear` }}
         >
-          {['⭐', '🚀', '✨', '🌟'][Math.floor(Math.random() * 4)]}
+          {p.emoji}
         </div>
       ))}
     </div>

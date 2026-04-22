@@ -105,7 +105,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                         disabled={!challenge.completed}
                         onClick={() => onClaimChallenge(challenge.id)}
                         className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${challenge.completed
-                          ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500 shadow-lg animate-pulse'
+                          ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500 shadow-lg motion-safe:animate-pulse'
                           : 'bg-white/10 text-white/50 cursor-not-allowed'
                           }`}
                       >
@@ -160,18 +160,19 @@ const Dashboard: React.FC<DashboardProps> = ({
               <input
                 type="text"
                 value={challengeInput}
-                onChange={(e) => setChallengeInput(e.target.value.toUpperCase())}
+                onChange={(e) => setChallengeInput(e.target.value)}
                 placeholder="ENTER CODE"
                 className="bg-black/30 border-2 border-white/20 rounded-xl px-4 py-2 text-white placeholder-gray-500 outline-none focus:border-orange-400 w-full font-mono uppercase"
               />
               <button
-                onClick={() => challengeInput && onJoinChallenge(challengeInput)}
+                onClick={() => challengeInput && onJoinChallenge(challengeInput.toUpperCase())}
                 disabled={!challengeInput}
                 className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-2 rounded-xl transition-all"
               >
                 VS
               </button>
             </div>
+            <p className="text-gray-400/60 text-xs mt-1 text-center">Code is not case-sensitive</p>
           </div>
         </div>
 

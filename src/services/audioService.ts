@@ -2,20 +2,29 @@
 let audioCtx: AudioContext | null = null;
 let musicInterval: ReturnType<typeof setInterval> | null = null;
 let musicGain: GainNode | null = null;
+let audioAvailable = true;
 
-const initAudio = () => {
-  if (!audioCtx) {
-    audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+const initAudio = (): AudioContext | null => {
+  if (!audioAvailable) return null;
+  try {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume();
+    }
+    return audioCtx;
+  } catch (e) {
+    console.warn('Web Audio API unavailable, audio disabled', e);
+    audioAvailable = false;
+    return null;
   }
-  if (audioCtx.state === 'suspended') {
-    audioCtx.resume();
-  }
-  return audioCtx;
 };
 
 // Enhanced tone generator with ADSR envelope for cleaner sound
 const playTone = (freq: number, type: OscillatorType, duration: number, startTime = 0, vol = 0.1) => {
   const ctx = initAudio();
+  if (!ctx) return;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
 
@@ -65,9 +74,13 @@ export const playSound = {
 
 export const music = {
   startGameMusic: (difficulty: string) => {
-    if (musicInterval) return; // Already playing
+    if (musicInterval) {
+      clearInterval(musicInterval);
+      musicInterval = null;
+    }
 
     const ctx = initAudio();
+    if (!ctx) return;
     let step = 0;
 
     // Dynamic tempo based on difficulty

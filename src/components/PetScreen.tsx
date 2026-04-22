@@ -162,8 +162,10 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
           <div className="flex items-center gap-2 z-10 mb-1">
             {isEditingName ? (
               <div className="flex items-center gap-2">
-                <input 
-                  type="text" 
+                <label htmlFor="petName" className="sr-only">Pet Name</label>
+                <input
+                  id="petName"
+                  type="text"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   className="bg-black/50 text-white font-bold text-2xl rounded-lg px-2 py-1 w-32 outline-none border border-white/20"

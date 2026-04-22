@@ -16,7 +16,7 @@ const PowerUpAdModal: React.FC<PowerUpAdModalProps> = ({ type, onWatch, onClose 
   const bgColor = isHint ? "bg-blue-100" : "bg-purple-100";
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+    <div role="alertdialog" aria-modal="true" aria-labelledby="powerup-modal-title" className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-2xl border-4 border-white relative animate-bounce-in overflow-hidden">
         
         <button 
@@ -30,7 +30,7 @@ const PowerUpAdModal: React.FC<PowerUpAdModalProps> = ({ type, onWatch, onClose 
           <Icon className={`w-10 h-10 ${color}`} />
         </div>
 
-        <h2 className="text-2xl font-black text-gray-800 mb-2">{title}</h2>
+        <h2 id="powerup-modal-title" className="text-2xl font-black text-gray-800 mb-2">{title}</h2>
         <p className="text-gray-500 font-medium mb-8">
           Watch a short video to get{' '}
           <span className={`font-bold ${color} text-lg`}>+3 FREE {isHint ? 'Hints' : 'Freezes'}</span>!

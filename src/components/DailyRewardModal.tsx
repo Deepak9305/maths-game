@@ -18,8 +18,8 @@ const DailyRewardModal: React.FC<DailyRewardModalProps> = ({ streak, bonus, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <Confetti />
+    <div role="alertdialog" aria-modal="true" aria-label="Daily reward earned" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+      <div aria-hidden="true"><Confetti /></div>
       <div className="bg-gradient-to-b from-gray-900 to-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-white/10 relative animate-bounce-in overflow-hidden">
         
         {/* Background glow */}

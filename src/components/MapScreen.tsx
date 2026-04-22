@@ -317,7 +317,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onSelectLevel, onClose })
             const hasRing = p.level % 7 === 0 || isMilestone;
             const { bg, shadow } = getPlanetColors(p.level);
             
-            const sizeClass = isMilestone ? 'w-14 h-14 text-xl' : 'w-10 h-10 text-base';
+            const sizeClass = isMilestone ? 'w-14 h-14 text-xl' : 'w-12 h-12 text-base';
             const ringSize = isMilestone ? 'scale-[1.4]' : 'scale-[1.2]';
 
             return (

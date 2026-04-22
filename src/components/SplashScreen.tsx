@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'motion/react';
 
 interface SplashScreenProps {
@@ -8,6 +8,8 @@ interface SplashScreenProps {
 }
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ playerName, setPlayerName, onStart }) => {
+  const [logoFailed, setLogoFailed] = useState(false);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (playerName.trim()) {
@@ -55,19 +57,16 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ playerName, setPlayerName, 
             animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
           >
-            <img
-              src="/logo.png"
-              className="w-48 h-48 md:w-64 md:h-64 mx-auto mb-4 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]"
-              alt="Math Quest Logo"
-              onError={(e) => {
-                const target = e.currentTarget;
-                target.style.display = 'none';
-                const fallback = document.createElement('div');
-                fallback.className = 'text-8xl md:text-9xl mb-4 mx-auto text-center';
-                fallback.textContent = '🚀';
-                target.parentElement?.insertBefore(fallback, target);
-              }}
-            />
+            {logoFailed ? (
+              <div className="text-8xl md:text-9xl mb-4 mx-auto text-center">🚀</div>
+            ) : (
+              <img
+                src="/logo.png"
+                className="w-48 h-48 md:w-64 md:h-64 mx-auto mb-4 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]"
+                alt="Math Quest Logo"
+                onError={() => setLogoFailed(true)}
+              />
+            )}
           </motion.div>
 
           <motion.h1
@@ -85,7 +84,9 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ playerName, setPlayerName, 
 
           <motion.form variants={itemVariants} onSubmit={handleSubmit} className="relative z-10">
             <div className="mb-6 relative">
+              <label htmlFor="pilotName" className="sr-only">Pilot Name</label>
               <input
+                id="pilotName"
                 type="text"
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}

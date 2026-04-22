@@ -115,7 +115,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
 
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-1.5">
-          <button onClick={onExit} className="bg-white/20 hover:bg-white/30 transition-colors p-3 rounded-full shadow-lg active:scale-95 border border-white/20">
+          <button onClick={onExit} aria-label="Pause game" className="bg-white/20 hover:bg-white/30 transition-colors p-3 rounded-full shadow-lg active:scale-95 border border-white/20">
             <Pause className="w-6 h-6 text-white" />
           </button>
 
@@ -123,20 +123,23 @@ const GameScreen: React.FC<GameScreenProps> = ({
             <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full text-white font-bold text-lg border border-white/10 shadow-lg flex items-center gap-2">
               <span>{score}</span>
               <div className="h-4 w-px bg-white/20"></div>
-              <div className="flex items-center gap-1">
+              <div
+                className="flex items-center gap-1"
+                aria-label={currentLives === null ? 'Infinite lives' : `${currentLives} lives remaining`}
+              >
                 {currentLives === null ? (
-                  <div className="flex items-center gap-1 text-red-400">
+                  <div className="flex items-center gap-1 text-red-400" aria-hidden="true">
                     <Heart className="w-4 h-4 fill-red-400" />
                     <Infinity className="w-3 h-3" />
                   </div>
                 ) : (
                   Array.from({ length: currentLives }).map((_, i) => (
-                    <Heart key={i} className="w-4 h-4 text-red-400 fill-red-400 animate-pulse-slow" />
+                    <Heart key={i} aria-hidden="true" className="w-4 h-4 text-red-400 fill-red-400 animate-pulse-slow" />
                   ))
                 )}
                 {currentLives !== null && currentLives < 3 && difficulty !== 'survival' && (
                   Array.from({ length: 3 - currentLives }).map((_, i) => (
-                    <Heart key={`lost-${i}`} className="w-4 h-4 text-red-900/50" />
+                    <Heart key={`lost-${i}`} aria-hidden="true" className="w-4 h-4 text-red-900/50" />
                   ))
                 )}
               </div>
@@ -245,7 +248,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
           )}
 
           {/* Answer Display Box */}
-          <div className="w-full bg-indigo-50 border-4 border-indigo-100 rounded-2xl h-12 flex items-center justify-center mb-1.5 shadow-inner">
+          <div className="w-full bg-indigo-50 border-4 border-indigo-100 rounded-2xl min-h-[3rem] flex items-center justify-center mb-1.5 shadow-inner">
             <span className={`text-3xl font-black tracking-widest ${userAnswer ? 'text-indigo-900' : 'text-indigo-200/50'}`}>
               {userAnswer || '?'}
             </span>
@@ -259,7 +262,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
                   <button
                     key={num}
                     onClick={() => handleNumpadInput(num.toString())}
-                    className="flex-1 min-h-0 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-900 text-2xl font-bold rounded-xl shadow-sm border-b-4 border-indigo-100 active:border-b-0 active:translate-y-1 transition-all"
+                    className="flex-1 min-h-12 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-900 text-2xl font-bold rounded-xl shadow-sm border-b-4 border-indigo-100 active:border-b-0 active:translate-y-1 transition-all"
                   >
                     {num}
                   </button>
@@ -269,19 +272,19 @@ const GameScreen: React.FC<GameScreenProps> = ({
             <div className="flex gap-1.5 flex-1 min-h-0">
               <button
                 onClick={() => handleNumpadInput('-')}
-                className="flex-1 min-h-0 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-900 text-2xl font-bold rounded-xl shadow-sm border-b-4 border-indigo-100 active:border-b-0 active:translate-y-1 transition-all"
+                className="flex-1 min-h-12 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-900 text-2xl font-bold rounded-xl shadow-sm border-b-4 border-indigo-100 active:border-b-0 active:translate-y-1 transition-all"
               >
                 -
               </button>
               <button
                 onClick={() => handleNumpadInput('0')}
-                className="flex-1 min-h-0 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-900 text-2xl font-bold rounded-xl shadow-sm border-b-4 border-indigo-100 active:border-b-0 active:translate-y-1 transition-all"
+                className="flex-1 min-h-12 flex items-center justify-center bg-indigo-50 hover:bg-indigo-100 active:bg-indigo-200 text-indigo-900 text-2xl font-bold rounded-xl shadow-sm border-b-4 border-indigo-100 active:border-b-0 active:translate-y-1 transition-all"
               >
                 0
               </button>
               <button
                 onClick={() => handleNumpadInput('DEL')}
-                className="flex-1 min-h-0 flex items-center justify-center bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 text-xl font-bold rounded-xl shadow-sm border-b-4 border-red-100 active:border-b-0 active:translate-y-1 transition-all"
+                className="flex-1 min-h-12 flex items-center justify-center bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-500 text-xl font-bold rounded-xl shadow-sm border-b-4 border-red-100 active:border-b-0 active:translate-y-1 transition-all"
               >
                 <Delete className="w-6 h-6" />
               </button>

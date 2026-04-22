@@ -6,7 +6,7 @@ const STORAGE_KEY = 'math-quest-data-v1';
 const FRIEND_CODE_KEY = 'math-quest-friend-code';
 
 export const storageService = {
-  saveData: async (player: PlayerState, dailyStreak: number) => {
+  saveData: async (player: PlayerState, dailyStreak: number): Promise<boolean> => {
     const data = JSON.stringify({ player, dailyStreak });
 
     try {
@@ -18,8 +18,10 @@ export const storageService = {
       } else {
         localStorage.setItem(STORAGE_KEY, data);
       }
+      return true;
     } catch (e) {
       console.error('Failed to save game data', e);
+      return false;
     }
   },
 

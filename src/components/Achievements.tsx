@@ -22,7 +22,14 @@ const Achievements: React.FC<AchievementsProps> = ({ unlockedAchievements, achie
           <p className="text-center text-gray-500 font-bold mb-6">
             {unlockedAchievements.length} / {achievementsList.length} Unlocked
           </p>
-          <div className="bg-gray-100 rounded-full h-3 mb-6 overflow-hidden">
+          <div
+            role="progressbar"
+            aria-valuenow={unlockedAchievements.length}
+            aria-valuemin={0}
+            aria-valuemax={achievementsList.length}
+            aria-label="Achievements unlocked"
+            className="bg-gray-100 rounded-full h-3 mb-6 overflow-hidden"
+          >
             <div
               className="bg-gradient-to-r from-yellow-400 to-orange-500 h-full rounded-full transition-all duration-500"
               style={{ width: `${(unlockedAchievements.length / achievementsList.length) * 100}%` }}

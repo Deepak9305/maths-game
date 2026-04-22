@@ -30,7 +30,7 @@ const Shop: React.FC<ShopProps> = ({
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4">
       <div className="max-w-3xl mx-auto">
-        <button onClick={onClose} className="mb-6 bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
+        <button onClick={onClose} aria-label="Close shop" className="mb-6 bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
           <X className="w-6 h-6 text-white" />
         </button>
         <div className="bg-white/95 backdrop-blur-md rounded-3xl p-4 md:p-8 shadow-2xl overflow-y-auto max-h-[85vh]">
@@ -49,6 +49,7 @@ const Shop: React.FC<ShopProps> = ({
                   setIsWatchingAd(false);
                 }}
                 disabled={isWatchingAd}
+                aria-busy={isWatchingAd}
                 className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-lg transition-transform hover:scale-105 active:scale-95"
              >
                 <Video className="w-5 h-5" /> {isWatchingAd ? 'Loading Ad...' : 'Free Coins (+500)'}
