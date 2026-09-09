@@ -25,3 +25,7 @@
 # Optimization for better stack traces in Google Play Console
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# Meta Ads / Facebook Audience Network missing rules
+-dontwarn com.facebook.infer.annotation.Nullsafe$Mode
+-dontwarn com.facebook.infer.annotation.Nullsafe

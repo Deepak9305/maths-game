@@ -14,35 +14,43 @@ interface ShopProps {
   onClose: () => void;
 }
 
-const Shop: React.FC<ShopProps> = ({ 
-  coins, 
-  equippedRocket, 
+const Shop: React.FC<ShopProps> = ({
+  coins,
+  equippedRocket,
   ownedRockets,
   powerUps,
-  rockets, 
-  onEquip, 
+  rockets,
+  onEquip,
   onBuyPowerUp,
-  onWatchAd, 
-  onClose 
+  onWatchAd,
+  onClose
 }) => {
   const [isWatchingAd, setIsWatchingAd] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4">
+    <div
+      className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4"
+      style={{
+        paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
+      }}
+    >
       <div className="max-w-3xl mx-auto">
         <button onClick={onClose} aria-label="Close shop" className="mb-6 bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
           <X className="w-6 h-6 text-white" />
         </button>
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-4 md:p-8 shadow-2xl overflow-y-auto max-h-[85vh]">
+        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-4 md:p-8 shadow-2xl overflow-y-auto max-h-[calc(100dvh-7rem)]">
           <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">🚀 Pilot Shop</h2>
-          
+
           {/* Coin Balance & Ad Button */}
           <div className="flex flex-col items-center justify-center gap-4 mb-8 sticky top-0 bg-white/90 p-4 rounded-xl z-10 shadow-sm backdrop-blur">
              <span className="inline-block bg-yellow-100 text-yellow-800 px-6 py-2 rounded-full font-bold text-2xl border-4 border-yellow-300 shadow-sm">
                 💰 {coins}
              </span>
-             
-             <button 
+
+             <button
                 onClick={async () => {
                   setIsWatchingAd(true);
                   await onWatchAd();
@@ -57,7 +65,7 @@ const Shop: React.FC<ShopProps> = ({
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
-            
+
             {/* Rocket Section */}
             <div>
               <h3 className="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
@@ -68,7 +76,7 @@ const Shop: React.FC<ShopProps> = ({
                   const isEquipped = equippedRocket === rocket.icon;
                   const isOwned = ownedRockets.includes(rocket.icon);
                   const canAfford = coins >= rocket.cost;
-                  
+
                   return (
                     <div
                       key={i}
@@ -117,7 +125,7 @@ const Shop: React.FC<ShopProps> = ({
                 <span className="text-2xl">⚡</span> Power-Up Station
               </h3>
               <div className="space-y-3">
-                
+
                 {/* Buy Hint */}
                 <div className="bg-purple-50 p-4 rounded-2xl border-b-4 border-purple-200 flex justify-between items-center">
                   <div className="flex items-center gap-3">
@@ -127,7 +135,7 @@ const Shop: React.FC<ShopProps> = ({
                       <p className="text-xs text-gray-500">You have: {powerUps.hint}</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                     onClick={() => onBuyPowerUp('hint', 1000)}
                     disabled={coins < 1000}
                     className="bg-purple-500 hover:bg-purple-600 disabled:bg-gray-300 text-white font-bold py-2 px-4 rounded-xl text-sm transition-all shadow-md active:scale-95"
@@ -145,7 +153,7 @@ const Shop: React.FC<ShopProps> = ({
                       <p className="text-xs text-gray-500">You have: {powerUps.timeFreeze}</p>
                     </div>
                   </div>
-                  <button 
+                  <button
                      onClick={() => onBuyPowerUp('timeFreeze', 1000)}
                      disabled={coins < 1000}
                      className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white font-bold py-2 px-4 rounded-xl text-sm transition-all shadow-md active:scale-95"
@@ -155,7 +163,7 @@ const Shop: React.FC<ShopProps> = ({
                 </div>
 
               </div>
-              
+
               <div className="mt-6 bg-yellow-50 p-4 rounded-xl border border-yellow-200 text-xs text-yellow-800 text-center">
                 Need more coins? <br/>Play <b>Hard Mode</b> or Challenge friends!
               </div>

@@ -1,5 +1,9 @@
-import { AdMob, AdOptions, RewardAdOptions, RewardAdPluginEvents } from '@capacitor-community/admob';
+import { AdMob, AdOptions, RewardAdOptions, RewardAdPluginEvents, BannerAdOptions, BannerAdSize, BannerAdPosition } from '@capacitor-community/admob';
 import { Capacitor } from '@capacitor/core';
+
+// Meta (Facebook) Ads is supported via AdMob Mediation.
+// No extra code is needed here, but you must configure the Meta Audience Network
+// and AdMob mediation groups in their respective consoles.
 
 // ==========================================
 // ⚠️ IMPORTANT: NATIVE CONFIGURATION REQUIRED
@@ -9,7 +13,7 @@ import { Capacitor } from '@capacitor/core';
 //
 // 1. ANDROID (android/app/src/main/AndroidManifest.xml):
 //    Add this inside the <application> tag:
-//    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3940256099942544~3347511713"/>
+//    <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-7381421031784616~6990993957"/>
 //
 // 2. iOS (ios/App/App/Info.plist):
 //    Add these keys:
@@ -24,9 +28,9 @@ const isNative = () => Capacitor.isNativePlatform();
 // When you release to the store, replace these with your real Ad Unit IDs.
 const AD_UNITS = {
   android: {
-    banner: 'ca-app-pub-3940256099942544/6300978111',       // Test Banner
+    banner: 'ca-app-pub-7381421031784616/2912148146',       // Production Banner
     interstitial: 'ca-app-pub-7381421031784616/5188724059', // Production Interstitial
-    reward: 'ca-app-pub-3940256099942544/5224354917',       // Test Reward
+    reward: 'ca-app-pub-7381421031784616/4033658128',       // Production Reward
   },
   ios: {
     banner: 'ca-app-pub-3940256099942544/2934735716',       // Test Banner
@@ -63,8 +67,38 @@ export const adMobService = {
           initializeForTesting: false, // Set to true only during local development
         });
         console.log('AdMob Initialized');
+
+        // Show banner by default on native
+        await adMobService.showBanner();
       } catch (e) {
         console.error('AdMob Init Failed', e);
+      }
+    }
+  },
+
+  showBanner: async (): Promise<void> => {
+    if (isNative()) {
+      try {
+        const options: BannerAdOptions = {
+          adId: getAdUnitId('banner'),
+          adSize: BannerAdSize.ADAPTIVE_BANNER,
+          position: BannerAdPosition.BOTTOM_CENTER,
+          margin: 0,
+          isTesting: false
+        };
+        await AdMob.showBanner(options);
+      } catch (e) {
+        console.error("Banner Ad Failed", e);
+      }
+    }
+  },
+
+  hideBanner: async (): Promise<void> => {
+    if (isNative()) {
+      try {
+        await AdMob.removeBanner();
+      } catch (e) {
+        console.error("Hide Banner Failed", e);
       }
     }
   },

@@ -3,7 +3,7 @@ import { TrendingUp, Award, Share2, Users, Swords, Skull, Shield, CheckCircle, Z
 import { PlayerState, Difficulty, DifficultySetting } from '../types';
 import { DIFFICULTY_SETTINGS } from '../services/mathService';
 
-import StreakBoard from './StreakBoard';
+import StreakBoard from '../components/StreakBoard';
 
 interface DashboardProps {
   player: PlayerState;
@@ -27,17 +27,25 @@ const Dashboard: React.FC<DashboardProps> = ({
   onClaimChallenge
 }) => {
   const [challengeInput, setChallengeInput] = useState('');
+  const normalizedChallengeCode = challengeInput.trim().toUpperCase();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4 pb-12">
+    <div
+      className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4"
+      style={{
+        paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
+      }}
+    >
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-3xl font-bold text-white flex items-center gap-2">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+          <div className="min-w-0">
+            <h2 className="text-3xl font-bold text-white flex items-center gap-2 min-w-0">
               <span className="text-4xl">👨‍🚀</span> {player.name}
             </h2>
-            <p className="text-yellow-300 font-medium mt-1">
+            <p className="text-yellow-300 font-medium mt-1 break-words">
               Level {player.level} • {Math.floor(player.xp)}/{player.level * 100} XP
             </p>
           </div>
@@ -149,30 +157,45 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Challenge Section */}
         <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-2xl p-6 mb-8 border border-orange-400/30">
-          <div className="flex flex-col md:flex-row items-center gap-4">
-            <div className="flex-1">
-              <h3 className="text-white font-bold text-xl flex items-center gap-2">
-                <Swords className="w-6 h-6 text-orange-400" /> Challenge a Friend
-              </h3>
-              <p className="text-gray-300 text-sm mt-1">Enter a friend's code to play the <b>exact same questions</b> they did!</p>
-            </div>
-            <div className="flex gap-2 w-full md:w-auto">
-              <input
-                type="text"
-                value={challengeInput}
-                onChange={(e) => setChallengeInput(e.target.value)}
-                placeholder="ENTER CODE"
-                className="bg-black/30 border-2 border-white/20 rounded-xl px-4 py-2 text-white placeholder-gray-500 outline-none focus:border-orange-400 w-full font-mono uppercase"
-              />
-              <button
-                onClick={() => challengeInput && onJoinChallenge(challengeInput.toUpperCase())}
-                disabled={!challengeInput}
-                className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-2 rounded-xl transition-all"
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="flex-1">
+                <h3 className="text-white font-bold text-xl flex items-center gap-2">
+                  <Swords className="w-6 h-6 text-orange-400" /> Challenge a Friend
+                </h3>
+                <p className="text-gray-300 text-sm mt-1">Enter a friend's code to play the <b>exact same questions</b> they did!</p>
+              </div>
+              <form
+                className="flex gap-2 w-full md:w-auto"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (normalizedChallengeCode) {
+                    onJoinChallenge(normalizedChallengeCode);
+                    setChallengeInput('');
+                  }
+                }}
               >
-                VS
-              </button>
+                <input
+                  type="text"
+                  value={challengeInput}
+                  onChange={(e) => setChallengeInput(e.target.value)}
+                  placeholder="ENTER CODE"
+                  className="bg-black/30 border-2 border-white/20 rounded-xl px-4 py-2 text-white placeholder-gray-500 outline-none focus:border-orange-400 w-full min-w-0 font-mono uppercase"
+                  maxLength={16}
+                  autoCapitalize="characters"
+                  autoCorrect="off"
+                  spellCheck={false}
+                />
+                <button
+                  type="submit"
+                  disabled={!normalizedChallengeCode}
+                  className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-2 rounded-xl transition-all whitespace-nowrap"
+                >
+                  VS
+                </button>
+              </form>
             </div>
-            <p className="text-gray-400/60 text-xs mt-1 text-center">Code is not case-sensitive</p>
+            <p className="text-gray-400/80 text-xs text-center md:text-right">Code is not case-sensitive.</p>
           </div>
         </div>
 
@@ -214,7 +237,7 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div>
 
         <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-3">
-          <p className="text-white/20 text-xs font-mono">v1.0.1 • Math Quest</p>
+          <p className="text-white/20 text-xs font-mono">v1.0.5 • Math Quest</p>
         </div>
 
       </div>

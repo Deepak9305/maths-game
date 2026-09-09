@@ -1,7 +1,7 @@
 import React from 'react';
 
 export type PetEmotion = 'normal' | 'happy' | 'sad' | 'hungry' | 'eating' | 'playing';
-export type PetStage = 'egg' | 'grub' | 'alien' | 'crawler' | 'dragon' | 'wolf' | 'phoenix';
+export type PetStage = 'egg' | 'grub' | 'alien' | 'crawler' | 'dragon' | 'wolf_pup' | 'wolf' | 'shadow_wolf' | 'void_wolf' | 'alpha_wolf' | 'phoenix_egg' | 'phoenix_chick' | 'phoenix' | 'inferno_phoenix' | 'celestial_phoenix';
 
 interface PetProps {
   stage: PetStage;
@@ -193,47 +193,163 @@ export const PetCharacter: React.FC<PetProps> = ({ stage, emotion, className = "
     </svg>
   );
 
+  // --- Wolf Evolution Chain ---
+  const renderWolfPup = () => (
+    <svg viewBox="0 0 100 100" className={className}>
+      <ellipse cx="50" cy="72" rx="18" ry="14" fill="#c7d2fe" stroke="#1e293b" strokeWidth="4"/>
+      <ellipse cx="50" cy="72" rx="10" ry="8" fill="#e0e7ff"/>
+      <circle cx="50" cy="48" r="16" fill="#c7d2fe" stroke="#1e293b" strokeWidth="4"/>
+      <path d="M 38 38 L 32 22 L 44 33 Z" fill="#a5b4fc" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 62 38 L 68 22 L 56 33 Z" fill="#a5b4fc" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <g transform="translate(-10, -2)">{renderCartoonFace()}</g>
+    </svg>
+  );
+
   const renderWolf = () => (
     <svg viewBox="0 0 100 100" className={className}>
-      {/* Tail */}
-      <path d="M 70 60 Q 90 50 85 70 Q 75 80 65 65 Z" fill="#818cf8" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      {/* Body */}
-      <ellipse cx="50" cy="65" rx="25" ry="20" fill="#6366f1" stroke="#1e293b" strokeWidth="4" />
-      {/* Belly */}
-      <ellipse cx="50" cy="68" rx="15" ry="12" fill="#c7d2fe" />
+      <path d="M 70 60 Q 90 50 85 70 Q 75 80 65 65 Z" fill="#818cf8" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <ellipse cx="50" cy="65" rx="25" ry="20" fill="#6366f1" stroke="#1e293b" strokeWidth="4"/>
+      <ellipse cx="50" cy="68" rx="15" ry="12" fill="#c7d2fe"/>
+      <circle cx="40" cy="40" r="20" fill="#6366f1" stroke="#1e293b" strokeWidth="4"/>
+      <path d="M 25 30 L 20 10 L 35 25 Z" fill="#818cf8" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 55 30 L 60 10 L 45 25 Z" fill="#818cf8" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <g transform="translate(-10, -5)">{renderCartoonFace()}</g>
+    </svg>
+  );
+
+  const renderShadowWolf = () => (
+    <svg viewBox="0 0 100 100" className={className}>
+      <path d="M 70 60 Q 93 48 88 72 Q 76 84 63 66 Z" fill="#4338ca" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <ellipse cx="50" cy="65" rx="27" ry="21" fill="#312e81" stroke="#1e293b" strokeWidth="4"/>
+      <ellipse cx="50" cy="68" rx="16" ry="13" fill="#4f46e5"/>
+      <circle cx="40" cy="39" r="21" fill="#312e81" stroke="#1e293b" strokeWidth="4"/>
+      <path d="M 23 28 L 17 8 L 34 23 Z" fill="#4338ca" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 57 28 L 63 8 L 46 23 Z" fill="#4338ca" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      {/* Shadow aura */}
+      <ellipse cx="50" cy="90" rx="28" ry="6" fill="#312e81" opacity="0.6"/>
+      <g transform="translate(-10, -6)">{renderCartoonFace()}</g>
+    </svg>
+  );
+
+  const renderVoidWolf = () => (
+    <svg viewBox="0 0 100 100" className={className}>
+      {/* Cosmic swirls */}
+      <circle cx="20" cy="20" r="5" fill="#7c3aed" opacity="0.5"/>
+      <circle cx="80" cy="25" r="4" fill="#db2777" opacity="0.5"/>
+      <circle cx="15" cy="75" r="3" fill="#2563eb" opacity="0.5"/>
+      <path d="M 72 58 Q 96 44 90 70 Q 77 85 62 64 Z" fill="#6d28d9" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <ellipse cx="50" cy="64" rx="28" ry="22" fill="#4c1d95" stroke="#1e293b" strokeWidth="4"/>
+      <ellipse cx="50" cy="68" rx="17" ry="13" fill="#7c3aed"/>
+      <circle cx="40" cy="38" r="22" fill="#4c1d95" stroke="#1e293b" strokeWidth="4"/>
+      <path d="M 21 27 L 14 5 L 33 22 Z" fill="#6d28d9" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 59 27 L 66 5 L 47 22 Z" fill="#6d28d9" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <g transform="translate(-10, -7)">{renderCartoonFace()}</g>
+    </svg>
+  );
+
+  const renderAlphaWolf = () => (
+    <svg viewBox="0 0 100 100" className={className}>
+      {/* Crown */}
+      <path d="M 22 22 L 28 10 L 36 18 L 44 5 L 52 18 L 56 10 L 60 22 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="2" strokeLinejoin="round"/>
+      <path d="M 72 56 Q 97 42 91 68 Q 78 82 61 62 Z" fill="#7c3aed" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <ellipse cx="50" cy="63" rx="29" ry="23" fill="#5b21b6" stroke="#1e293b" strokeWidth="4"/>
+      <ellipse cx="50" cy="67" rx="18" ry="14" fill="#8b5cf6"/>
+      <circle cx="40" cy="37" r="23" fill="#5b21b6" stroke="#1e293b" strokeWidth="4"/>
+      <path d="M 20 26 L 13 4 L 32 21 Z" fill="#7c3aed" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 60 26 L 67 4 L 48 21 Z" fill="#7c3aed" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      {/* Glowing eyes override */}
+      <circle cx="28" cy="33" r="7" fill="#fbbf24"/>
+      <circle cx="52" cy="33" r="7" fill="#fbbf24"/>
+      <circle cx="30" cy="31" r="3" fill="white"/>
+      <circle cx="54" cy="31" r="3" fill="white"/>
+    </svg>
+  );
+
+  // --- Phoenix Evolution Chain ---
+  const renderPhoenixEgg = () => (
+    <svg viewBox="0 0 100 100" className={className}>
+      <ellipse cx="50" cy="55" rx="35" ry="42" fill="#fed7aa" stroke="#1e293b" strokeWidth="4"/>
+      {/* Flame markings */}
+      <path d="M 40 30 Q 50 20 60 30 Q 55 40 50 35 Q 45 40 40 30 Z" fill="#f97316" opacity="0.8"/>
+      <path d="M 32 50 Q 38 42 44 50 Q 38 55 32 50 Z" fill="#fb923c" opacity="0.7"/>
+      <path d="M 56 55 Q 62 47 68 55 Q 62 60 56 55 Z" fill="#fb923c" opacity="0.7"/>
+      {(emotion === 'playing' || emotion === 'happy') && (
+        <path d="M 42 16 L 47 26 L 37 31 L 47 40" fill="none" stroke="#f97316" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
+      )}
+    </svg>
+  );
+
+  const renderPhoenixChick = () => (
+    <svg viewBox="0 0 100 100" className={className}>
+      {/* Tiny wings */}
+      <path d="M 35 55 Q 18 45 22 30 Q 28 42 36 48 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="2" strokeLinejoin="round"/>
+      <path d="M 65 55 Q 82 45 78 30 Q 72 42 64 48 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="2" strokeLinejoin="round"/>
+      {/* Fluffy body */}
+      <ellipse cx="50" cy="70" rx="20" ry="16" fill="#fbbf24" stroke="#1e293b" strokeWidth="3"/>
       {/* Head */}
-      <circle cx="40" cy="40" r="20" fill="#6366f1" stroke="#1e293b" strokeWidth="4" />
-      {/* Ears */}
-      <path d="M 25 30 L 20 10 L 35 25 Z" fill="#818cf8" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      <path d="M 55 30 L 60 10 L 45 25 Z" fill="#818cf8" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      {/* Face */}
-      <g transform="translate(-10, -5)">
-        {renderCartoonFace()}
-      </g>
+      <circle cx="50" cy="48" r="18" fill="#fde68a" stroke="#1e293b" strokeWidth="3"/>
+      {/* Tuft */}
+      <path d="M 44 32 Q 50 22 56 32 Z" fill="#f59e0b" stroke="#1e293b" strokeWidth="2" strokeLinejoin="round"/>
+      {renderCartoonFace(3)}
     </svg>
   );
 
   const renderPhoenix = () => (
     <svg viewBox="0 0 100 100" className={className}>
-      {/* Wings */}
-      <path d="M 35 50 Q 10 30 15 10 Q 25 25 35 40 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      <path d="M 65 50 Q 90 30 85 10 Q 75 25 65 40 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      {/* Tail feathers */}
-      <path d="M 40 75 Q 50 95 60 75 Z" fill="#f59e0b" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      <path d="M 30 70 Q 40 90 50 70 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      <path d="M 50 70 Q 60 90 70 70 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      {/* Body */}
-      <ellipse cx="50" cy="60" rx="20" ry="25" fill="#f59e0b" stroke="#1e293b" strokeWidth="4" />
-      {/* Belly */}
-      <ellipse cx="50" cy="65" rx="12" ry="15" fill="#fef3c7" />
-      {/* Head */}
-      <circle cx="50" cy="35" r="18" fill="#f59e0b" stroke="#1e293b" strokeWidth="4" />
-      {/* Crest */}
-      <path d="M 40 20 Q 50 5 60 20 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round" />
-      {/* Face */}
-      <g transform="translate(0, -10)">
-        {renderCartoonFace()}
-      </g>
+      <path d="M 35 50 Q 10 30 15 10 Q 25 25 35 40 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 65 50 Q 90 30 85 10 Q 75 25 65 40 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 40 75 Q 50 95 60 75 Z" fill="#f59e0b" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 30 70 Q 40 90 50 70 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 50 70 Q 60 90 70 70 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <ellipse cx="50" cy="60" rx="20" ry="25" fill="#f59e0b" stroke="#1e293b" strokeWidth="4"/>
+      <ellipse cx="50" cy="65" rx="12" ry="15" fill="#fef3c7"/>
+      <circle cx="50" cy="35" r="18" fill="#f59e0b" stroke="#1e293b" strokeWidth="4"/>
+      <path d="M 40 20 Q 50 5 60 20 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <g transform="translate(0, -10)">{renderCartoonFace()}</g>
+    </svg>
+  );
+
+  const renderInfernoPhoenix = () => (
+    <svg viewBox="0 0 100 100" className={className}>
+      {/* Flame wings */}
+      <path d="M 33 48 Q 5 28 12 5 Q 22 22 33 38 Z" fill="#ef4444" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 67 48 Q 95 28 88 5 Q 78 22 67 38 Z" fill="#ef4444" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 22 45 Q 8 35 14 18" fill="none" stroke="#f97316" strokeWidth="5" strokeLinecap="round"/>
+      <path d="M 78 45 Q 92 35 86 18" fill="none" stroke="#f97316" strokeWidth="5" strokeLinecap="round"/>
+      {/* Tail */}
+      <path d="M 38 75 Q 50 98 62 75 Z" fill="#dc2626" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 28 68 Q 40 92 52 68 Z" fill="#ef4444" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 48 68 Q 60 92 72 68 Z" fill="#ef4444" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <ellipse cx="50" cy="58" rx="22" ry="26" fill="#dc2626" stroke="#1e293b" strokeWidth="4"/>
+      <ellipse cx="50" cy="63" rx="13" ry="16" fill="#fca5a5"/>
+      <circle cx="50" cy="33" r="20" fill="#dc2626" stroke="#1e293b" strokeWidth="4"/>
+      <path d="M 37 17 Q 50 0 63 17 Z" fill="#ef4444" stroke="#1e293b" strokeWidth="3" strokeLinejoin="round"/>
+      <g transform="translate(0, -8)">{renderCartoonFace()}</g>
+    </svg>
+  );
+
+  const renderCelestialPhoenix = () => (
+    <svg viewBox="0 0 100 100" className={className}>
+      {/* Stars */}
+      <circle cx="12" cy="15" r="2" fill="#fde68a" opacity="0.9"/>
+      <circle cx="88" cy="12" r="2" fill="#fde68a" opacity="0.9"/>
+      <circle cx="8" cy="70" r="1.5" fill="#fde68a" opacity="0.7"/>
+      <circle cx="93" cy="65" r="1.5" fill="#fde68a" opacity="0.7"/>
+      {/* Celestial wings */}
+      <path d="M 32 46 Q 2 22 10 2 Q 20 20 32 36 Z" fill="#fef3c7" stroke="#fbbf24" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 68 46 Q 98 22 90 2 Q 80 20 68 36 Z" fill="#fef3c7" stroke="#fbbf24" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 20 42 Q 5 30 11 13" fill="none" stroke="#fde68a" strokeWidth="5" strokeLinecap="round"/>
+      <path d="M 80 42 Q 95 30 89 13" fill="none" stroke="#fde68a" strokeWidth="5" strokeLinecap="round"/>
+      {/* Crown */}
+      <path d="M 32 22 L 38 10 L 46 18 L 50 8 L 54 18 L 62 10 L 68 22 Z" fill="#fbbf24" stroke="#1e293b" strokeWidth="2" strokeLinejoin="round"/>
+      {/* Tail */}
+      <path d="M 36 74 Q 50 100 64 74 Z" fill="#fde68a" stroke="#fbbf24" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 25 68 Q 39 94 53 68 Z" fill="#fef3c7" stroke="#fbbf24" strokeWidth="3" strokeLinejoin="round"/>
+      <path d="M 47 68 Q 61 94 75 68 Z" fill="#fef3c7" stroke="#fbbf24" strokeWidth="3" strokeLinejoin="round"/>
+      <ellipse cx="50" cy="57" rx="22" ry="26" fill="#fbbf24" stroke="#1e293b" strokeWidth="4"/>
+      <ellipse cx="50" cy="62" rx="13" ry="16" fill="#fef9c3"/>
+      <circle cx="50" cy="31" r="20" fill="#fbbf24" stroke="#1e293b" strokeWidth="4"/>
+      <g transform="translate(0, -9)">{renderCartoonFace()}</g>
     </svg>
   );
 
@@ -243,8 +359,16 @@ export const PetCharacter: React.FC<PetProps> = ({ stage, emotion, className = "
     case 'alien': return renderAlien();
     case 'crawler': return renderCrawler();
     case 'dragon': return renderDragon();
+    case 'wolf_pup': return renderWolfPup();
     case 'wolf': return renderWolf();
+    case 'shadow_wolf': return renderShadowWolf();
+    case 'void_wolf': return renderVoidWolf();
+    case 'alpha_wolf': return renderAlphaWolf();
+    case 'phoenix_egg': return renderPhoenixEgg();
+    case 'phoenix_chick': return renderPhoenixChick();
     case 'phoenix': return renderPhoenix();
+    case 'inferno_phoenix': return renderInfernoPhoenix();
+    case 'celestial_phoenix': return renderCelestialPhoenix();
     default: return renderEgg();
   }
 };

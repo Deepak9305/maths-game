@@ -29,8 +29,16 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
   const [isDoubling, setIsDoubling] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4 flex items-center justify-center">
-      <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-yellow-400 overflow-y-auto max-h-[95vh]">
+    <div
+      className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4 flex items-center justify-center"
+      style={{
+        paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
+      }}
+    >
+      <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-yellow-400 overflow-y-auto max-h-[calc(100dvh-2rem)]">
         <Trophy className="w-24 h-24 mx-auto mb-6 text-yellow-400 drop-shadow-lg" style={{ animation: 'bounce 0.6s ease-in-out 3' }} />
         <h1 className="text-4xl font-bold text-gray-800 mb-2">Mission Complete! 🎉</h1>
         <p className={`inline-block text-sm font-bold uppercase tracking-wider px-4 py-1 rounded-full mb-4 ${settings.color} text-white`}>

@@ -3,7 +3,7 @@ import { PlayerState } from '../types';
 import { Heart, Activity, Zap, Star, Edit2, Check, Info, X, ShoppingBag } from 'lucide-react';
 import { playSound } from '../services/audioService';
 import { nativeService } from '../services/nativeService';
-import { PetCharacter, PetStage, PetEmotion } from './PetCharacters';
+import { PetCharacter, PetStage, PetEmotion } from '../components/PetCharacters';
 
 interface PetScreenProps {
   player: PlayerState;
@@ -83,22 +83,28 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
     setIsEditingName(false);
   };
 
-  // Determine pet base form based on level
+  // Determine pet stage and species name based on pet ID and level
   let stage: PetStage = 'alien';
   let speciesName = 'Alien Baby';
-  
+
   if (pet.id === 'wolf') {
-    stage = 'wolf';
-    speciesName = 'Nebula Wolf';
+    if (pet.level < 5)       { stage = 'wolf_pup';    speciesName = 'Wolf Pup'; }
+    else if (pet.level < 10) { stage = 'wolf';         speciesName = 'Nebula Wolf'; }
+    else if (pet.level < 20) { stage = 'shadow_wolf';  speciesName = 'Shadow Wolf'; }
+    else if (pet.level < 30) { stage = 'void_wolf';    speciesName = 'Void Wolf'; }
+    else                     { stage = 'alpha_wolf';   speciesName = 'Alpha Wolf'; }
   } else if (pet.id === 'phoenix') {
-    stage = 'phoenix';
-    speciesName = 'Solar Phoenix';
+    if (pet.level < 5)       { stage = 'phoenix_egg';      speciesName = 'Flame Egg'; }
+    else if (pet.level < 10) { stage = 'phoenix_chick';    speciesName = 'Fire Chick'; }
+    else if (pet.level < 20) { stage = 'phoenix';           speciesName = 'Solar Phoenix'; }
+    else if (pet.level < 30) { stage = 'inferno_phoenix';  speciesName = 'Inferno Phoenix'; }
+    else                     { stage = 'celestial_phoenix'; speciesName = 'Celestial Phoenix'; }
   } else {
-    if (pet.level < 5) { stage = 'egg'; speciesName = 'Space Egg'; }
-    else if (pet.level < 10) { stage = 'grub'; speciesName = 'Star Grub'; }
-    else if (pet.level < 20) { stage = 'alien'; speciesName = 'Alien Baby'; }
+    if (pet.level < 5)       { stage = 'egg';     speciesName = 'Space Egg'; }
+    else if (pet.level < 10) { stage = 'grub';    speciesName = 'Star Grub'; }
+    else if (pet.level < 20) { stage = 'alien';   speciesName = 'Alien Baby'; }
     else if (pet.level < 30) { stage = 'crawler'; speciesName = 'Void Crawler'; }
-    else { stage = 'dragon'; speciesName = 'Cosmic Dragon'; }
+    else                     { stage = 'dragon';  speciesName = 'Cosmic Dragon'; }
   }
 
   // Determine pet emotion based on stats
@@ -114,7 +120,15 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
   const isPerkActive = pet.happiness >= 80 && pet.hunger <= 20;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4 pb-12 flex flex-col">
+    <div
+      className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4 flex flex-col"
+      style={{
+        paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
+      }}
+    >
       <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
         {/* Header */}
         <div className="flex justify-between items-center mb-6 bg-black/30 p-4 rounded-2xl backdrop-blur-md border border-white/10">
@@ -189,15 +203,13 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
           </div>
           <div className="flex items-center justify-center gap-2 z-10 mb-6">
             <p className="text-purple-300 font-medium">Level {pet.level} {speciesName}</p>
-            {pet.id === 'alien' && (
-              <button 
-                onClick={() => setShowEvolutionModal(true)} 
-                className="text-purple-300 hover:text-white transition-colors"
-                title="View Evolution Cycle"
-              >
-                <Info className="w-4 h-4" />
-              </button>
-            )}
+            <button
+              onClick={() => setShowEvolutionModal(true)}
+              className="text-purple-300 hover:text-white transition-colors"
+              title="View Evolution Cycle"
+            >
+              <Info className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Stats */}
@@ -209,7 +221,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
                 <span className="text-yellow-400 font-bold">{pet.xp} / {pet.level * 50}</span>
               </div>
               <div className="h-2 bg-black/40 rounded-full overflow-hidden border border-white/10">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-yellow-400 to-orange-500 transition-all duration-500"
                   style={{ width: `${(pet.xp / (pet.level * 50)) * 100}%` }}
                 />
@@ -222,7 +234,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
                 <span className="text-pink-400 font-bold">{pet.happiness}%</span>
               </div>
               <div className="h-4 bg-black/40 rounded-full overflow-hidden border border-white/10">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-pink-500 to-rose-400 transition-all duration-500"
                   style={{ width: `${Math.min(100, Math.max(0, pet.happiness))}%` }}
                 />
@@ -235,7 +247,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
                 <span className="text-orange-400 font-bold">{pet.hunger}%</span>
               </div>
               <div className="h-4 bg-black/40 rounded-full overflow-hidden border border-white/10">
-                <div 
+                <div
                   className="h-full bg-gradient-to-r from-orange-500 to-red-500 transition-all duration-500"
                   style={{ width: `${Math.min(100, Math.max(0, pet.hunger))}%` }}
                 />
@@ -294,15 +306,15 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
 
       {/* Shop Modal */}
       {showShopModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
           onClick={() => setShowShopModal(false)}
         >
-          <div 
-            className="bg-slate-900 border border-blue-500/30 rounded-3xl p-6 w-full max-w-md relative max-h-[80vh] overflow-y-auto"
+          <div
+            className="bg-slate-900 border border-blue-500/30 rounded-3xl p-6 w-full max-w-md relative max-h-[calc(100dvh-3rem)] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <button 
+            <button
               onClick={() => setShowShopModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white"
             >
@@ -310,17 +322,17 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
             </button>
             <h3 className="text-2xl font-bold text-white mb-2 text-center">Pet Shop</h3>
             <p className="text-slate-400 text-center text-sm mb-6">Adopt a new companion!</p>
-            
+
             <div className="space-y-4">
               {AVAILABLE_PETS.map(p => {
                 const isOwned = !!player.pets?.[p.id];
                 const isEquipped = activePetId === p.id;
                 const canAfford = player.coins >= p.cost;
-                
+
                 return (
                   <div key={p.id} className={`flex items-center gap-4 p-3 rounded-xl border ${isEquipped ? 'bg-blue-900/40 border-blue-500/50' : 'bg-black/40 border-white/5'}`}>
                     <div className="w-16 h-16 bg-black/50 rounded-lg flex items-center justify-center">
-                      <PetCharacter stage={p.id === 'alien' ? 'alien' : p.id as PetStage} emotion="normal" className="w-12 h-12" />
+                    <PetCharacter stage={p.id === 'wolf' ? 'wolf_pup' : p.id === 'phoenix' ? 'phoenix_egg' : 'egg'} emotion="normal" className="w-12 h-12" />
                     </div>
                     <div className="flex-1">
                       <p className="text-white font-bold">{p.name}</p>
@@ -328,7 +340,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
                       {isEquipped ? (
                         <span className="text-blue-400 font-bold text-sm">Active</span>
                       ) : isOwned ? (
-                        <button 
+                        <button
                           onClick={() => {
                             if (onEquipPet) onEquipPet(p.id);
                             setShowShopModal(false);
@@ -338,7 +350,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
                           Equip
                         </button>
                       ) : (
-                        <button 
+                        <button
                           onClick={() => {
                             if (onBuyPet && canAfford) onBuyPet(p.id, p.cost);
                           }}
@@ -359,57 +371,55 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
 
       {/* Evolution Modal */}
       {showEvolutionModal && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
           onClick={() => setShowEvolutionModal(false)}
         >
-          <div 
-            className="bg-slate-900 border border-purple-500/30 rounded-3xl p-6 w-full max-w-sm relative"
+          <div
+            className="bg-slate-900 border border-purple-500/30 rounded-3xl p-6 w-full max-w-sm relative max-h-[calc(100dvh-3rem)] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <button 
+            <button
               onClick={() => setShowEvolutionModal(false)}
               className="absolute top-4 right-4 text-slate-400 hover:text-white"
             >
               <X className="w-6 h-6" />
             </button>
             <h3 className="text-2xl font-bold text-white mb-6 text-center">Evolution Cycle</h3>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 bg-black/40 p-3 rounded-xl border border-white/5">
-                <PetCharacter stage="egg" emotion="normal" className="w-12 h-12" />
-                <div>
-                  <p className="text-white font-bold">Space Egg</p>
-                  <p className="text-slate-400 text-sm">Levels 1 - 4</p>
+            <div className="space-y-3">
+              {(pet.id === 'wolf'
+                ? [
+                    { s: 'wolf_pup' as PetStage,   name: 'Wolf Pup',         levels: '1 - 4' },
+                    { s: 'wolf' as PetStage,        name: 'Nebula Wolf',      levels: '5 - 9' },
+                    { s: 'shadow_wolf' as PetStage, name: 'Shadow Wolf',      levels: '10 - 19' },
+                    { s: 'void_wolf' as PetStage,   name: 'Void Wolf',        levels: '20 - 29' },
+                    { s: 'alpha_wolf' as PetStage,  name: 'Alpha Wolf',       levels: '30+' },
+                  ]
+                : pet.id === 'phoenix'
+                ? [
+                    { s: 'phoenix_egg' as PetStage,       name: 'Flame Egg',         levels: '1 - 4' },
+                    { s: 'phoenix_chick' as PetStage,     name: 'Fire Chick',        levels: '5 - 9' },
+                    { s: 'phoenix' as PetStage,           name: 'Solar Phoenix',     levels: '10 - 19' },
+                    { s: 'inferno_phoenix' as PetStage,   name: 'Inferno Phoenix',   levels: '20 - 29' },
+                    { s: 'celestial_phoenix' as PetStage, name: 'Celestial Phoenix', levels: '30+' },
+                  ]
+                : [
+                    { s: 'egg' as PetStage,     name: 'Space Egg',     levels: '1 - 4' },
+                    { s: 'grub' as PetStage,    name: 'Star Grub',     levels: '5 - 9' },
+                    { s: 'alien' as PetStage,   name: 'Alien Baby',    levels: '10 - 19' },
+                    { s: 'crawler' as PetStage, name: 'Void Crawler',  levels: '20 - 29' },
+                    { s: 'dragon' as PetStage,  name: 'Cosmic Dragon', levels: '30+' },
+                  ]
+              ).map(({ s, name, levels }) => (
+                <div key={s} className={`flex items-center gap-4 p-3 rounded-xl border ${stage === s ? 'bg-purple-900/50 border-purple-500/60' : 'bg-black/40 border-white/5'}`}>
+                  <PetCharacter stage={s} emotion="normal" className="w-12 h-12 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-white font-bold">{name}</p>
+                    <p className="text-slate-400 text-sm">Levels {levels}</p>
+                  </div>
+                  {stage === s && <span className="text-yellow-400 text-xs font-bold">✦ Now</span>}
                 </div>
-              </div>
-              <div className="flex items-center gap-4 bg-black/40 p-3 rounded-xl border border-white/5">
-                <PetCharacter stage="grub" emotion="normal" className="w-12 h-12" />
-                <div>
-                  <p className="text-white font-bold">Star Grub</p>
-                  <p className="text-slate-400 text-sm">Levels 5 - 9</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 bg-black/40 p-3 rounded-xl border border-white/5">
-                <PetCharacter stage="alien" emotion="normal" className="w-12 h-12" />
-                <div>
-                  <p className="text-white font-bold">Alien Baby</p>
-                  <p className="text-slate-400 text-sm">Levels 10 - 19</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 bg-black/40 p-3 rounded-xl border border-white/5">
-                <PetCharacter stage="crawler" emotion="normal" className="w-12 h-12" />
-                <div>
-                  <p className="text-white font-bold">Void Crawler</p>
-                  <p className="text-slate-400 text-sm">Levels 20 - 29</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 bg-black/40 p-3 rounded-xl border border-white/5">
-                <PetCharacter stage="dragon" emotion="normal" className="w-12 h-12" />
-                <div>
-                  <p className="text-white font-bold">Cosmic Dragon</p>
-                  <p className="text-slate-400 text-sm">Level 30+</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>

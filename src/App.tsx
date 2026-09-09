@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { App as CapacitorApp } from '@capacitor/app';
-import SplashScreen from './components/SplashScreen';
-import Dashboard from './components/Dashboard';
-import GameScreen from './components/GameScreen';
-import CompletionScreen from './components/CompletionScreen';
-import Achievements from './components/Achievements';
-import Shop from './components/Shop';
+import SplashScreen from './screens/SplashScreen';
+import Dashboard from './screens/Dashboard';
+import GameScreen from './screens/GameScreen';
+import CompletionScreen from './screens/CompletionScreen';
+import Achievements from './screens/Achievements';
+import Shop from './screens/Shop';
 import DailyRewardModal from './components/DailyRewardModal';
 import PauseModal from './components/PauseModal';
 import PowerUpAdModal from './components/PowerUpAdModal';
-import MapScreen from './components/MapScreen';
-import PetScreen from './components/PetScreen';
+import MapScreen from './screens/MapScreen';
+import PetScreen from './screens/PetScreen';
 import { PlayerState, ScreenState, Difficulty, Question, RocketItem, AchievementItem } from './types';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { generateQuestion, DIFFICULTY_SETTINGS, createSeededRandom, generateDailyChallenges } from './services/mathService';
@@ -436,8 +436,9 @@ const App: React.FC = () => {
     playSound.click();
     const success = await adMobService.showRewardVideo();
     if (success) {
+      // Add the same amount again (doubling total) — don't double-count what's already added
       setPlayer(prev => ({ ...prev, coins: prev.coins + gameCoins }));
-      setGameCoins(gameCoins * 2);
+      setGameCoins(prev => prev * 2);
       playSound.levelUp();
       nativeService.haptics.notificationSuccess();
     }
@@ -586,7 +587,7 @@ const App: React.FC = () => {
       if (newLevel >= 5) achievementsToUnlock.push('level_5');
       if (newCoins >= 1000) achievementsToUnlock.push('coin_1000');
       if (newTotalScore >= 5000) achievementsToUnlock.push('score_5000');
-      if (difficulty === 'hard' && timer && timer > 5 && !player.achievements.includes('speed_demon')) achievementsToUnlock.push('speed_demon');
+      if (difficulty === 'hard' && timer !== null && timer <= 3 && !player.achievements.includes('speed_demon')) achievementsToUnlock.push('speed_demon');
 
       // --- NEW ACHIEVEMENT CHECKS ---
       // Progression
@@ -679,12 +680,14 @@ const App: React.FC = () => {
       if (isGameComplete) {
         handleGameCompletion();
       } else {
+        // Capture currentWave in a local variable so the timeout closure doesn't use stale state
+        const waveForNextQ = currentWave;
         setTimeout(() => {
-          setQuestion(generateQuestion(difficulty, rngRef.current, currentWave));
+          setQuestion(generateQuestion(difficulty, rngRef.current, waveForNextQ));
           setFeedback('');
           setActivePowerUp(null);
           if (difficulty === 'survival') {
-            setTimer(calculateSurvivalTime(currentWave));
+            setTimer(calculateSurvivalTime(waveForNextQ));
           } else if (settings.time) {
             setTimer(settings.time);
           }
@@ -761,7 +764,7 @@ const App: React.FC = () => {
     });
 
     if (type === 'hint' && question) {
-      setFeedback(`💡 Hint: The answer is ${question.answer}`);
+      setFeedback(`Hint: The answer is ${question.answer}`);
     } else if (type === 'timeFreeze') {
       setActivePowerUp('timeFreeze');
       setTimeout(() => setActivePowerUp(null), 10000);

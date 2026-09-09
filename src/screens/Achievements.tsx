@@ -10,12 +10,20 @@ interface AchievementsProps {
 
 const Achievements: React.FC<AchievementsProps> = ({ unlockedAchievements, achievementsList, onClose }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4">
+    <div
+      className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4"
+      style={{
+        paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
+      }}
+    >
       <div className="max-w-2xl mx-auto">
         <button onClick={onClose} className="mb-6 bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
           <X className="w-6 h-6 text-white" />
         </button>
-        <div className="bg-white rounded-3xl p-6 shadow-2xl max-h-[75vh] overflow-y-auto">
+        <div className="bg-white rounded-3xl p-6 shadow-2xl max-h-[calc(100dvh-8rem)] overflow-y-auto">
           <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center flex items-center justify-center gap-3">
             <Award className="w-8 h-8 text-purple-500" /> Achievements
           </h2>
