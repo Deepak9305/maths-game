@@ -1,20 +1,100 @@
 import React, { useState } from 'react';
-import { TrendingUp, Award, Share2, Users, Swords, Skull, Shield, CheckCircle, Zap } from 'lucide-react';
-import { PlayerState, Difficulty, DifficultySetting } from '../types';
-import { DIFFICULTY_SETTINGS } from '../services/mathService';
-
-import StreakBoard from '../components/StreakBoard';
+import {
+  Award,
+  BarChart3,
+  Calculator,
+  Check,
+  Coins,
+  Flame,
+  Grid2X2,
+  Home,
+  Orbit,
+  Rocket,
+  Settings,
+  Share2,
+  Sparkles,
+  Square,
+  Target,
+  Trophy,
+  X
+} from 'lucide-react';
+import { GameMode, ModeDifficulty, PlayerState, SudokuSize } from '../types';
+import {
+  GAME_MODE_DEFINITIONS,
+  MODE_DIFFICULTY_LABELS,
+  PRIMARY_GAME_MODES
+} from '../services/modeService';
 
 interface DashboardProps {
   player: PlayerState;
   dailyStreak: number;
   friendCode: string;
-  onStartGame: (diff: Difficulty) => void;
+  onStartGame: (mode: GameMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize) => void;
   onNavigate: (screen: 'shop' | 'achievements' | 'privacy' | 'map' | 'pet') => void;
   onShare: () => void;
   onJoinChallenge: (code: string) => void;
   onClaimChallenge: (id: string) => void;
 }
+
+const MODE_ICONS: Record<GameMode, React.ComponentType<{ className?: string }>> = {
+  'quick-calc': Calculator,
+  'square-sprint': Square,
+  'log-lab': BarChart3,
+  'mini-sudoku': Grid2X2,
+  'target-puzzle': Target,
+  survival: Orbit
+};
+
+const MODE_STYLES: Record<GameMode, { orb: string; ring: string; text: string }> = {
+  'quick-calc': {
+    orb: 'bg-cyan-500/90',
+    ring: 'border-cyan-300 shadow-cyan-400/60',
+    text: 'text-cyan-100'
+  },
+  'square-sprint': {
+    orb: 'bg-violet-500/90',
+    ring: 'border-violet-300 shadow-violet-400/60',
+    text: 'text-violet-100'
+  },
+  'log-lab': {
+    orb: 'bg-emerald-500/90',
+    ring: 'border-emerald-300 shadow-emerald-400/60',
+    text: 'text-emerald-100'
+  },
+  'mini-sudoku': {
+    orb: 'bg-orange-500/90',
+    ring: 'border-orange-300 shadow-orange-400/60',
+    text: 'text-orange-100'
+  },
+  'target-puzzle': {
+    orb: 'bg-rose-500/90',
+    ring: 'border-rose-300 shadow-rose-400/60',
+    text: 'text-rose-100'
+  },
+  survival: {
+    orb: 'bg-red-500/90',
+    ring: 'border-red-300 shadow-red-400/60',
+    text: 'text-red-100'
+  }
+};
+
+const ORBIT_POSITIONS: Record<Exclude<GameMode, 'survival'>, string> = {
+  'quick-calc': 'left-[15%] top-[38%] sm:left-[18%]',
+  'square-sprint': 'left-1/2 top-[8%]',
+  'log-lab': 'right-[15%] top-[39%] sm:right-[18%]',
+  'mini-sudoku': 'left-[25%] top-[70%] sm:left-[28%]',
+  'target-puzzle': 'right-[25%] top-[70%] sm:right-[28%]'
+};
+
+const ModeIcon: React.FC<{ mode: GameMode; className?: string }> = ({ mode, className }) => {
+  const Icon = MODE_ICONS[mode];
+  return <Icon className={className} />;
+};
+
+const formatBest = (mode: GameMode, bestScore: number | undefined) => {
+  if (!bestScore) return 'New mission';
+  return mode === 'survival' ? `Wave ${bestScore}` : `${bestScore} pts`;
+};
 
 const Dashboard: React.FC<DashboardProps> = ({
   player,
@@ -26,221 +106,306 @@ const Dashboard: React.FC<DashboardProps> = ({
   onJoinChallenge,
   onClaimChallenge
 }) => {
+  const [selectedMode, setSelectedMode] = useState<GameMode>('quick-calc');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<ModeDifficulty>('standard');
+  const [sudokuSize, setSudokuSize] = useState<SudokuSize>(4);
   const [challengeInput, setChallengeInput] = useState('');
-  const normalizedChallengeCode = challengeInput.trim().toUpperCase();
+  const [showSettings, setShowSettings] = useState(false);
+
+  const selectedDefinition = GAME_MODE_DEFINITIONS[selectedMode];
+  const selectedStats = player.modeStats?.[selectedMode];
+  const nextChallenge = player.dailyChallenges?.find(challenge => !challenge.claimed);
+
+  const startSelectedMode = () => {
+    onStartGame(selectedMode, selectedDifficulty, sudokuSize);
+  };
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4"
-      style={{
-        paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
-        paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
-      }}
-    >
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-          <div className="min-w-0">
-            <h2 className="text-3xl font-bold text-white flex items-center gap-2 min-w-0">
-              <span className="text-4xl">👨‍🚀</span> {player.name}
-            </h2>
-            <p className="text-yellow-300 font-medium mt-1 break-words">
-              Level {player.level} • {Math.floor(player.xp)}/{player.level * 100} XP
-            </p>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={() => onNavigate('shop')}
-              className="bg-yellow-400/20 hover:bg-yellow-400/30 transition-colors px-4 py-2 rounded-xl text-white font-bold border border-yellow-400/50"
-            >
-              {player.coins} 💰
-            </button>
-          </div>
-        </div>
+    <div className="min-h-screen bg-[#050d29] text-white font-['Lexend'] relative overflow-x-hidden">
+      <div
+        aria-hidden="true"
+        className="fixed inset-0 bg-cover bg-center opacity-90"
+        style={{ backgroundImage: "url('/assets/orbit-space-bg.png')" }}
+      />
+      <div aria-hidden="true" className="fixed inset-0 bg-[#050d29]/55" />
 
-        {/* XP Bar */}
-        <div className="relative mb-8">
-          <div className="bg-black/30 rounded-full h-5 overflow-hidden backdrop-blur-sm border border-white/10">
-            <div
-              className="bg-gradient-to-r from-green-400 to-blue-500 h-full rounded-full transition-all duration-1000 ease-out"
-              style={{ width: `${Math.min(100, Math.max(0, (player.xp / (player.level * 100)) * 100))}%` }}
-            />
-          </div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[10px] font-bold text-white drop-shadow-md">
-              {Math.floor(player.xp)} / {player.level * 100} XP
-            </span>
-          </div>
-        </div>
-
-        {/* Daily Streak & Challenges Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Streak Board */}
-          <div className="transform hover:scale-[1.02] transition-transform h-full">
-            <StreakBoard streak={dailyStreak} />
-          </div>
-
-          {/* Daily Challenges Section */}
-          <div className="md:col-span-2 bg-indigo-500/20 backdrop-blur-md rounded-2xl p-4 border border-indigo-400/30">
-            <h3 className="text-white font-bold mb-3 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-yellow-400" /> Daily Missions
-            </h3>
-            <div className="space-y-3">
-              {player.dailyChallenges && player.dailyChallenges.map((challenge) => (
-                <div key={challenge.id} className="bg-black/20 rounded-xl p-3 flex items-center justify-between">
-                  <div className="flex-1 mr-4">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-white font-bold">{challenge.description}</span>
-                      <span className={challenge.completed ? "text-green-400" : "text-gray-400"}>
-                        {Math.min(challenge.current, challenge.target)}/{challenge.target}
-                      </span>
-                    </div>
-                    <div className="h-2 bg-black/40 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full transition-all duration-500 ${challenge.completed ? 'bg-green-500' : 'bg-blue-500'}`}
-                        style={{ width: `${Math.min((challenge.current / challenge.target) * 100, 100)}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                  <div>
-                    {challenge.claimed ? (
-                      <span className="text-gray-500 text-xs font-bold flex items-center gap-1">
-                        <CheckCircle className="w-4 h-4" /> Done
-                      </span>
-                    ) : (
-                      <button
-                        disabled={!challenge.completed}
-                        onClick={() => onClaimChallenge(challenge.id)}
-                        className={`text-xs px-3 py-1.5 rounded-lg font-bold transition-all ${challenge.completed
-                          ? 'bg-yellow-400 text-yellow-900 hover:bg-yellow-500 shadow-lg motion-safe:animate-pulse'
-                          : 'bg-white/10 text-white/50 cursor-not-allowed'
-                          }`}
-                      >
-                        {challenge.completed ? 'Claim' : `+${challenge.reward}`}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-              {(!player.dailyChallenges || player.dailyChallenges.length === 0) && (
-                <p className="text-white/50 text-sm text-center">No active missions.</p>
-              )}
+      <main
+        className="relative z-10 mx-auto max-w-5xl px-4 pt-4 sm:px-6 sm:pt-6"
+        style={{
+          paddingBottom: 'calc(7rem + env(safe-area-inset-bottom, 0px))',
+          paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
+          paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
+        }}
+      >
+        <header className="flex items-center gap-2 sm:gap-3">
+          <div className="flex min-w-0 flex-1 items-center gap-2 rounded-2xl border border-cyan-300/20 bg-[#0b1b48]/85 px-3 py-2 shadow-lg backdrop-blur-md sm:px-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-cyan-300/40 bg-cyan-400/15 text-cyan-200">
+              <Rocket className="h-6 w-6" />
             </div>
-          </div>
-        </div>
-
-        {/* Game Modes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {(Object.entries(DIFFICULTY_SETTINGS) as [Difficulty, DifficultySetting][]).map(([key, settings]) => (
-            <button
-              key={key}
-              onClick={() => onStartGame(key)}
-              className={`${settings.color} hover:brightness-110 active:scale-95 transform transition-all rounded-3xl p-4 text-white shadow-xl border-b-4 border-black/20 flex flex-col items-center justify-center min-h-[160px] relative overflow-hidden`}
-            >
-              {key === 'survival' && (
-                <div className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold px-2 py-1 rounded-bl-xl">
-                  NEW!
-                </div>
-              )}
-              <div className="text-4xl mb-3 drop-shadow-md">
-                {key === 'easy' ? '⭐' : key === 'medium' ? '🚀' : key === 'hard' ? '🏆' : <Skull className="w-10 h-10 animate-pulse" />}
-              </div>
-              <h3 className="text-lg font-bold mb-1">{settings.name}</h3>
-              <p className="text-xs opacity-90 font-medium text-center">
-                {key === 'easy' ? 'Add & Subtract' : key === 'medium' ? 'Multiply & Divide' : key === 'hard' ? '3-Number Combos!' : '10 Waves of Chaos!'}
-              </p>
-              {settings.time && <p className="text-[10px] mt-2 bg-black/20 px-2 py-1 rounded-lg">⏱️ {settings.time}s</p>}
-            </button>
-          ))}
-        </div>
-
-        {/* Challenge Section */}
-        <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 backdrop-blur-md rounded-2xl p-6 mb-8 border border-orange-400/30">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col md:flex-row md:items-center gap-4">
-              <div className="flex-1">
-                <h3 className="text-white font-bold text-xl flex items-center gap-2">
-                  <Swords className="w-6 h-6 text-orange-400" /> Challenge a Friend
-                </h3>
-                <p className="text-gray-300 text-sm mt-1">Enter a friend's code to play the <b>exact same questions</b> they did!</p>
-              </div>
-              <form
-                className="flex gap-2 w-full md:w-auto"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (normalizedChallengeCode) {
-                    onJoinChallenge(normalizedChallengeCode);
-                    setChallengeInput('');
-                  }
-                }}
-              >
-                <input
-                  type="text"
-                  value={challengeInput}
-                  onChange={(e) => setChallengeInput(e.target.value)}
-                  placeholder="ENTER CODE"
-                  className="bg-black/30 border-2 border-white/20 rounded-xl px-4 py-2 text-white placeholder-gray-500 outline-none focus:border-orange-400 w-full min-w-0 font-mono uppercase"
-                  maxLength={16}
-                  autoCapitalize="characters"
-                  autoCorrect="off"
-                  spellCheck={false}
+            <div className="min-w-0">
+              <p className="truncate text-xs font-semibold uppercase tracking-wider text-cyan-200/80">Pilot</p>
+              <p className="truncate text-sm font-bold text-white">{player.name || 'Explorer'}</p>
+              <div className="mt-1 h-1.5 w-20 overflow-hidden rounded-full bg-slate-950/70">
+                <div
+                  className="h-full rounded-full bg-cyan-300 transition-all"
+                  style={{ width: `${Math.min(100, Math.max(0, (player.xp / (player.level * 100)) * 100))}%` }}
                 />
-                <button
-                  type="submit"
-                  disabled={!normalizedChallengeCode}
-                  className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-2 rounded-xl transition-all whitespace-nowrap"
-                >
-                  VS
-                </button>
-              </form>
+              </div>
             </div>
-            <p className="text-gray-400/80 text-xs text-center md:text-right">Code is not case-sensitive.</p>
+            <span className="ml-auto shrink-0 text-lg font-black text-cyan-100">Lv {player.level}</span>
+          </div>
+
+          <div className="hidden items-center gap-2 rounded-2xl border border-yellow-300/20 bg-[#0b1b48]/85 px-4 py-3 shadow-lg backdrop-blur-md sm:flex">
+            <Coins className="h-5 w-5 text-yellow-300" />
+            <span className="font-black text-yellow-100">{player.coins}</span>
+          </div>
+
+          <div className="flex items-center gap-1.5 rounded-2xl border border-orange-300/20 bg-[#0b1b48]/85 px-3 py-2 shadow-lg backdrop-blur-md sm:px-4">
+            <Flame className="h-5 w-5 text-orange-300" />
+            <span className="font-black text-orange-100">{dailyStreak}</span>
+            <span className="hidden text-[10px] font-bold uppercase tracking-wide text-orange-200/70 sm:inline">day streak</span>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Open settings"
+            onClick={() => setShowSettings(true)}
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-300/20 bg-[#0b1b48]/85 text-cyan-100 shadow-lg backdrop-blur-md transition hover:border-cyan-200/60 hover:bg-cyan-400/20 active:scale-95"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+        </header>
+
+        <section className="flex flex-col items-center pt-5 sm:pt-7">
+          <img src="/logo.png" alt="Math Quest" className="h-32 w-32 rounded-full object-contain mix-blend-screen sm:h-40 sm:w-40" />
+          <h1 className="mt-1 whitespace-nowrap font-['Press_Start_2P'] text-[13px] tracking-tight text-white drop-shadow-[0_2px_0_#0ea5e9] sm:text-2xl">
+            Choose your mission
+          </h1>
+        </section>
+
+        <section className="relative mx-auto mt-4 h-[280px] w-full max-w-xl sm:h-[350px]" aria-label="Mission selector">
+          <div aria-hidden="true" className="absolute left-1/2 top-[44%] h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/25 border-dashed sm:h-72 sm:w-72" />
+          <div aria-hidden="true" className="absolute left-1/2 top-[44%] h-44 w-44 -translate-x-1/2 -translate-y-1/2 rounded-full border border-cyan-300/15 border-dashed sm:h-52 sm:w-52" />
+
+          {PRIMARY_GAME_MODES.map(mode => {
+            const isSelected = selectedMode === mode;
+            const styles = MODE_STYLES[mode];
+            return (
+              <button
+                type="button"
+                key={mode}
+                aria-pressed={isSelected}
+                onClick={() => setSelectedMode(mode)}
+                className={`absolute z-10 flex -translate-x-1/2 flex-col items-center gap-1.5 transition-all duration-300 ${ORBIT_POSITIONS[mode]} ${isSelected ? 'scale-110' : 'scale-100 opacity-85 hover:scale-105 hover:opacity-100'}`}
+              >
+                <span className={`flex h-[76px] w-[76px] items-center justify-center rounded-full border-4 ${styles.orb} ${isSelected ? `${styles.ring} shadow-[0_0_28px]` : 'border-white/20'} sm:h-[86px] sm:w-[86px]`}>
+                  <ModeIcon mode={mode} className="h-9 w-9 text-white drop-shadow-md sm:h-10 sm:w-10" />
+                </span>
+                <span className={`whitespace-nowrap text-xs font-black tracking-wide ${isSelected ? 'text-white' : styles.text}`}>{GAME_MODE_DEFINITIONS[mode].name}</span>
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            aria-label="Start selected mission"
+            onClick={startSelectedMode}
+            className="absolute left-1/2 top-[44%] z-20 flex h-28 w-28 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-4 border-cyan-200/80 bg-[#0c2a67]/95 shadow-[0_0_34px_rgba(34,211,238,0.55)] transition hover:scale-105 hover:border-white active:scale-95 sm:h-32 sm:w-32"
+          >
+            <span className="flex h-20 w-20 items-center justify-center rounded-full border border-cyan-200/50 bg-cyan-300/15 sm:h-24 sm:w-24">
+              <Trophy className="h-10 w-10 text-yellow-200 sm:h-12 sm:w-12" />
+            </span>
+          </button>
+        </section>
+
+        <section className="mx-auto max-w-xl rounded-[1.75rem] border border-cyan-300/25 bg-[#071b4b]/90 p-3 shadow-2xl backdrop-blur-md sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border ${MODE_STYLES[selectedMode].ring} ${MODE_STYLES[selectedMode].orb}`}>
+              <ModeIcon mode={selectedMode} className="h-7 w-7 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-['Press_Start_2P'] text-sm text-white sm:text-base">{selectedDefinition.name}</h2>
+                <span className="shrink-0 text-right text-[10px] font-bold uppercase tracking-wider text-cyan-200/70">
+                  {formatBest(selectedMode, selectedStats?.bestScore)}
+                </span>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-blue-100/75">{selectedDefinition.description}</p>
+            </div>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {(Object.keys(MODE_DIFFICULTY_LABELS) as ModeDifficulty[]).map(difficulty => (
+              <button
+                type="button"
+                key={difficulty}
+                aria-pressed={selectedDifficulty === difficulty}
+                onClick={() => setSelectedDifficulty(difficulty)}
+                className={`rounded-xl border px-2 py-2 text-xs font-black transition ${selectedDifficulty === difficulty ? 'border-cyan-300 bg-cyan-400/20 text-cyan-100 shadow-[0_0_18px_rgba(34,211,238,0.18)]' : 'border-white/10 bg-white/5 text-blue-100/65 hover:border-white/30 hover:text-white'}`}
+              >
+                {MODE_DIFFICULTY_LABELS[difficulty]}
+              </button>
+            ))}
+          </div>
+
+          {selectedMode === 'mini-sudoku' && (
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-white/10 bg-black/15 px-3 py-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-blue-100/60">Grid size</span>
+              <div className="flex gap-2">
+                {([4, 9] as SudokuSize[]).map(size => (
+                  <button
+                    type="button"
+                    key={size}
+                    aria-pressed={sudokuSize === size}
+                    onClick={() => setSudokuSize(size)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-black transition ${sudokuSize === size ? 'bg-orange-400 text-slate-950' : 'bg-white/10 text-white/70 hover:bg-white/20'}`}
+                  >
+                    {size} × {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={startSelectedMode}
+            className="mt-4 flex w-full items-center justify-center gap-3 rounded-2xl border-b-4 border-orange-700/50 bg-orange-400 px-5 py-3.5 font-['Press_Start_2P'] text-sm text-slate-950 shadow-[0_0_24px_rgba(251,146,60,0.35)] transition hover:bg-orange-300 active:translate-y-1 active:border-b-0"
+          >
+            Start mission
+            <Rocket className="h-5 w-5" />
+          </button>
+        </section>
+
+        {nextChallenge && (
+          <section className="mx-auto mt-4 max-w-xl rounded-2xl border border-yellow-300/20 bg-[#101d49]/85 p-4 shadow-lg backdrop-blur-md">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-yellow-300/15 text-yellow-200">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-black uppercase tracking-wider text-yellow-200/80">Daily mission</p>
+                  <span className="text-xs font-bold text-white/70">{Math.min(nextChallenge.current, nextChallenge.target)}/{nextChallenge.target}</span>
+                </div>
+                <p className="mt-1 truncate text-sm font-bold text-white">{nextChallenge.description}</p>
+                <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-950/70">
+                  <div className="h-full rounded-full bg-yellow-300 transition-all" style={{ width: `${Math.min(100, (nextChallenge.current / nextChallenge.target) * 100)}%` }} />
+                </div>
+              </div>
+              <button
+                type="button"
+                disabled={!nextChallenge.completed}
+                onClick={() => onClaimChallenge(nextChallenge.id)}
+                className={`shrink-0 rounded-lg px-3 py-2 text-xs font-black transition ${nextChallenge.completed ? 'bg-yellow-300 text-slate-950 hover:bg-yellow-200' : 'bg-white/10 text-white/40'}`}
+              >
+                {nextChallenge.completed ? 'Claim' : `+${nextChallenge.reward}`}
+              </button>
+            </div>
+          </section>
+        )}
+
+        <section className="mx-auto mt-4 grid max-w-xl grid-cols-2 gap-2 sm:grid-cols-4">
+          <button type="button" onClick={() => onNavigate('map')} className="flex items-center justify-center gap-2 rounded-xl border border-cyan-300/20 bg-[#0b1b48]/80 px-3 py-3 text-xs font-black text-cyan-100 transition hover:bg-cyan-400/15 active:scale-95">
+            <Orbit className="h-4 w-4" /> Journey
+          </button>
+          <button type="button" onClick={() => onNavigate('pet')} className="flex items-center justify-center gap-2 rounded-xl border border-emerald-300/20 bg-[#0b1b48]/80 px-3 py-3 text-xs font-black text-emerald-100 transition hover:bg-emerald-400/15 active:scale-95">
+            <Sparkles className="h-4 w-4" /> Pet
+          </button>
+          <button type="button" onClick={() => onNavigate('achievements')} className="flex items-center justify-center gap-2 rounded-xl border border-violet-300/20 bg-[#0b1b48]/80 px-3 py-3 text-xs font-black text-violet-100 transition hover:bg-violet-400/15 active:scale-95">
+            <Trophy className="h-4 w-4" /> Badges
+          </button>
+          <button type="button" onClick={() => onNavigate('shop')} className="flex items-center justify-center gap-2 rounded-xl border border-yellow-300/20 bg-[#0b1b48]/80 px-3 py-3 text-xs font-black text-yellow-100 transition hover:bg-yellow-400/15 active:scale-95">
+            <Coins className="h-4 w-4" /> Shop
+          </button>
+        </section>
+
+        <section className="mx-auto mt-4 max-w-xl rounded-2xl border border-red-300/20 bg-red-500/10 p-3 backdrop-blur-md">
+          <button type="button" onClick={() => onStartGame('survival', 'expert', sudokuSize)} className="flex w-full items-center gap-3 text-left">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-500/20 text-red-200">
+              <Flame className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-black uppercase tracking-wider text-red-200/75">Endless challenge</p>
+              <p className="truncate text-sm font-bold text-white">Survival mode · beat your best wave</p>
+            </div>
+            <span className="text-xl text-red-200">›</span>
+          </button>
+        </section>
+
+        <details className="mx-auto mt-4 max-w-xl overflow-hidden rounded-2xl border border-white/10 bg-[#0b1b48]/75 backdrop-blur-md">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-bold text-blue-100/80">Challenge a friend</summary>
+          <div className="border-t border-white/10 p-4">
+            <p className="text-sm text-blue-100/65">Share a code to play the same seeded Quick Calc run.</p>
+            <div className="mt-3 flex gap-2">
+              <input
+                value={challengeInput}
+                onChange={event => setChallengeInput(event.target.value.toUpperCase())}
+                placeholder="ENTER CODE"
+                maxLength={16}
+                className="min-w-0 flex-1 rounded-xl border border-white/15 bg-black/25 px-3 py-2 font-mono text-sm font-bold tracking-wider text-white outline-none placeholder:text-white/30 focus:border-orange-300"
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+              />
+              <button
+                type="button"
+                disabled={!challengeInput.trim()}
+                onClick={() => {
+                  onJoinChallenge(challengeInput.trim());
+                  setChallengeInput('');
+                }}
+                className="rounded-xl bg-orange-400 px-4 py-2 text-sm font-black text-slate-950 transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                VS
+              </button>
+            </div>
+            <button type="button" onClick={onShare} className="mt-3 flex items-center gap-2 text-xs font-bold text-cyan-200 hover:text-white">
+              <Share2 className="h-4 w-4" /> Share your code: {friendCode}
+            </button>
+          </div>
+        </details>
+      </main>
+
+      <nav className="fixed bottom-0 left-0 right-0 z-30 border-t border-cyan-200/15 bg-[#050d29]/95 px-4 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-12px_36px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+        <div className="mx-auto flex max-w-2xl items-center justify-around">
+          <button type="button" className="flex min-w-24 flex-col items-center gap-1 py-2 text-cyan-200" aria-current="page">
+            <Home className="h-5 w-5" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Math Quest</span>
+          </button>
+          <button type="button" onClick={() => onNavigate('map')} className="flex min-w-24 flex-col items-center gap-1 py-2 text-blue-100/60 transition hover:text-white">
+            <Orbit className="h-5 w-5" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Missions</span>
+          </button>
+          <button type="button" onClick={() => setShowSettings(true)} className="flex min-w-24 flex-col items-center gap-1 py-2 text-blue-100/60 transition hover:text-white">
+            <Settings className="h-5 w-5" />
+            <span className="text-[10px] font-black uppercase tracking-wider">Settings</span>
+          </button>
+        </div>
+      </nav>
+
+      {showSettings && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/75 p-4 backdrop-blur-sm sm:items-center">
+          <div role="dialog" aria-modal="true" aria-labelledby="settings-title" className="w-full max-w-md rounded-3xl border border-cyan-200/20 bg-[#0b1b48] p-5 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <h2 id="settings-title" className="font-['Press_Start_2P'] text-base text-white">Settings</h2>
+              <button type="button" aria-label="Close settings" onClick={() => setShowSettings(false)} className="rounded-xl p-2 text-white/60 transition hover:bg-white/10 hover:text-white">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-2 text-sm text-blue-100/65">Choose where to explore next.</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => { setShowSettings(false); onNavigate('shop'); }} className="flex items-center gap-2 rounded-xl border border-yellow-300/20 bg-yellow-400/10 p-3 text-sm font-bold text-yellow-100"><Coins className="h-4 w-4" /> Shop</button>
+              <button type="button" onClick={() => { setShowSettings(false); onNavigate('achievements'); }} className="flex items-center gap-2 rounded-xl border border-violet-300/20 bg-violet-400/10 p-3 text-sm font-bold text-violet-100"><Award className="h-4 w-4" /> Badges</button>
+              <button type="button" onClick={() => { setShowSettings(false); onNavigate('pet'); }} className="flex items-center gap-2 rounded-xl border border-emerald-300/20 bg-emerald-400/10 p-3 text-sm font-bold text-emerald-100"><Sparkles className="h-4 w-4" /> Pet lab</button>
+              <button type="button" onClick={() => { setShowSettings(false); onShare(); }} className="flex items-center gap-2 rounded-xl border border-cyan-300/20 bg-cyan-400/10 p-3 text-sm font-bold text-cyan-100"><Share2 className="h-4 w-4" /> Share</button>
+            </div>
+            <div className="mt-4 flex items-center gap-2 rounded-xl border border-white/10 bg-black/15 px-3 py-2 text-xs text-white/55">
+              <Check className="h-4 w-4 text-emerald-300" /> Progress is saved on this device.
+            </div>
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <button
-            onClick={() => onNavigate('map')}
-            className="bg-blue-500/30 hover:bg-blue-500/40 border border-blue-500/30 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all"
-          >
-            <span className="text-2xl">🗺️</span> Map
-          </button>
-          <button
-            onClick={() => onNavigate('pet')}
-            className="bg-green-500/30 hover:bg-green-500/40 border border-green-500/30 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all"
-          >
-            <span className="text-2xl">👽</span> Pet
-          </button>
-          <button
-            onClick={() => onNavigate('achievements')}
-            className="bg-purple-500/30 hover:bg-purple-500/40 border border-purple-500/30 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all"
-          >
-            <Award className="w-6 h-6" /> Achievements
-          </button>
-          <button
-            onClick={onShare}
-            className="bg-pink-500/30 hover:bg-pink-500/40 border border-pink-500/30 backdrop-blur-md p-4 rounded-2xl text-white font-bold flex flex-col items-center justify-center gap-2 hover:scale-105 transition-all"
-          >
-            <Share2 className="w-6 h-6" /> Share Code
-          </button>
-        </div>
-
-        {/* Friend Code */}
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 text-white border border-white/10 relative text-center">
-          <h3 className="font-bold mb-2 flex items-center gap-2 justify-center text-lg">
-            <Users className="w-5 h-5" /> Your Friend Code
-          </h3>
-          <p className="text-3xl font-bold text-yellow-300 py-2 tracking-widest font-mono">{friendCode}</p>
-          <p className="text-sm opacity-75">Send this code to friends so they can challenge you!</p>
-        </div>
-
-        <div className="mt-8 pt-6 border-t border-white/10 flex flex-col items-center gap-3">
-          <p className="text-white/20 text-xs font-mono">v1.0.5 • Math Quest</p>
-        </div>
-
-      </div>
+      )}
     </div>
   );
 };

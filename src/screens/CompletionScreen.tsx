@@ -1,11 +1,12 @@
 import React from 'react';
-import { Trophy } from 'lucide-react';
-import { Difficulty, DifficultySetting } from '../types';
-import { DIFFICULTY_SETTINGS } from '../services/mathService';
+import { ArrowRight, Coins, Home, Orbit, Share2, Sparkles, Trophy, Video, Zap } from 'lucide-react';
+import { ModeDifficulty, ModeSessionConfig } from '../types';
 
 interface CompletionScreenProps {
   score: number;
-  difficulty: Difficulty;
+  modeName: string;
+  modeDifficulty: ModeDifficulty;
+  sessionConfig: ModeSessionConfig;
   gameCoins: number;
   gameXp: number;
   onPlayAgain: () => void;
@@ -16,7 +17,9 @@ interface CompletionScreenProps {
 
 const CompletionScreen: React.FC<CompletionScreenProps> = ({
   score,
-  difficulty,
+  modeName,
+  modeDifficulty,
+  sessionConfig,
   gameCoins,
   gameXp,
   onPlayAgain,
@@ -24,81 +27,77 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
   onShare,
   onDoubleCoins
 }) => {
-  const settings = DIFFICULTY_SETTINGS[difficulty];
   const [hasDoubled, setHasDoubled] = React.useState(false);
   const [isDoubling, setIsDoubling] = React.useState(false);
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4 flex items-center justify-center"
+      className="min-h-screen bg-[#050d29] px-4 py-5 font-['Lexend'] text-white"
       style={{
-        paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
+        paddingTop: 'calc(1.25rem + env(safe-area-inset-top, 0px))',
+        paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))',
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
-        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
+        paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))',
+        backgroundImage: "linear-gradient(rgba(5, 13, 41, .75), rgba(5, 13, 41, .92)), url('/assets/orbit-space-bg.png')",
+        backgroundPosition: 'center',
+        backgroundSize: 'cover'
       }}
     >
-      <div className="bg-white rounded-3xl p-8 max-w-md w-full text-center shadow-2xl border-4 border-yellow-400 overflow-y-auto max-h-[calc(100dvh-2rem)]">
-        <Trophy className="w-24 h-24 mx-auto mb-6 text-yellow-400 drop-shadow-lg" style={{ animation: 'bounce 0.6s ease-in-out 3' }} />
-        <h1 className="text-4xl font-bold text-gray-800 mb-2">Mission Complete! 🎉</h1>
-        <p className={`inline-block text-sm font-bold uppercase tracking-wider px-4 py-1 rounded-full mb-4 ${settings.color} text-white`}>
-          {settings.name}
-        </p>
-        <p className="text-5xl text-purple-600 font-bold mb-8">{score}</p>
-        
-        <div className="bg-gray-50 rounded-2xl p-6 mb-8 border border-gray-100">
-          <p className="text-lg font-bold text-gray-500 mb-4 uppercase tracking-wider">Rewards</p>
-          <div className="flex justify-around items-center">
-             <div>
-                <p className="text-3xl mb-1">💰</p>
-                <p className="font-bold text-gray-800 text-xl">+{gameCoins}</p>
-                <p className="text-xs text-gray-500">Coins</p>
-             </div>
-             <div className="w-px h-12 bg-gray-200"></div>
-             <div>
-                <p className="text-3xl mb-1">✨</p>
-                <p className="font-bold text-gray-800 text-xl">+{gameXp}</p>
-                <p className="text-xs text-gray-500">XP</p>
-             </div>
+      <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] max-w-md items-center">
+        <section className="w-full rounded-[2rem] border border-cyan-200/25 bg-[#0b1b48]/95 p-5 text-center shadow-2xl backdrop-blur-md sm:p-7">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-yellow-300/40 bg-yellow-300/10 text-yellow-200 shadow-[0_0_32px_rgba(250,204,21,.2)]">
+            <Trophy className="h-11 w-11" />
           </div>
-        </div>
+          <p className="mt-5 text-xs font-black uppercase tracking-[0.24em] text-cyan-200/65">Mission complete</p>
+          <h1 className="mt-2 font-['Press_Start_2P'] text-xl leading-relaxed text-white sm:text-2xl">Sector cleared</h1>
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-cyan-100">
+            <Orbit className="h-4 w-4" /> {modeName} · {modeDifficulty}
+          </div>
 
-        <div className="space-y-3">
-          {!hasDoubled && gameCoins > 0 && (
-            <button
-              onClick={async () => {
-                setIsDoubling(true);
-                const success = await onDoubleCoins();
-                setIsDoubling(false);
-                if (success) {
-                  setHasDoubled(true);
-                }
-              }}
-              disabled={isDoubling}
-              className={`w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-500 hover:to-orange-600 disabled:opacity-50 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg flex items-center justify-center gap-2 ${isDoubling ? 'cursor-wait' : 'disabled:cursor-not-allowed'}`}
-            >
-              {isDoubling ? 'Loading Ad...' : '📺 Double Coins!'}
+          <div className="mt-6 rounded-3xl border border-cyan-200/15 bg-slate-950/25 px-4 py-5">
+            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/45">Final score</p>
+            <p className="mt-2 font-['Press_Start_2P'] text-4xl text-orange-200 sm:text-5xl">{score}</p>
+            <div className="mt-4 grid grid-cols-2 gap-2">
+              <div className="rounded-2xl border border-yellow-300/15 bg-yellow-400/10 px-3 py-3">
+                <Coins className="mx-auto h-5 w-5 text-yellow-200" />
+                <p className="mt-1 text-lg font-black text-yellow-100">+{gameCoins}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-yellow-100/55">Coins</p>
+              </div>
+              <div className="rounded-2xl border border-violet-300/15 bg-violet-400/10 px-3 py-3">
+                <Sparkles className="mx-auto h-5 w-5 text-violet-200" />
+                <p className="mt-1 text-lg font-black text-violet-100">+{gameXp}</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-violet-100/55">XP earned</p>
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-4 text-xs leading-relaxed text-blue-100/55">{sessionConfig.description}</p>
+
+          <div className="mt-5 space-y-2.5">
+            {!hasDoubled && gameCoins > 0 && (
+              <button
+                type="button"
+                onClick={async () => {
+                  setIsDoubling(true);
+                  const success = await onDoubleCoins();
+                  setIsDoubling(false);
+                  if (success) setHasDoubled(true);
+                }}
+                disabled={isDoubling}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl border border-yellow-200/40 bg-yellow-300 px-4 py-3.5 text-sm font-black text-slate-950 shadow-lg transition hover:bg-yellow-200 disabled:cursor-wait disabled:opacity-50"
+              >
+                <Video className="h-5 w-5" /> {isDoubling ? 'Loading reward...' : 'Double coins · watch ad'}
+              </button>
+            )}
+            <button type="button" onClick={onPlayAgain} className="flex w-full items-center justify-center gap-2 rounded-2xl border-b-4 border-orange-700/50 bg-orange-400 px-4 py-3.5 text-sm font-black text-slate-950 shadow-lg transition hover:bg-orange-300 active:translate-y-1 active:border-b-0">
+              Play this mission again <Zap className="h-5 w-5" />
             </button>
-          )}
-          <button
-            onClick={onPlayAgain}
-            className="w-full bg-gradient-to-r from-green-400 to-emerald-500 hover:from-green-500 hover:to-emerald-600 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg ring-4 ring-green-400/30"
-          >
-            Play Again 🔄
-          </button>
-          <button
-            onClick={onShare}
-            className="w-full bg-gradient-to-r from-pink-500 to-red-500 hover:from-pink-600 hover:to-red-600 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg"
-          >
-            Share Score 📱
-          </button>
-          <button
-            onClick={onDashboard}
-            className="w-full bg-gradient-to-r from-slate-500 to-slate-600 hover:from-slate-600 hover:to-slate-700 text-white text-xl font-bold py-3 rounded-2xl transition-transform hover:scale-105 shadow-lg"
-          >
-            Dashboard 🏠
-          </button>
-        </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              <button type="button" onClick={onShare} className="flex items-center justify-center gap-2 rounded-2xl border border-cyan-200/20 bg-cyan-400/10 px-3 py-3 text-xs font-black text-cyan-100 transition hover:bg-cyan-400/20"><Share2 className="h-4 w-4" /> Share score</button>
+              <button type="button" onClick={onDashboard} className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-black text-white/75 transition hover:bg-white/10 hover:text-white"><Home className="h-4 w-4" /> Mission hub <ArrowRight className="h-4 w-4" /></button>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   );

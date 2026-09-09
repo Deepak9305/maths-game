@@ -2,6 +2,12 @@ export type ScreenState = 'splash' | 'dashboard' | 'game' | 'complete' | 'achiev
 
 export type Difficulty = 'easy' | 'medium' | 'hard' | 'survival';
 
+export type GameMode = 'quick-calc' | 'square-sprint' | 'log-lab' | 'mini-sudoku' | 'target-puzzle' | 'survival';
+
+export type ModeDifficulty = 'beginner' | 'standard' | 'expert';
+
+export type SudokuSize = 4 | 9;
+
 export interface DifficultySetting {
   name: string;
   time: number | null;
@@ -11,10 +17,32 @@ export interface DifficultySetting {
   lives: number | null; // null represents unlimited lives
 }
 
+export interface ModeSessionConfig extends DifficultySetting {
+  mode: GameMode;
+  difficulty: ModeDifficulty;
+  description: string;
+}
+
+export interface ModeStats {
+  bestScore: number;
+  bestStreak: number;
+  gamesPlayed: number;
+  bestTime?: number;
+}
+
 export interface Question {
   display: string;
   answer: number;
   visualAid: number | null;
+  choices?: string[];
+  correctLabel?: string;
+}
+
+export interface SudokuPuzzle {
+  size: SudokuSize;
+  puzzle: number[][];
+  solution: number[][];
+  given: boolean[][];
 }
 
 export interface RocketItem {
@@ -82,4 +110,7 @@ export interface PlayerState {
   pets?: Record<string, PetState>;
   activePetId?: string;
   showAnimations?: boolean;
+
+  // Per-mode personal bests. Optional for backwards compatibility with v1 saves.
+  modeStats?: Partial<Record<GameMode, ModeStats>>;
 }
