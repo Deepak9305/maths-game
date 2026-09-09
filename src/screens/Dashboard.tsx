@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Award, PawPrint, ShoppingBag } from 'lucide-react';
+import { Award, Home, Map, PawPrint, Settings, ShoppingBag } from 'lucide-react';
 import { GameMode, ModeDifficulty, PlayerState, SudokuSize } from '../types';
 import { GAME_MODE_DEFINITIONS, MODE_DIFFICULTY_LABELS } from '../services/modeService';
 
@@ -322,25 +322,43 @@ const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
 
-        <nav aria-label="Primary navigation" className="absolute inset-x-0 bottom-0 z-20 h-[12%]">
+        <nav aria-label="Primary navigation" className="absolute inset-x-0 bottom-0 z-20 grid h-[12%] grid-cols-4 border-t border-cyan-200/15 bg-[#061638] px-1">
           <button
             type="button"
             aria-label="Math Quest home"
             aria-current="page"
-            className="absolute bottom-0 left-0 h-full w-1/3 outline-none focus-visible:ring-4 focus-visible:ring-cyan-300/90"
-          />
+            className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-cyan-300 outline-none transition hover:bg-cyan-300/10 focus-visible:ring-4 focus-visible:ring-cyan-300/90"
+          >
+            <Home className="h-5 w-5" />
+            <span className="text-[9px] font-black uppercase tracking-tight">Math Quest</span>
+          </button>
           <button
             type="button"
             aria-label="Open missions"
             onClick={() => onNavigate('map')}
-            className="absolute bottom-0 left-1/3 h-full w-1/3 outline-none focus-visible:ring-4 focus-visible:ring-cyan-300/90"
-          />
+            className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-white/55 outline-none transition hover:bg-cyan-300/10 hover:text-cyan-100 focus-visible:ring-4 focus-visible:ring-cyan-300/90"
+          >
+            <Map className="h-5 w-5" />
+            <span className="text-[9px] font-black uppercase tracking-tight">Missions</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Open pets"
+            onClick={() => onNavigate('pet')}
+            className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-white/55 outline-none transition hover:bg-emerald-300/10 hover:text-emerald-100 focus-visible:ring-4 focus-visible:ring-emerald-300/90"
+          >
+            <PawPrint className="h-5 w-5" />
+            <span className="text-[9px] font-black uppercase tracking-tight">Pets</span>
+          </button>
           <button
             type="button"
             aria-label="Open settings"
             onClick={() => setSettingsOpen(true)}
-            className="absolute bottom-0 right-0 h-full w-1/3 outline-none focus-visible:ring-4 focus-visible:ring-cyan-300/90"
-          />
+            className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-white/55 outline-none transition hover:bg-cyan-300/10 hover:text-cyan-100 focus-visible:ring-4 focus-visible:ring-cyan-300/90"
+          >
+            <Settings className="h-5 w-5" />
+            <span className="text-[9px] font-black uppercase tracking-tight">Settings</span>
+          </button>
         </nav>
 
         <button
