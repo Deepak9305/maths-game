@@ -2,8 +2,8 @@ import { Difficulty, Question, DifficultySetting, DailyChallenge } from '../type
 
 export const DIFFICULTY_SETTINGS: Record<Difficulty, DifficultySetting> = {
   easy: { name: 'Rookie', time: null, questions: 10, color: 'bg-green-500', xp: 1, lives: null },
-  medium: { name: 'Pilot', time: 15, questions: 15, color: 'bg-blue-500', xp: 2, lives: 3 },
-  hard: { name: 'Commander', time: 10, questions: 20, color: 'bg-purple-600', xp: 3, lives: 3 },
+  medium: { name: 'Pilot', time: 12, questions: 15, color: 'bg-blue-500', xp: 2, lives: 3 },
+  hard: { name: 'Commander', time: 8, questions: 20, color: 'bg-purple-600', xp: 3, lives: 3 },
   survival: { name: 'Survival', time: 10, questions: 9999, color: 'bg-red-600', xp: 5, lives: 1 }
 };
 
@@ -49,7 +49,7 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
     }
   } else {
     // Standard Scaling
-    maxNum = diff === 'easy' ? 20 : diff === 'medium' ? 50 : 100;
+    maxNum = diff === 'easy' ? 20 : diff === 'medium' ? 70 : 140;
   }
 
   if (mode === 'hard') {
@@ -71,7 +71,9 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
       part1Result = num1 - num2;
       displayPart1 = `${num1} - ${num2}`;
     } else { // '*'
-      const limit = diff === 'survival' ? Math.min(10 + Math.floor(wave/2), 25) : 15;
+      const limit = diff === 'survival'
+        ? Math.min(10 + Math.floor(wave / 2), 25)
+        : 20;
       num1 = randomInt(3, limit);
       num2 = randomInt(3, limit);
       part1Result = num1 * num2;
@@ -116,14 +118,14 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
       display = `${num1} - ${num2}`;
       break;
     case '*':
-      num1 = randomInt(3, 15); // Increased from 2-9
-      num2 = randomInt(3, 15); // Increased from 2-9
+      num1 = randomInt(4, 20);
+      num2 = randomInt(4, 20);
       answer = num1 * num2;
       display = `${num1} × ${num2}`;
       break;
     case '/':
-      num2 = randomInt(3, 15); // Increased from 2-9
-      answer = randomInt(3, 15); // Increased from 2-9
+      num2 = randomInt(4, 20);
+      answer = randomInt(4, 20);
       num1 = num2 * answer;
       display = `${num1} ÷ ${num2}`;
       break;

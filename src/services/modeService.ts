@@ -73,28 +73,28 @@ const makeConfig = (
 export const MODE_DIFFICULTY_CONFIGS: Record<GameMode, Record<ModeDifficulty, ModeSessionConfig>> = {
   'quick-calc': {
     beginner: makeConfig('quick-calc', 'beginner', null, 10, 1, null, 'Warm up with addition and subtraction.'),
-    standard: makeConfig('quick-calc', 'standard', 15, 15, 2, 3, 'Mix multiplication and division under pressure.'),
-    expert: makeConfig('quick-calc', 'expert', 10, 20, 3, 3, 'Master three-step combos at top speed.')
+    standard: makeConfig('quick-calc', 'standard', 12, 15, 2, 3, 'Solve larger multiplication and division problems under pressure.'),
+    expert: makeConfig('quick-calc', 'expert', 8, 20, 3, 3, 'Master large three-step combos at top speed.')
   },
   'square-sprint': {
     beginner: makeConfig('square-sprint', 'beginner', 20, 10, 2, 3, 'Learn perfect squares and friendly roots.'),
-    standard: makeConfig('square-sprint', 'standard', 14, 15, 3, 3, 'Switch between squares and roots quickly.'),
-    expert: makeConfig('square-sprint', 'expert', 9, 20, 4, 2, 'Handle big squares before the timer burns out.')
+    standard: makeConfig('square-sprint', 'standard', 12, 15, 3, 3, 'Switch between larger squares and roots quickly.'),
+    expert: makeConfig('square-sprint', 'expert', 8, 20, 4, 2, 'Handle huge squares before the timer burns out.')
   },
   'log-lab': {
     beginner: makeConfig('log-lab', 'beginner', 25, 10, 2, 3, 'Start with clean powers and familiar bases.'),
-    standard: makeConfig('log-lab', 'standard', 16, 15, 3, 3, 'Solve mixed-base logarithms at pace.'),
-    expert: makeConfig('log-lab', 'expert', 11, 20, 5, 2, 'Decode tougher powers with no wasted moves.')
+    standard: makeConfig('log-lab', 'standard', 13, 15, 3, 3, 'Solve mixed-base logarithms with bigger powers.'),
+    expert: makeConfig('log-lab', 'expert', 9, 20, 5, 2, 'Decode tougher powers with no wasted moves.')
   },
   'mini-sudoku': {
     beginner: makeConfig('mini-sudoku', 'beginner', null, 1, 4, null, 'A gentle pattern hunt to get started.'),
-    standard: makeConfig('mini-sudoku', 'standard', null, 1, 5, null, 'Balance speed and accuracy in the grid.'),
-    expert: makeConfig('mini-sudoku', 'expert', null, 1, 7, null, 'Clear a dense grid with perfect focus.')
+    standard: makeConfig('mini-sudoku', 'standard', null, 1, 5, null, 'Solve a sparser grid with fewer clues.'),
+    expert: makeConfig('mini-sudoku', 'expert', null, 1, 7, null, 'Clear a dense, clue-starved grid with perfect focus.')
   },
   'target-puzzle': {
     beginner: makeConfig('target-puzzle', 'beginner', 25, 10, 2, 3, 'Find the friendly equation that reaches the goal.'),
-    standard: makeConfig('target-puzzle', 'standard', 17, 15, 3, 3, 'Compare expressions and trust your instincts.'),
-    expert: makeConfig('target-puzzle', 'expert', 12, 20, 5, 2, 'Spot the exact target among clever decoys.')
+    standard: makeConfig('target-puzzle', 'standard', 13, 15, 3, 3, 'Compare larger expressions and trust your instincts.'),
+    expert: makeConfig('target-puzzle', 'expert', 9, 20, 5, 2, 'Spot the exact target among high-value decoys.')
   },
   survival: {
     beginner: makeConfig('survival', 'beginner', 10, 9999, 5, 1, 'Endless waves with escalating arithmetic.'),
@@ -159,7 +159,7 @@ const subscript = (value: number) => String(value).split('').map(char => (
 )).join('');
 
 const generateSquareQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
-  const startingMax = difficulty === 'beginner' ? 12 : difficulty === 'standard' ? 20 : 35;
+  const startingMax = difficulty === 'beginner' ? 12 : difficulty === 'standard' ? 28 : 45;
   const maxBase = startingMax + (survival ? Math.min(80, (wave - 1) * 4) : 0);
   const base = randomInt(2, maxBase, rng);
   const isRoot = rng() > 0.5;
@@ -170,10 +170,10 @@ const generateSquareQuestion = (difficulty: ModeDifficulty, rng: () => number, w
 };
 
 const generateLogQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
-  const baseSet = difficulty === 'beginner' ? [2, 10] : difficulty === 'standard' ? [2, 3, 5, 10] : [2, 3, 4, 5, 10];
-  const bases = survival && wave >= 4 ? [...baseSet, 7] : baseSet;
+  const baseSet = difficulty === 'beginner' ? [2, 10] : difficulty === 'standard' ? [2, 3, 5, 7, 10] : [2, 3, 4, 5, 7, 10];
+  const bases = survival && wave >= 4 ? Array.from(new Set([...baseSet, 7])) : baseSet;
   const base = bases[randomInt(0, bases.length - 1, rng)];
-  const startingExponent = difficulty === 'beginner' ? 3 : difficulty === 'standard' ? 4 : 5;
+  const startingExponent = difficulty === 'beginner' ? 3 : difficulty === 'standard' ? 6 : 7;
   const maxExponent = startingExponent + (survival ? Math.min(7, Math.floor((wave - 1) / 2)) : 0);
   const exponent = randomInt(1, maxExponent, rng);
   return {
@@ -184,11 +184,11 @@ const generateLogQuestion = (difficulty: ModeDifficulty, rng: () => number, wave
 };
 
 const generateTargetQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
-  const startingMax = difficulty === 'beginner' ? 6 : difficulty === 'standard' ? 9 : 12;
+  const startingMax = difficulty === 'beginner' ? 6 : difficulty === 'standard' ? 13 : 18;
   const max = startingMax + (survival ? Math.min(30, (wave - 1) * 2) : 0);
   const a = randomInt(2, max, rng);
   const b = randomInt(2, max, rng);
-  const cStartingMax = difficulty === 'expert' ? 8 : 6;
+  const cStartingMax = difficulty === 'expert' ? 10 : difficulty === 'standard' ? 8 : 6;
   const c = randomInt(2, cStartingMax + (survival ? Math.min(18, wave - 1) : 0), rng);
   const target = a + b * c;
   const candidates = [
@@ -256,8 +256,8 @@ export const generateSudokuPuzzle = (
   const solution = createSudokuSolution(size, rng);
   const puzzle = solution.map(row => [...row]);
   const baseRemovalCount = size === 4
-    ? difficulty === 'beginner' ? 5 : difficulty === 'standard' ? 7 : 9
-    : difficulty === 'beginner' ? 34 : difficulty === 'standard' ? 45 : 54;
+    ? difficulty === 'beginner' ? 5 : difficulty === 'standard' ? 9 : 11
+    : difficulty === 'beginner' ? 34 : difficulty === 'standard' ? 50 : 60;
   const maxRemovals = size === 4 ? 12 : 64;
   const removalCount = Math.min(maxRemovals, baseRemovalCount + (survival ? Math.floor((wave - 1) * (size === 4 ? 1 : 2)) : 0));
 
