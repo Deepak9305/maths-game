@@ -258,8 +258,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 
           <button
             type="button"
-            aria-label="Start selected mission from the command console"
-            onClick={startSelectedMission}
+            aria-label="Open badges from the trophy console"
+            onClick={() => onNavigate('achievements')}
             className="absolute left-[33%] top-[42%] z-10 h-[16%] w-[34%] rounded-full outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/90"
           />
 
