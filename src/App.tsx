@@ -1384,11 +1384,7 @@ const App: React.FC = () => {
       {screen === 'map' && (
         <MapScreen
           player={player}
-          onSelectLevel={(level) => {
-            // In a full implementation, this could set a specific level configuration
-            // For now, we just start a medium game as a placeholder
-            startGame('medium');
-          }}
+          onStartMode={(mode, tier, selectedSize, survival) => startMode(mode, tier, selectedSize, undefined, survival)}
           onClose={() => navigate('dashboard')}
         />
       )}

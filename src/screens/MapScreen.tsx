@@ -1,12 +1,31 @@
-import React, { useEffect, useRef } from 'react';
-import { PlayerState } from '../types';
-import { Map, Star, Lock, CheckCircle, Rocket } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { BarChart3, Calculator, CheckCircle, Grid2X2, Lock, Map, Rocket, Square, Target } from 'lucide-react';
+import { GameMode, ModeDifficulty, PlayerState, SudokuSize } from '../types';
+import { GAME_MODE_DEFINITIONS, MODE_DIFFICULTY_LABELS, PRIMARY_GAME_MODES } from '../services/modeService';
+
+type PrimaryMode = Exclude<GameMode, 'survival'>;
 
 interface MapScreenProps {
   player: PlayerState;
-  onSelectLevel: (level: number) => void;
+  onStartMode: (mode: PrimaryMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize, survival: boolean) => void;
   onClose: () => void;
 }
+
+const MODE_ICONS: Record<PrimaryMode, React.ComponentType<{ className?: string }>> = {
+  'quick-calc': Calculator,
+  'square-sprint': Square,
+  'log-lab': BarChart3,
+  'mini-sudoku': Grid2X2,
+  'target-puzzle': Target
+};
+
+const MODE_ACCENTS: Record<PrimaryMode, { active: string; icon: string }> = {
+  'quick-calc': { active: 'border-cyan-200 bg-cyan-400/20 text-cyan-50', icon: 'text-cyan-200' },
+  'square-sprint': { active: 'border-violet-200 bg-violet-400/20 text-violet-50', icon: 'text-violet-200' },
+  'log-lab': { active: 'border-emerald-200 bg-emerald-400/20 text-emerald-50', icon: 'text-emerald-200' },
+  'mini-sudoku': { active: 'border-orange-200 bg-orange-400/20 text-orange-50', icon: 'text-orange-200' },
+  'target-puzzle': { active: 'border-rose-200 bg-rose-400/20 text-rose-50', icon: 'text-rose-200' }
+};
 
 const LEVEL_HEIGHT = 100;
 const TOTAL_LEVELS = 50;
@@ -29,8 +48,13 @@ const getPlanetColors = (level: number) => {
   return types[level % types.length];
 };
 
-const MapScreen: React.FC<MapScreenProps> = ({ player, onSelectLevel, onClose }) => {
+const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [selectedMode, setSelectedMode] = useState<PrimaryMode>('quick-calc');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<ModeDifficulty>('standard');
+  const [sudokuSize, setSudokuSize] = useState<SudokuSize>(4);
+  const [survivalMode, setSurvivalMode] = useState(false);
+  const [launchLevel, setLaunchLevel] = useState<number | null>(null);
   const PADDING_TOP = 250; // Space above the highest level (leaves room for the header)
   const PADDING_BOTTOM = 150; // Space below level 1 (leaves room for home indicator)
   const containerHeight = (TOTAL_LEVELS - 1) * LEVEL_HEIGHT + PADDING_TOP + PADDING_BOTTOM;
@@ -143,6 +167,8 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onSelectLevel, onClose })
   const pathD = createSmoothPath(points);
   const completedPoints = points.filter(p => p.level <= player.level);
   const completedPathD = completedPoints.length > 0 ? createSmoothPath(completedPoints) : '';
+  const selectedDefinition = GAME_MODE_DEFINITIONS[selectedMode];
+  const SelectedModeIcon = MODE_ICONS[selectedMode];
 
   return (
     <div className="h-[100dvh] bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-slate-950 to-black flex flex-col relative overflow-hidden">
@@ -151,26 +177,57 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onSelectLevel, onClose })
         className="absolute top-0 left-0 right-0 z-50 p-4 pointer-events-none"
         style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
       >
-        <div className="max-w-4xl mx-auto flex justify-between items-center bg-black/80 p-3 md:p-4 rounded-2xl backdrop-blur-xl border border-white/10 pointer-events-auto shadow-2xl gap-2">
-          <div className="flex items-center gap-2 md:gap-3 min-w-0">
-            <div className="p-1.5 md:p-2 bg-blue-500/20 rounded-lg border border-blue-500/30 flex-shrink-0">
-              <Map className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+        <div className="max-w-4xl mx-auto flex flex-col bg-black/80 p-3 md:p-4 rounded-2xl backdrop-blur-xl border border-white/10 pointer-events-auto shadow-2xl gap-3">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 md:gap-3 min-w-0">
+              <div className="p-1.5 md:p-2 bg-blue-500/20 rounded-lg border border-blue-500/30 flex-shrink-0">
+                <Map className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+              </div>
+              <div className="min-w-0">
+                <h2 className="text-base sm:text-lg md:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 tracking-wide md:tracking-widest uppercase">
+                  Galaxy Map
+                </h2>
+                <p className="text-[10px] md:text-xs text-blue-200/60 font-medium truncate mt-0.5">
+                  Sector {Math.floor((player.level - 1) / 10) + 1} • Level {player.level}
+                </p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h2 className="text-base sm:text-lg md:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400 tracking-wide md:tracking-widest uppercase">
-                Galaxy Map
-              </h2>
-              <p className="text-[10px] md:text-xs text-blue-200/60 font-medium truncate mt-0.5">
-                Sector {Math.floor((player.level - 1) / 10) + 1} • Level {player.level}
-              </p>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Return to homepage"
+              className="flex-shrink-0 bg-white/10 hover:bg-white/20 active:scale-95 transition-all px-3 md:px-4 py-2 rounded-xl text-white text-sm font-bold border border-white/20 hover:scale-105"
+            >
+              Exit
+            </button>
+          </div>
+
+          <div className="border-t border-white/10 pt-2">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-200/70">Choose a game</p>
+              <p className="text-[10px] font-bold text-white/40">Shared progress</p>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+              {PRIMARY_GAME_MODES.map(mode => {
+                const Icon = MODE_ICONS[mode];
+                const isSelected = selectedMode === mode;
+                const accent = MODE_ACCENTS[mode];
+                return (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-label={`Choose ${GAME_MODE_DEFINITIONS[mode].name}`}
+                    aria-pressed={isSelected}
+                    onClick={() => setSelectedMode(mode)}
+                    className={`flex min-w-[8.5rem] shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left transition active:scale-95 ${isSelected ? accent.active : 'border-white/10 bg-white/5 text-white/65 hover:border-white/25 hover:bg-white/10'}`}
+                  >
+                    <Icon className={`h-4 w-4 shrink-0 ${isSelected ? accent.icon : 'text-white/45'}`} />
+                    <span className="truncate text-xs font-black">{GAME_MODE_DEFINITIONS[mode].name}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="flex-shrink-0 bg-white/10 hover:bg-white/20 active:scale-95 transition-all px-3 md:px-4 py-2 rounded-xl text-white text-sm font-bold border border-white/20 hover:scale-105"
-          >
-            Exit
-          </button>
         </div>
       </div>
 
@@ -335,7 +392,8 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onSelectLevel, onClose })
                 key={p.level}
                 id={`level-${p.level}`}
                 disabled={!isUnlocked}
-                onClick={() => onSelectLevel(p.level)}
+                onClick={() => setLaunchLevel(p.level)}
+                aria-label={`${isCompleted ? 'Replay' : 'Start'} level ${p.level} with ${selectedDefinition.name}`}
                 className={`
                   absolute transform -translate-x-1/2 -translate-y-1/2
                   ${sizeClass} rounded-full flex items-center justify-center font-bold transition-all duration-500
@@ -397,6 +455,104 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onSelectLevel, onClose })
           })}
         </div>
       </div>
+
+      {launchLevel !== null && (
+        <div className="fixed inset-0 z-[60] flex items-end bg-black/75 p-4 pt-24 backdrop-blur-sm">
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="map-launch-title"
+            className="mx-auto w-full max-w-xl rounded-[1.5rem] border-2 border-cyan-200/40 bg-[#071a48]/95 p-4 shadow-[0_0_35px_rgba(34,211,238,.28)]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-200/30 bg-cyan-400/10">
+                  <SelectedModeIcon className="h-6 w-6 text-cyan-200" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-black uppercase tracking-[0.18em] text-cyan-200">Level {launchLevel} selected</p>
+                  <h2 id="map-launch-title" className="mt-1 truncate font-['Press_Start_2P'] text-sm leading-6 text-white">{selectedDefinition.name}</h2>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setLaunchLevel(null)}
+                className="rounded-lg px-2 py-1 text-sm font-black text-cyan-100 hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-cyan-200"
+              >
+                Close
+              </button>
+            </div>
+
+            <p className="mt-3 text-sm leading-6 text-blue-100/80">{selectedDefinition.description}</p>
+
+            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Run type</p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                aria-pressed={!survivalMode}
+                onClick={() => setSurvivalMode(false)}
+                className={`rounded-xl border px-3 py-2 text-xs font-black transition ${!survivalMode ? 'border-cyan-200 bg-cyan-300 text-slate-950' : 'border-cyan-200/25 bg-white/5 text-cyan-50 hover:bg-white/10'}`}
+              >
+                Mission
+              </button>
+              <button
+                type="button"
+                aria-pressed={survivalMode}
+                onClick={() => setSurvivalMode(true)}
+                className={`rounded-xl border px-3 py-2 text-xs font-black transition ${survivalMode ? 'border-red-200 bg-red-400 text-slate-950' : 'border-red-200/25 bg-red-400/10 text-red-100 hover:bg-red-400/20'}`}
+              >
+                Survival ∞
+              </button>
+            </div>
+            {survivalMode && <p className="mt-2 text-xs leading-5 text-red-100/80">Unlimited waves. Every five correct answers raises the pressure.</p>}
+
+            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Difficulty</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {(Object.keys(MODE_DIFFICULTY_LABELS) as ModeDifficulty[]).map(difficulty => (
+                <button
+                  key={difficulty}
+                  type="button"
+                  aria-pressed={selectedDifficulty === difficulty}
+                  onClick={() => setSelectedDifficulty(difficulty)}
+                  className={`rounded-xl border px-2 py-2 text-xs font-black transition ${selectedDifficulty === difficulty ? 'border-yellow-200 bg-yellow-300 text-slate-950' : 'border-cyan-200/25 bg-white/5 text-cyan-50 hover:bg-white/10'}`}
+                >
+                  {MODE_DIFFICULTY_LABELS[difficulty]}
+                </button>
+              ))}
+            </div>
+
+            {selectedMode === 'mini-sudoku' && (
+              <div className="mt-3 flex items-center justify-between rounded-xl border border-cyan-200/20 bg-black/20 p-2">
+                <span className="text-xs font-bold text-cyan-50">Grid size</span>
+                <div className="flex gap-2">
+                  {([4, 9] as SudokuSize[]).map(size => (
+                    <button
+                      key={size}
+                      type="button"
+                      aria-pressed={sudokuSize === size}
+                      onClick={() => setSudokuSize(size)}
+                      className={`rounded-lg px-3 py-1.5 text-xs font-black ${sudokuSize === size ? 'bg-orange-300 text-slate-950' : 'bg-white/10 text-white'}`}
+                    >
+                      {size} × {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                onStartMode(selectedMode, selectedDifficulty, sudokuSize, survivalMode);
+                setLaunchLevel(null);
+              }}
+              className="mt-4 w-full rounded-xl border-b-4 border-orange-700 bg-gradient-to-b from-yellow-300 to-orange-400 px-4 py-3 font-['Press_Start_2P'] text-xs text-[#071238] shadow-[0_0_24px_rgba(251,191,36,.42)] transition hover:brightness-110 active:translate-y-0.5"
+            >
+              Start {survivalMode ? 'survival' : 'mission'}
+            </button>
+          </section>
+        </div>
+      )}
     </div>
   );
 };
