@@ -272,18 +272,25 @@ const Dashboard: React.FC<DashboardProps> = ({
           <span className={`${modeLabelMotion} absolute right-[7%] top-[60.7%] flex h-[2.8%] w-[30%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-3s' }}>Equation Match</span>
         </div>
 
-        <div
+        <button
+          type="button"
           data-testid="mission-preview"
-          aria-label={`${selectedDefinition.name}: ${MODE_CARD_DESCRIPTIONS[selectedMode]} Speed, accuracy, high score`}
-          className="pointer-events-none absolute left-[28.5%] right-[7.5%] top-[65.2%] z-[6] h-[11.7%] overflow-hidden rounded-[10px] bg-[#071b4a] px-[3.5%] py-[3%] shadow-[0_0_18px_rgba(8,47,107,.35)]"
+          aria-label={`Start ${selectedDefinition.name} Survival`}
+          onClick={() => onStartGame(selectedMode, selectedDifficulty, sudokuSize, true)}
+          className="group absolute left-[28.5%] right-[7.5%] top-[65.2%] z-[11] h-[11.7%] overflow-hidden rounded-[10px] bg-[#071b4a] px-[3.5%] py-[3%] text-left shadow-[0_0_18px_rgba(8,47,107,.35)] outline-none transition hover:bg-[#0b2860] active:scale-[.99] focus-visible:ring-4 focus-visible:ring-yellow-300/90"
         >
           <div className="flex h-full min-h-0 items-stretch gap-[4%]">
             <div className="min-w-0 flex-1">
-              <h2 className="font-['Press_Start_2P'] text-[clamp(12px,3.1vw,16px)] font-black leading-[1.25] text-white">
-                {selectedDefinition.name}
-              </h2>
+              <div className="flex min-w-0 items-center gap-2">
+                <h2 className="min-w-0 truncate font-['Press_Start_2P'] text-[clamp(12px,3.1vw,16px)] font-black leading-[1.25] text-white">
+                  {selectedDefinition.name}
+                </h2>
+                <span className="shrink-0 rounded-full border border-orange-200/40 bg-orange-400/15 px-1.5 py-1 text-[clamp(6px,1.5vw,8px)] font-black uppercase tracking-[0.08em] text-orange-100 transition group-hover:bg-orange-300/25">
+                  Survival ∞
+                </span>
+              </div>
               <p className="mt-[4%] max-w-[27ch] text-[clamp(10px,2.4vw,13px)] font-bold leading-[1.2] text-blue-100/90">
-                {MODE_CARD_DESCRIPTIONS[selectedMode]}
+                Unlimited waves · rising difficulty.
               </p>
             </div>
             <div className="flex w-[25%] shrink-0 flex-col justify-center gap-[9%] border-l border-cyan-200/30 pl-[4%] text-[clamp(8px,1.9vw,10px)] font-black leading-[1.15] tracking-[0.08em] text-cyan-100/85">
@@ -292,7 +299,7 @@ const Dashboard: React.FC<DashboardProps> = ({
               <span>HIGH SCORE</span>
             </div>
           </div>
-        </div>
+        </button>
 
         <section aria-label="Choose a mission" className="absolute inset-0">
           {(Object.keys(MODE_HOTSPOTS) as PrimaryMode[]).map(mode => (
