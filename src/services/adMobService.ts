@@ -84,10 +84,11 @@ const withTimeout = async <T>(operation: Promise<T>, timeoutMs: number): Promise
 };
 
 const applyBannerVisibility = async () => {
-  if (!isNative() || !initialized || bannerRequested === bannerVisible) return;
+  if (!isNative() || !initialized) return;
 
   try {
     if (bannerRequested) {
+      if (bannerVisible) return;
       const options: BannerAdOptions = {
         adId: getAdUnitId('banner'),
         adSize: BannerAdSize.ADAPTIVE_BANNER,
@@ -99,6 +100,8 @@ const applyBannerVisibility = async () => {
       bannerVisible = true;
       logAdEvent('banner_shown');
     } else {
+      // Always ask the native plugin to remove the banner. The WebView can lose
+      // its local visibility flag while the native ad view remains attached.
       await AdMob.removeBanner();
       bannerVisible = false;
       logAdEvent('banner_hidden');
