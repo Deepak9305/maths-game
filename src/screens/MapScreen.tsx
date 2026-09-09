@@ -27,6 +27,76 @@ const MODE_ACCENTS: Record<PrimaryMode, { active: string; icon: string }> = {
   'target-puzzle': { active: 'border-rose-200 bg-rose-400/20 text-rose-50', icon: 'text-rose-200' }
 };
 
+interface PlanetColor {
+  bg: string;
+  shadow: string;
+}
+
+interface ModeMapTheme {
+  glow: string;
+  path: string[];
+  planets: PlanetColor[];
+  getXOffset: (index: number) => number;
+}
+
+const MODE_MAP_THEMES: Record<PrimaryMode, ModeMapTheme> = {
+  'quick-calc': {
+    glow: 'rgba(14, 165, 233, .2)',
+    path: ['#22D3EE', '#60A5FA', '#34D399'],
+    planets: [
+      { bg: 'from-blue-400 to-emerald-600', shadow: 'rgba(59, 130, 246, 0.6)' },
+      { bg: 'from-red-500 to-orange-800', shadow: 'rgba(239, 68, 68, 0.6)' },
+      { bg: 'from-purple-400 to-indigo-800', shadow: 'rgba(168, 85, 247, 0.6)' },
+      { bg: 'from-cyan-200 to-blue-600', shadow: 'rgba(6, 182, 212, 0.6)' }
+    ],
+    getXOffset: index => Math.sin(index * 1.2) * 25
+  },
+  'square-sprint': {
+    glow: 'rgba(124, 58, 237, .2)',
+    path: ['#C084FC', '#A78BFA', '#F0ABFC'],
+    planets: [
+      { bg: 'from-violet-400 to-indigo-800', shadow: 'rgba(139, 92, 246, 0.65)' },
+      { bg: 'from-fuchsia-400 to-purple-800', shadow: 'rgba(217, 70, 239, 0.6)' },
+      { bg: 'from-amber-300 to-orange-700', shadow: 'rgba(245, 158, 11, 0.6)' },
+      { bg: 'from-blue-300 to-violet-700', shadow: 'rgba(96, 165, 250, 0.6)' }
+    ],
+    getXOffset: index => (index % 2 === 0 ? -20 : 20) + Math.sin(index * 0.45) * 7
+  },
+  'log-lab': {
+    glow: 'rgba(5, 150, 105, .2)',
+    path: ['#34D399', '#2DD4BF', '#67E8F9'],
+    planets: [
+      { bg: 'from-emerald-300 to-teal-800', shadow: 'rgba(16, 185, 129, 0.65)' },
+      { bg: 'from-cyan-300 to-blue-800', shadow: 'rgba(6, 182, 212, 0.6)' },
+      { bg: 'from-teal-300 to-emerald-800', shadow: 'rgba(20, 184, 166, 0.6)' },
+      { bg: 'from-lime-300 to-green-800', shadow: 'rgba(132, 204, 22, 0.55)' }
+    ],
+    getXOffset: index => Math.sin(index * 0.62) * 34
+  },
+  'mini-sudoku': {
+    glow: 'rgba(234, 88, 12, .2)',
+    path: ['#FDBA74', '#FB923C', '#F472B6'],
+    planets: [
+      { bg: 'from-orange-300 to-red-700', shadow: 'rgba(249, 115, 22, 0.65)' },
+      { bg: 'from-amber-300 to-orange-800', shadow: 'rgba(245, 158, 11, 0.6)' },
+      { bg: 'from-rose-300 to-pink-800', shadow: 'rgba(244, 63, 94, 0.6)' },
+      { bg: 'from-yellow-200 to-amber-700', shadow: 'rgba(234, 179, 8, 0.6)' }
+    ],
+    getXOffset: index => [-30, -10, 10, 30][index % 4] + Math.sin(index * 0.3) * 4
+  },
+  'target-puzzle': {
+    glow: 'rgba(225, 29, 72, .2)',
+    path: ['#FB7185', '#F43F5E', '#FBBF24'],
+    planets: [
+      { bg: 'from-rose-300 to-red-800', shadow: 'rgba(244, 63, 94, 0.65)' },
+      { bg: 'from-red-400 to-orange-800', shadow: 'rgba(239, 68, 68, 0.6)' },
+      { bg: 'from-pink-300 to-fuchsia-800', shadow: 'rgba(236, 72, 153, 0.6)' },
+      { bg: 'from-yellow-300 to-amber-700', shadow: 'rgba(245, 158, 11, 0.6)' }
+    ],
+    getXOffset: index => Math.sin(index * 1.7) * 18 + (index % 10 < 5 ? -12 : 12)
+  }
+};
+
 const LEVEL_HEIGHT = 100;
 const TOTAL_LEVELS = 50;
 
@@ -36,16 +106,9 @@ const pseudoRandom = (seed: number) => {
   return x - Math.floor(x);
 };
 
-const getPlanetColors = (level: number) => {
-  const types = [
-    { bg: 'from-blue-400 to-emerald-600', shadow: 'rgba(59, 130, 246, 0.6)' }, // Earth-like
-    { bg: 'from-red-500 to-orange-800', shadow: 'rgba(239, 68, 68, 0.6)' }, // Mars-like
-    { bg: 'from-purple-400 to-indigo-800', shadow: 'rgba(168, 85, 247, 0.6)' }, // Gas Giant
-    { bg: 'from-cyan-200 to-blue-600', shadow: 'rgba(6, 182, 212, 0.6)' }, // Ice
-    { bg: 'from-amber-400 to-red-700', shadow: 'rgba(245, 158, 11, 0.6)' }, // Lava
-    { bg: 'from-fuchsia-500 to-pink-800', shadow: 'rgba(217, 70, 239, 0.6)' }, // Alien
-  ];
-  return types[level % types.length];
+const getPlanetColors = (level: number, mode: PrimaryMode) => {
+  const planets = MODE_MAP_THEMES[mode].planets;
+  return planets[(level - 1) % planets.length];
 };
 
 const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) => {
@@ -55,6 +118,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
   const [sudokuSize, setSudokuSize] = useState<SudokuSize>(4);
   const [survivalMode, setSurvivalMode] = useState(false);
   const [launchLevel, setLaunchLevel] = useState<number | null>(null);
+  const modeTheme = MODE_MAP_THEMES[selectedMode];
   const PADDING_TOP = 250; // Space above the highest level (leaves room for the header)
   const PADDING_BOTTOM = 150; // Space below level 1 (leaves room for home indicator)
   const containerHeight = (TOTAL_LEVELS - 1) * LEVEL_HEIGHT + PADDING_TOP + PADDING_BOTTOM;
@@ -62,13 +126,12 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
   // Generate path points
   const points = React.useMemo(() => Array.from({ length: TOTAL_LEVELS }, (_, i) => {
     const level = i + 1;
-    // Tighter zig-zag pattern
-    const xOffset = Math.sin(i * 1.2) * 25; // -25 to 25
+    const xOffset = modeTheme.getXOffset(i);
     const x = 50 + xOffset;
     // Bottom to top: level 1 is at the bottom
     const y = containerHeight - PADDING_BOTTOM - (i * LEVEL_HEIGHT);
     return { level, x, y };
-  }), [containerHeight]);
+  }), [containerHeight, modeTheme]);
 
   const createSmoothPath = (pts: {x: number, y: number}[]) => {
     if (pts.length === 0) return '';
@@ -161,7 +224,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
       clearTimeout(timeoutId2);
       clearTimeout(timeoutId3);
     };
-  }, [player.level]);
+  }, [player.level, selectedMode]);
 
   // Path data for SVG
   const pathD = createSmoothPath(points);
@@ -171,7 +234,10 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
   const SelectedModeIcon = MODE_ICONS[selectedMode];
 
   return (
-    <div className="h-[100dvh] bg-slate-950 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-slate-950 to-black flex flex-col relative overflow-hidden">
+    <div
+      className="relative flex h-[100dvh] flex-col overflow-hidden bg-slate-950 to-black"
+      style={{ background: `radial-gradient(ellipse at top, ${modeTheme.glow} 0%, rgba(15, 23, 42, .96) 46%, #020617 100%)` }}
+    >
       {/* Header - Fixed at top with safe area support */}
       <div
         className="absolute top-0 left-0 right-0 z-50 p-4 pointer-events-none"
@@ -203,29 +269,28 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
           </div>
 
           <div className="border-t border-white/10 pt-2">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-200/70">Choose a game</p>
-              <p className="text-[10px] font-bold text-white/40">Shared progress</p>
+            <div className="flex items-center justify-between gap-3">
+              <label htmlFor="map-mode-select" className="shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-blue-200/70">
+                Level route
+              </label>
+              <select
+                id="map-mode-select"
+                aria-label="Select Galaxy Map game mode"
+                value={selectedMode}
+                onChange={event => setSelectedMode(event.target.value as PrimaryMode)}
+                className="min-w-0 flex-1 appearance-none rounded-xl border border-cyan-200/35 bg-[#071a48] px-3 py-2 text-xs font-black text-cyan-50 outline-none transition focus:border-cyan-100 focus:ring-2 focus:ring-cyan-200/40"
+              >
+                {PRIMARY_GAME_MODES.map(mode => (
+                  <option key={mode} value={mode} className="bg-[#071a48] text-white">
+                    {GAME_MODE_DEFINITIONS[mode].name}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
-              {PRIMARY_GAME_MODES.map(mode => {
-                const Icon = MODE_ICONS[mode];
-                const isSelected = selectedMode === mode;
-                const accent = MODE_ACCENTS[mode];
-                return (
-                  <button
-                    key={mode}
-                    type="button"
-                    aria-label={`Choose ${GAME_MODE_DEFINITIONS[mode].name}`}
-                    aria-pressed={isSelected}
-                    onClick={() => setSelectedMode(mode)}
-                    className={`flex min-w-[8.5rem] shrink-0 items-center gap-2 rounded-xl border px-3 py-2 text-left transition active:scale-95 ${isSelected ? accent.active : 'border-white/10 bg-white/5 text-white/65 hover:border-white/25 hover:bg-white/10'}`}
-                  >
-                    <Icon className={`h-4 w-4 shrink-0 ${isSelected ? accent.icon : 'text-white/45'}`} />
-                    <span className="truncate text-xs font-black">{GAME_MODE_DEFINITIONS[mode].name}</span>
-                  </button>
-                );
-              })}
+            <div className="mt-2 flex items-center gap-2 text-[10px] font-bold text-white/55">
+              <SelectedModeIcon className={`h-4 w-4 shrink-0 ${MODE_ACCENTS[selectedMode].icon}`} />
+              <span className="truncate">{selectedDefinition.description}</span>
+              <span className="shrink-0 text-white/35">50 levels</span>
             </div>
           </div>
         </div>
@@ -344,10 +409,10 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
             preserveAspectRatio="none"
           >
             <defs>
-              <linearGradient id="pathGradient" x1="0" y1="0" x2="0" y2={containerHeight} gradientUnits="userSpaceOnUse">
-                <stop offset="0%" stopColor="#60A5FA" />
-                <stop offset="50%" stopColor="#A78BFA" />
-                <stop offset="100%" stopColor="#34D399" />
+            <linearGradient id={`pathGradient-${selectedMode}`} x1="0" y1="0" x2="0" y2={containerHeight} gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={modeTheme.path[0]} />
+                <stop offset="50%" stopColor={modeTheme.path[1]} />
+                <stop offset="100%" stopColor={modeTheme.path[2]} />
               </linearGradient>
             </defs>
 
@@ -366,7 +431,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
               <path
                 d={completedPathD}
                 fill="none"
-                stroke="url(#pathGradient)"
+                stroke={`url(#pathGradient-${selectedMode})`}
                 strokeWidth="6"
                 vectorEffect="non-scaling-stroke"
                 strokeLinecap="round"
@@ -382,7 +447,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
             const isCompleted = player.level > p.level;
             const isMilestone = p.level % 10 === 0;
             const hasRing = p.level % 7 === 0 || isMilestone;
-            const { bg, shadow } = getPlanetColors(p.level);
+            const { bg, shadow } = getPlanetColors(p.level, selectedMode);
 
             const sizeClass = isMilestone ? 'w-14 h-14 text-xl' : 'w-12 h-12 text-base';
             const ringSize = isMilestone ? 'scale-[1.4]' : 'scale-[1.2]';
