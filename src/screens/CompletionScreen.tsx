@@ -96,7 +96,7 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
             </button>
             <div className="grid grid-cols-2 gap-2.5">
               <button type="button" onClick={onShare} className="flex items-center justify-center gap-2 rounded-2xl border border-cyan-200/20 bg-cyan-400/10 px-3 py-3 text-xs font-black text-cyan-100 transition hover:bg-cyan-400/20"><Share2 className="h-4 w-4" /> Share score</button>
-              <button type="button" onClick={onDashboard} className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-black text-white/75 transition hover:bg-white/10 hover:text-white"><Home className="h-4 w-4" /> Mission hub <ArrowRight className="h-4 w-4" /></button>
+              <button type="button" aria-label="Return to homepage" onClick={onDashboard} className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-black text-white/75 transition hover:bg-white/10 hover:text-white"><Home className="h-4 w-4" /> Home <ArrowRight className="h-4 w-4" /></button>
             </div>
           </div>
         </section>
