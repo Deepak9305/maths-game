@@ -99,6 +99,10 @@ const MODE_MAP_THEMES: Record<PrimaryMode, ModeMapTheme> = {
 
 const LEVEL_HEIGHT = 100;
 const TOTAL_LEVELS = 50;
+const clampRouteLevel = (level: number | undefined) => {
+  const normalizedLevel = typeof level === 'number' && Number.isFinite(level) ? Math.floor(level) : 1;
+  return Math.min(TOTAL_LEVELS, Math.max(1, normalizedLevel));
+};
 
 // Pseudo-random number generator for consistent background
 const pseudoRandom = (seed: number) => {
@@ -119,7 +123,8 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
   const [survivalMode, setSurvivalMode] = useState(false);
   const [launchLevel, setLaunchLevel] = useState<number | null>(null);
   const modeTheme = MODE_MAP_THEMES[selectedMode];
-  const routeProgressPercent = Math.min(100, Math.round((player.level / TOTAL_LEVELS) * 100));
+  const modeLevel = clampRouteLevel(player.modeProgress?.[selectedMode]);
+  const routeProgressPercent = Math.round(((modeLevel - 1) / (TOTAL_LEVELS - 1)) * 100);
   const PADDING_TOP = 250; // Space above the highest level (leaves room for the header)
   const PADDING_BOTTOM = 150; // Space below level 1 (leaves room for home indicator)
   const containerHeight = (TOTAL_LEVELS - 1) * LEVEL_HEIGHT + PADDING_TOP + PADDING_BOTTOM;
@@ -210,7 +215,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
   useEffect(() => {
     const scrollToCurrentLevel = () => {
       const map = scrollRef.current;
-      const currentLevelElement = document.getElementById(`level-${player.level}`);
+      const currentLevelElement = document.getElementById(`level-${modeLevel}`);
       if (!map || !currentLevelElement) return;
 
       const maxScroll = Math.max(0, map.scrollHeight - map.clientHeight);
@@ -221,11 +226,11 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
     const frameId = requestAnimationFrame(scrollToCurrentLevel);
 
     return () => cancelAnimationFrame(frameId);
-  }, [player.level, selectedMode]);
+  }, [modeLevel, selectedMode]);
 
   // Path data for SVG
   const pathD = createSmoothPath(points);
-  const completedPoints = points.filter(p => p.level <= player.level);
+  const completedPoints = points.filter(p => p.level <= modeLevel);
   const completedPathD = completedPoints.length > 0 ? createSmoothPath(completedPoints) : '';
   const selectedDefinition = GAME_MODE_DEFINITIONS[selectedMode];
   const SelectedModeIcon = MODE_ICONS[selectedMode];
@@ -251,7 +256,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
                   Galaxy Map
                 </h2>
                 <p className="text-[10px] md:text-xs text-blue-200/60 font-medium truncate mt-0.5">
-                  Sector {Math.floor((player.level - 1) / 10) + 1} • Level {player.level} / {TOTAL_LEVELS}
+                  Sector {Math.floor((modeLevel - 1) / 10) + 1} • Level {modeLevel} / {TOTAL_LEVELS}
                 </p>
               </div>
             </div>
@@ -440,9 +445,9 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
 
           {/* Level Nodes */}
           {points.map((p) => {
-            const isUnlocked = player.level >= p.level;
-            const isCurrent = player.level === p.level;
-            const isCompleted = player.level > p.level;
+            const isUnlocked = modeLevel >= p.level;
+            const isCurrent = modeLevel === p.level;
+            const isCompleted = modeLevel > p.level;
             const isMilestone = p.level % 10 === 0;
             const hasRing = p.level % 7 === 0 || isMilestone;
             const { bg, shadow } = getPlanetColors(p.level, selectedMode);
@@ -524,7 +529,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
         style={{ paddingBottom: 'calc(.75rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div
-          aria-label={`${selectedDefinition.name} route progress: level ${player.level} of ${TOTAL_LEVELS}`}
+          aria-label={`${selectedDefinition.name} route progress: level ${modeLevel} of ${TOTAL_LEVELS}`}
           className="mx-auto flex max-w-xl items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[#050d28]/95 p-3 shadow-[0_-8px_30px_rgba(2,6,23,.48)] backdrop-blur-xl"
         >
           <div className="flex min-w-0 items-center gap-2.5">
@@ -533,7 +538,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
             </div>
             <div className="min-w-0">
               <p className="truncate text-xs font-black text-white">{selectedDefinition.name} route</p>
-              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Level {player.level} of {TOTAL_LEVELS}</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Level {modeLevel} of {TOTAL_LEVELS}</p>
             </div>
           </div>
           <div className="w-24 shrink-0">

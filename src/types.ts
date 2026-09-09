@@ -113,4 +113,7 @@ export interface PlayerState {
 
   // Per-mode personal bests. Optional for backwards compatibility with v1 saves.
   modeStats?: Partial<Record<GameMode, ModeStats>>;
+
+  // Independent Galaxy Map progression for each primary mode. Optional for backwards compatibility.
+  modeProgress?: Partial<Record<Exclude<GameMode, 'survival'>, number>>;
 }

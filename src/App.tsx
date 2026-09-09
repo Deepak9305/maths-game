@@ -16,7 +16,7 @@ import PetScreen from './screens/PetScreen';
 import { PlayerState, ScreenState, Difficulty, Question, RocketItem, AchievementItem, GameMode, ModeDifficulty, SudokuSize } from './types';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { createSeededRandom, generateDailyChallenges } from './services/mathService';
-import { GAME_MODE_DEFINITIONS, generateModeQuestion, generateSudokuPuzzle, getModeConfig, getSurvivalConfig, modeDifficultyToLegacyDifficulty, countFilledSudokuCells } from './services/modeService';
+import { GAME_MODE_DEFINITIONS, generateModeQuestion, generateSudokuPuzzle, getModeConfig, getSurvivalConfig, modeDifficultyToLegacyDifficulty, countFilledSudokuCells, PRIMARY_GAME_MODES } from './services/modeService';
 import { playSound, music } from './services/audioService';
 import { adMobService } from './services/adMobService';
 import { nativeService } from './services/nativeService';
@@ -75,6 +75,34 @@ const ACHIEVEMENTS_LIST: AchievementItem[] = [
 ];
 
 const QUESTIONS_PER_WAVE = 5;
+const GALAXY_MAP_LEVELS = 50;
+type PrimaryMode = Exclude<GameMode, 'survival'>;
+type ModeProgress = NonNullable<PlayerState['modeProgress']>;
+
+const clampMapLevel = (value: number | undefined, fallback = 1) => {
+  const level = typeof value === 'number' && Number.isFinite(value) ? Math.floor(value) : fallback;
+  return Math.min(GALAXY_MAP_LEVELS, Math.max(1, level));
+};
+
+const getInitialModeProgress = (savedPlayer?: PlayerState): ModeProgress => {
+  const legacyLevel = clampMapLevel(savedPlayer?.level);
+  const hasSavedModeProgress = savedPlayer?.modeProgress !== undefined;
+
+  return PRIMARY_GAME_MODES.reduce<ModeProgress>((progress, mode) => {
+    const savedLevel = savedPlayer?.modeProgress?.[mode];
+    const gamesPlayed = savedPlayer?.modeStats?.[mode]?.gamesPlayed;
+    const legacyModeLevel = hasSavedModeProgress
+      ? 1
+      : gamesPlayed !== undefined
+        ? clampMapLevel(gamesPlayed + 1)
+        : legacyLevel;
+
+    progress[mode] = clampMapLevel(savedLevel, legacyModeLevel);
+    return progress;
+  }, {});
+};
+
+const isPrimaryMode = (mode: GameMode): mode is PrimaryMode => PRIMARY_GAME_MODES.includes(mode as PrimaryMode);
 const getSurvivalSudokuMistakeLimit = (wave: number) => Math.max(1, 3 - Math.floor((wave - 1) / 4));
 
 const App: React.FC = () => {
@@ -106,7 +134,8 @@ const App: React.FC = () => {
     dailyChallenges: [],
     lastChallengeDate: null,
     showAnimations: true,
-    modeStats: {}
+    modeStats: {},
+    modeProgress: getInitialModeProgress()
   });
   const [dailyStreak, setDailyStreak] = useState(1);
   const [dailyRewardInfo, setDailyRewardInfo] = useState<{ streak: number; bonus: number } | null>(null);
@@ -195,6 +224,7 @@ const App: React.FC = () => {
         if (p.lastRewardDate === undefined) p.lastRewardDate = null;
         if (!p.dailyChallenges) p.dailyChallenges = [];
         if (!p.modeStats) p.modeStats = {};
+        p.modeProgress = getInitialModeProgress(p);
 
         // Check if we need to generate new challenges
         const today = new Date().toDateString();
@@ -442,8 +472,19 @@ const App: React.FC = () => {
 
   const handleGameCompletion = useCallback(async (completedScore = score, completedStreak = streak, outcome: 'won' | 'lost' = 'won') => {
     setCompletionOutcome(outcome);
+    const routeMode: PrimaryMode | null = !isSurvivalMode && outcome === 'won' && isPrimaryMode(gameMode)
+      ? gameMode
+      : null;
+
     setPlayer(prev => {
       const previousStats = prev.modeStats?.[gameMode] ?? { bestScore: 0, bestStreak: 0, gamesPlayed: 0 };
+      const nextModeProgress = routeMode
+        ? {
+            ...getInitialModeProgress(prev),
+            [routeMode]: clampMapLevel((prev.modeProgress?.[routeMode] ?? 1) + 1)
+          }
+        : prev.modeProgress;
+
       return {
         ...prev,
         modeStats: {
@@ -454,7 +495,8 @@ const App: React.FC = () => {
             bestStreak: Math.max(previousStats.bestStreak, completedStreak),
             gamesPlayed: previousStats.gamesPlayed + 1
           }
-        }
+        },
+        ...(routeMode ? { modeProgress: nextModeProgress } : {})
       };
     });
 
@@ -502,7 +544,7 @@ const App: React.FC = () => {
     }
 
     setScreen('complete');
-  }, [player.achievements, player.lastRewardDate, dailyStreak, unlockAchievement, gameMode, score, streak]);
+  }, [player.achievements, player.lastRewardDate, dailyStreak, unlockAchievement, gameMode, score, streak, isSurvivalMode]);
 
   const handleDoubleCoins = async (): Promise<boolean> => {
     if (completionOutcome !== 'won') return false;
