@@ -109,6 +109,7 @@ const App: React.FC = () => {
   // Navigation State
   const [screen, setScreen] = useState<ScreenState>('splash');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isDocumentVisible, setIsDocumentVisible] = useState(true);
 
   // Game Configuration State
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -291,9 +292,12 @@ const App: React.FC = () => {
   // Auto-pause on background
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.hidden && screen === 'game') {
-        setIsPaused(true);
+      const isVisible = !document.hidden;
+      setIsDocumentVisible(isVisible);
+
+      if (!isVisible) {
         music.stop();
+        if (screen === 'game') setIsPaused(true);
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -311,13 +315,17 @@ const App: React.FC = () => {
 
   // Handle Music
   useEffect(() => {
-    if (screen === 'game' && !isWaveTransition && !isPaused && !powerUpAdTarget && !lossContinueOpen) {
+    if (!isDocumentVisible) {
+      music.stop();
+    } else if (screen === 'dashboard') {
+      music.startMenuMusic();
+    } else if (screen === 'game' && !isWaveTransition && !isPaused && !powerUpAdTarget && !lossContinueOpen) {
       music.startGameMusic(difficulty);
     } else {
       music.stop();
     }
     return () => music.stop();
-  }, [screen, difficulty, isWaveTransition, isPaused, powerUpAdTarget, lossContinueOpen]);
+  }, [screen, difficulty, isWaveTransition, isPaused, powerUpAdTarget, lossContinueOpen, isDocumentVisible]);
 
   // Handle Android Back Button
   // Keep screenRef in sync with screen state

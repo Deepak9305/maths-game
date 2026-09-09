@@ -2,7 +2,12 @@
 let audioCtx: AudioContext | null = null;
 let musicInterval: ReturnType<typeof setInterval> | null = null;
 let musicGain: GainNode | null = null;
+let activeMusicTrack: 'menu' | 'game' | null = null;
 let audioAvailable = true;
+
+const GAME_MUSIC_VOLUME = 0.35;
+const MENU_MUSIC_VOLUME = 0.16;
+const MUSIC_FADE_SECONDS = 0.45;
 
 const initAudio = (): AudioContext | null => {
   if (!audioAvailable) return null;
@@ -11,7 +16,9 @@ const initAudio = (): AudioContext | null => {
       audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
     if (audioCtx.state === 'suspended') {
-      audioCtx.resume();
+      void audioCtx.resume().catch(() => {
+        // Browsers may require a user gesture before resuming audio.
+      });
     }
     return audioCtx;
   } catch (e) {
@@ -19,6 +26,32 @@ const initAudio = (): AudioContext | null => {
     audioAvailable = false;
     return null;
   }
+};
+
+const ensureMusicGain = (ctx: AudioContext) => {
+  if (!musicGain) {
+    musicGain = ctx.createGain();
+    musicGain.gain.value = 0;
+    musicGain.connect(ctx.destination);
+  }
+  return musicGain;
+};
+
+const fadeMusicGain = (ctx: AudioContext, target: number) => {
+  if (!musicGain) return;
+
+  const now = ctx.currentTime;
+  musicGain.gain.cancelScheduledValues(now);
+  musicGain.gain.setValueAtTime(Math.max(0, musicGain.gain.value), now);
+  musicGain.gain.linearRampToValueAtTime(target, now + MUSIC_FADE_SECONDS);
+};
+
+const clearMusicLoop = () => {
+  if (musicInterval) {
+    clearInterval(musicInterval);
+    musicInterval = null;
+  }
+  activeMusicTrack = null;
 };
 
 // Enhanced tone generator with ADSR envelope for cleaner sound
@@ -73,11 +106,76 @@ export const playSound = {
 };
 
 export const music = {
+  startMenuMusic: () => {
+    if (activeMusicTrack === 'menu' && musicInterval) return;
+
+    clearMusicLoop();
+    const ctx = initAudio();
+    if (!ctx) return;
+
+    const music_gain = ensureMusicGain(ctx);
+    activeMusicTrack = 'menu';
+    fadeMusicGain(ctx, MENU_MUSIC_VOLUME);
+
+    // Original, low-volume ambient progression. No external audio asset or recording.
+    const chords = [
+      [220, 261.63, 329.63],
+      [196, 246.94, 293.66],
+      [174.61, 220, 261.63],
+      [196, 246.94, 293.66]
+    ];
+    const chordDuration = 5.6;
+    const playChord = (chord: number[]) => {
+      const start = ctx.currentTime;
+
+      chord.forEach((frequency, index) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        const voiceVolume = index === 0 ? 0.035 : 0.025;
+
+        osc.type = index === 0 ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(frequency, start);
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(1100, start);
+        filter.Q.value = 0.5;
+
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.linearRampToValueAtTime(voiceVolume, start + 0.8);
+        gain.gain.linearRampToValueAtTime(voiceVolume * 0.7, start + 3.8);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + chordDuration);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(music_gain);
+        osc.start(start);
+        osc.stop(start + chordDuration + 0.1);
+      });
+
+      // A barely-there high shimmer keeps the menu feeling spacious without adding percussion.
+      const shimmer = ctx.createOscillator();
+      const shimmerGain = ctx.createGain();
+      shimmer.type = 'sine';
+      shimmer.frequency.setValueAtTime(chord[2] * 2, start);
+      shimmerGain.gain.setValueAtTime(0.0001, start);
+      shimmerGain.gain.linearRampToValueAtTime(0.008, start + 1.1);
+      shimmerGain.gain.exponentialRampToValueAtTime(0.0001, start + 4.8);
+      shimmer.connect(shimmerGain);
+      shimmerGain.connect(music_gain);
+      shimmer.start(start);
+      shimmer.stop(start + 5);
+    };
+
+    let chordIndex = 0;
+    playChord(chords[chordIndex]);
+    musicInterval = setInterval(() => {
+      if (audioCtx?.state === 'suspended') void audioCtx.resume().catch(() => { });
+      chordIndex = (chordIndex + 1) % chords.length;
+      playChord(chords[chordIndex]);
+    }, 5200);
+  },
   startGameMusic: (difficulty: string) => {
-    if (musicInterval) {
-      clearInterval(musicInterval);
-      musicInterval = null;
-    }
+    clearMusicLoop();
 
     const ctx = initAudio();
     if (!ctx) return;
@@ -92,22 +190,9 @@ export const music = {
 
     const stepTime = (60 / tempo) * 1000 / 4; // 16th notes
 
-    // Create or reuse master volume for music so it doesn't overpower sfx
-    if (!musicGain) {
-      musicGain = ctx.createGain();
-      musicGain.gain.value = 0.35;
-      musicGain.connect(ctx.destination);
-    } else {
-      // Reset gain that was zeroed by stop(), then ensure connection
-      musicGain.gain.setValueAtTime(0.35, ctx.currentTime);
-      try {
-        musicGain.connect(ctx.destination);
-      } catch (e) {
-        // Already connected, ignore
-      }
-    }
-
-    const music_gain = musicGain; // Create local reference to avoid null issues
+    const music_gain = ensureMusicGain(ctx);
+    activeMusicTrack = 'game';
+    fadeMusicGain(ctx, GAME_MUSIC_VOLUME);
     
     // Deep driving bass notes sequence (A Minor)
     const bassSequence = [55, 55, 49, 49, 41.2, 41.2, 49, 49]; // A1, G1, E1...
@@ -208,13 +293,9 @@ export const music = {
     }, stepTime);
   },
   stop: () => {
-    if (musicInterval) {
-      clearInterval(musicInterval);
-      musicInterval = null;
-    }
-    // Silence musicGain immediately; oscillators self-stop via their scheduled stop times
+    clearMusicLoop();
     if (musicGain && audioCtx) {
-      musicGain.gain.setValueAtTime(0, audioCtx.currentTime);
+      fadeMusicGain(audioCtx, 0);
     }
   }
 };
