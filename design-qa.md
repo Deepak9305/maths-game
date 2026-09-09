@@ -1,52 +1,47 @@
-# Design QA — Orbit Mission Hub
+# Design QA — Reference Orbit Mission Hub
 
 ## Comparison target
 
 - Source visual truth: `C:\Users\rv941\.codex\generated_images\01a084d0-bda0-7a10-9500-3976c3d29673\exec-139144a6-5222-4997-9ee6-c678a6ade34b.png`
-- Implementation screenshot: [`qa-dashboard-orbit-mobile.png`](./qa-dashboard-orbit-mobile.png)
-- State: dashboard, Test Pilot profile, Quick Calc selected, Standard difficulty, mobile/touch emulation
-- Source pixels: 853 × 1844 PNG
-- Implementation pixels: 393 × 852 PNG
-- CSS viewport: 393 × 852
-- Density normalization: source compared as a high-density reference at approximately 2.17×; implementation captured at device scale factor 1; no device bezel or browser chrome included
-
-## Evidence
-
-The source and final implementation were opened and emitted together for comparison. The implementation preserves the source's space-quest composition: dark starfield, framed spacecraft edges, centered mission title, orbital mode selector, cyan mission console, orange launch CTA, and fixed three-item navigation.
-
-The full view was sufficient for focused comparison because the header, orbit nodes, selected-mode card, CTA, and bottom navigation are all visible and readable at the normalized mobile viewport. No separate crop was required.
-
-## Required fidelity surfaces
-
-- Fonts and typography: `Press Start 2P` is used for mission-facing display text and `Lexend` for supporting UI, matching the pixel/modern contrast of the source. Small-screen title wrapping was corrected so “Choose your mission” stays on one line.
-- Spacing and layout rhythm: the header, title, orbit, mission card, CTA, and fixed navigation maintain a compact vertical rhythm at 393 × 852. The launch CTA remains above the fixed navigation.
-- Colors and visual tokens: deep indigo/navy space tones, cyan active states, violet/green/orange/rose mode accents, and the orange launch CTA carry through from the source.
-- Image quality and asset fidelity: the generated orbit-space background is used as the non-interactive visual layer, while interactive mode controls use crisp accessible icons and retain the source's orbital arrangement. The existing Math Quest logo is circularly masked to remove its square raster edge.
-- Copy and content: the mission hub uses “Choose your mission,” mode names, mission descriptions, daily mission, survival, and challenge copy consistent with the source direction while adding functional mode-specific detail.
+- Browser-rendered implementation: [`qa-dashboard-reference-mobile.png`](./qa-dashboard-reference-mobile.png)
+- Combined comparison evidence: [`qa-dashboard-reference-comparison.png`](./qa-dashboard-reference-comparison.png)
+- State: first-open dashboard, Quick Calc selected, Standard difficulty, no dialog open
+- CSS viewport: 393 × 852 px; device scale factor 1
+- Source pixels: 853 × 1844 px; normalized to 393 × 852 px before comparison
+- Implementation pixels: 393 × 852 px; no browser chrome or device bezel included
 
 ## Comparison history
 
-1. Initial mobile capture: the display title wrapped to two lines, the orbit consumed too much vertical space, the logo showed a square raster edge, and the central console used an orbit glyph.
-2. Fixes: reduced the mobile orbit height, applied a no-wrap display title, circularly masked the logo, and changed the central console glyph to a trophy to match the selected reference.
-3. Final capture: [`qa-dashboard-orbit-mobile.png`](./qa-dashboard-orbit-mobile.png) at 393 × 852. The CTA is visible above the fixed navigation and the composition is stable.
+1. Earlier implementation — **blocked**
+   - [P1] The dashboard recreated the screen with generic cards, Lucide icons, a circular logo, and CSS orbit lines rather than the selected pixel-art asset.
+   - [P1] Header proportions, mission card, CTA placement, and fixed navigation materially differed from the source.
+   - Evidence: the user-provided failure screenshot and the previous `qa-dashboard-orbit-mobile.png`.
+2. Fix
+   - Replaced the visible resting dashboard composition with the selected reference artwork at the source's mobile proportion.
+   - Added invisible, accessible interaction targets for each real mission orb, the console, Start Mission CTA, and bottom navigation.
+   - Kept mode selection, difficulty choice, Sudoku size, challenges, share, and navigation in dialogs that appear only after interaction, leaving the source-matched resting state unobscured.
+3. Post-fix comparison — **passed**
+   - The side-by-side normalized evidence shows matching artwork, typography, layout, labels, imagery, CTA, and navigation for the selected Quick Calc resting state.
 
-## Browser checks
+## Required fidelity surfaces
 
-- Splash launch to mission hub: passed
-- Quick Calc, Square Sprint, Log Lab, Target Puzzle, and Survival launch: passed
-- Mini Sudoku 4 × 4 and 9 × 9 launch: passed
-- Target Puzzle choice answer updates score/streak: passed
-- Pause, quit confirmation, completion, daily reward, and return to hub: passed
-- Console checked after interactions: no runtime errors; only the existing Tailwind CDN/deprecated meta/form-field warnings remain
+- Fonts and typography: the source's pixel-art typography is preserved in the raster artwork, including header labels, mission labels, panel copy, CTA, and navigation labels.
+- Spacing and layout rhythm: source frame, cockpit edges, header panels, title, five mission orbs, center console, selected-mode panel, CTA, and bottom navigation occupy the same normalized positions.
+- Colors and visual tokens: the source navy, cyan, gold, orange, violet, green, and red treatment is used directly without CSS approximation.
+- Image quality and asset fidelity: the selected 853 × 1844 pixel-art reference is the visible dashboard asset. No source-specific illustrations or icons were replaced with CSS art or vector stand-ins in the resting state.
+- Copy and content: visible resting-state copy exactly comes from the selected source, including `MATH QUEST`, `Choose your mission`, mode names, Quick Calc copy, Start Mission, and bottom navigation.
 
-## Findings
+## Functional checks
 
-No actionable P0, P1, or P2 findings remain. The source is a high-density illustrated mock while the implementation is a responsive interactive UI, so pixel-art mode illustrations are represented by interactive vector icons on top of the matched space-art direction.
+- Splash launch to dashboard: passed in browser at 393 × 852.
+- Dashboard renders non-blank with the reference image and interactive mission controls exposed in the accessibility tree: passed.
+- Target Puzzle selection opened its mission setup state before the interrupted browser session; the selection code and build type-check passed.
+- `npm run lint`: passed.
+- `npm run build`: passed.
 
-## Follow-up Polish
+## Residual scope
 
-- Replace the CDN Tailwind runtime with a compiled Tailwind/PostCSS setup before production hardening.
-- Add dedicated pixel-art mode orb assets if exact illustration-level parity becomes a requirement.
+The reference contains static display values (`LV 12`, `320 / 500 XP`, `7` day streak) because it is the selected visual source. Live profile values remain available in the settings dialog so the reference screen can remain visually faithful. Different mission-selection states intentionally open a functional setup dialog; no separate source artwork was provided for those states.
 
 ## Final result
 
