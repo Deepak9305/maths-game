@@ -70,6 +70,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   const nextChallenge = player.dailyChallenges?.find(challenge => !challenge.claimed);
   const showAnimations = player.showAnimations ?? true;
   const modeLabelMotion = showAnimations ? 'mq-mode-label' : '';
+  const displayName = player.name.trim() || 'Pilot';
+  const nextLevelXp = Math.max(100, player.level * 100);
+  const xpPercent = Math.min(100, Math.round((player.xp / nextLevelXp) * 100));
 
   const startSelectedMission = () => {
     setMissionSetupOpen(false);
@@ -235,6 +238,20 @@ const Dashboard: React.FC<DashboardProps> = ({
           <span className="mq-star-twinkle absolute left-[31%] top-[54%] h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_8px_2px_rgba(253,224,71,.65)]" style={{ animationDelay: '-2.2s' }} />
           <span className="mq-star-twinkle absolute right-[31%] top-[57%] h-1 w-1 rounded-full bg-cyan-100 shadow-[0_0_8px_2px_rgba(165,243,252,.65)]" style={{ animationDelay: '-1.1s' }} />
         </div>}
+
+        <div
+          aria-label={`Pilot ${displayName}, level ${player.level}, ${player.xp} of ${nextLevelXp} XP`}
+          className="pointer-events-none absolute left-[17%] top-[1.7%] z-[6] h-[6.2%] w-[28%] overflow-hidden rounded-md border border-cyan-100/15 bg-[#061638] px-[2.5%] py-[1%] text-left font-['Lexend'] text-[8px] font-black leading-none tracking-tight text-white shadow-[0_2px_8px_rgba(0,0,0,.45)]"
+        >
+          <p className="truncate font-['Press_Start_2P'] text-[clamp(6px,1.95vw,10px)] leading-[1.15] text-cyan-50">PILOT {displayName}</p>
+          <div className="mt-[3%] flex items-center justify-between gap-1 font-['Press_Start_2P'] text-[clamp(5px,1.55vw,8px)] leading-none text-blue-100/85">
+            <span className="shrink-0">LV {player.level}</span>
+            <span className="truncate text-right">{player.xp}/{nextLevelXp} XP</span>
+          </div>
+          <div className="mt-[3%] h-[10%] min-h-[2px] overflow-hidden rounded-full bg-[#0b1436] ring-1 ring-cyan-200/20">
+            <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-blue-400" style={{ width: `${xpPercent}%` }} />
+          </div>
+        </div>
 
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[5] font-['Lexend'] text-[8px] font-black leading-none tracking-tight text-white drop-shadow-[0_1px_0_#071238]">
           <span className={`${modeLabelMotion} absolute left-[37%] top-[34.8%] flex h-[2.8%] w-[26%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-.4s' }}>Squares &amp; Roots</span>
