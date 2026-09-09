@@ -95,6 +95,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: .28; }
             50% { transform: translate3d(0, -5px, 0) scale(1.04); opacity: .52; }
           }
+          @keyframes mq-scene-drift {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1.012); }
+            50% { transform: translate3d(0, -4px, 0) scale(1.018); }
+          }
           @keyframes mq-mode-glow {
             0%, 100% { transform: translate3d(-50%, -50%, 0) scale(.92); opacity: .34; }
             50% { transform: translate3d(-50%, -50%, 0) scale(1.08); opacity: .7; }
@@ -126,6 +130,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             50% { opacity: .7; transform: scale(1.12); }
           }
           .mq-ambient-drift { animation: mq-ambient-drift 4.8s ease-in-out infinite; }
+          .mq-scene-drift { animation: mq-scene-drift 8s ease-in-out infinite; transform-origin: center; will-change: transform; }
           .mq-mode-glow { animation: mq-mode-glow 2.6s ease-in-out infinite; }
           .mq-launch-breathe { animation: mq-launch-breathe 2.4s ease-in-out infinite; }
           .mq-mode-label { animation: mq-label-drift 3.2s ease-in-out infinite; }
@@ -134,7 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           .mq-shortcut-dock { animation: mq-shortcut-dock 4.2s ease-in-out infinite; }
           .mq-console-ping { animation: mq-console-ping 2.8s ease-in-out infinite; transform-origin: center; }
           @media (prefers-reduced-motion: reduce) {
-            .mq-ambient-drift, .mq-mode-glow, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock, .mq-console-ping { animation: none !important; }
+            .mq-ambient-drift, .mq-scene-drift, .mq-mode-glow, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock, .mq-console-ping { animation: none !important; }
           }
         `}</style>
         <img
@@ -145,7 +150,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
+          className={`pointer-events-none absolute inset-0 h-full w-full select-none object-fill ${showAnimations ? 'mq-scene-drift' : ''}`}
         />
 
         {showAnimations && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
