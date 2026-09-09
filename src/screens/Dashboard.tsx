@@ -249,12 +249,15 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         <div
           aria-label={`Pilot ${displayName}, level ${player.level}, ${player.xp} of ${nextLevelXp} XP`}
-          className="pointer-events-none absolute left-[17%] top-[1.7%] z-[6] h-[6.2%] w-[28%] overflow-hidden rounded-md border border-cyan-100/15 bg-[#061638] px-[2.5%] py-[1%] text-left font-['Lexend'] text-[8px] font-black leading-none tracking-tight text-white shadow-[0_2px_8px_rgba(0,0,0,.45)]"
+          className="pointer-events-none absolute left-[17%] top-[1.7%] z-[6] h-[6.2%] w-[31%] overflow-hidden rounded-md border border-cyan-100/15 bg-[#061638] px-[2%] py-[1%] text-left font-['Lexend'] text-[8px] font-black leading-none tracking-tight text-white shadow-[0_2px_8px_rgba(0,0,0,.45)]"
         >
-          <p className="truncate font-['Press_Start_2P'] text-[clamp(6px,1.95vw,10px)] leading-[1.15] text-cyan-50">PILOT {displayName}</p>
+          <p className="flex min-w-0 items-baseline gap-[4%] leading-[1.15]">
+            <span className="shrink-0 font-['Lexend'] text-[clamp(4px,1.1vw,6px)] font-black tracking-[0.08em] text-cyan-200/70">PILOT</span>
+            <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap font-['Press_Start_2P'] text-[clamp(5px,1.45vw,7px)] text-cyan-50" title={displayName}>{displayName}</span>
+          </p>
           <div className="mt-[3%] flex items-center justify-between gap-1 font-['Press_Start_2P'] text-[clamp(5px,1.55vw,8px)] leading-none text-blue-100/85">
             <span className="shrink-0">LV {player.level}</span>
-            <span className="truncate text-right">{player.xp}/{nextLevelXp} XP</span>
+            <span className="min-w-0 truncate text-right">{player.xp}/{nextLevelXp} XP</span>
           </div>
           <div className="mt-[3%] h-[10%] min-h-[2px] overflow-hidden rounded-full bg-[#0b1436] ring-1 ring-cyan-200/20">
             <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-blue-400" style={{ width: `${xpPercent}%` }} />
