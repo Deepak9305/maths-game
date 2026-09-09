@@ -119,6 +119,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
   const [survivalMode, setSurvivalMode] = useState(false);
   const [launchLevel, setLaunchLevel] = useState<number | null>(null);
   const modeTheme = MODE_MAP_THEMES[selectedMode];
+  const routeProgressPercent = Math.min(100, Math.round((player.level / TOTAL_LEVELS) * 100));
   const PADDING_TOP = 250; // Space above the highest level (leaves room for the header)
   const PADDING_BOTTOM = 150; // Space below level 1 (leaves room for home indicator)
   const containerHeight = (TOTAL_LEVELS - 1) * LEVEL_HEIGHT + PADDING_TOP + PADDING_BOTTOM;
@@ -208,22 +209,18 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
   // Auto-scroll to current level
   useEffect(() => {
     const scrollToCurrentLevel = () => {
+      const map = scrollRef.current;
       const currentLevelElement = document.getElementById(`level-${player.level}`);
-      if (currentLevelElement) {
-        currentLevelElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (!map || !currentLevelElement) return;
+
+      const maxScroll = Math.max(0, map.scrollHeight - map.clientHeight);
+      const centeredScroll = currentLevelElement.offsetTop - (map.clientHeight - currentLevelElement.offsetHeight) / 2;
+      map.scrollTo({ top: Math.min(maxScroll, Math.max(0, centeredScroll)), behavior: 'auto' });
     };
 
-    // Run after layout is complete
-    const timeoutId1 = setTimeout(scrollToCurrentLevel, 50);
-    const timeoutId2 = setTimeout(scrollToCurrentLevel, 200);
-    const timeoutId3 = setTimeout(scrollToCurrentLevel, 500);
+    const frameId = requestAnimationFrame(scrollToCurrentLevel);
 
-    return () => {
-      clearTimeout(timeoutId1);
-      clearTimeout(timeoutId2);
-      clearTimeout(timeoutId3);
-    };
+    return () => cancelAnimationFrame(frameId);
   }, [player.level, selectedMode]);
 
   // Path data for SVG
@@ -254,7 +251,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
                   Galaxy Map
                 </h2>
                 <p className="text-[10px] md:text-xs text-blue-200/60 font-medium truncate mt-0.5">
-                  Sector {Math.floor((player.level - 1) / 10) + 1} • Level {player.level}
+                  Sector {Math.floor((player.level - 1) / 10) + 1} • Level {player.level} / {TOTAL_LEVELS}
                 </p>
               </div>
             </div>
@@ -420,10 +417,11 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
             <path
               d={pathD}
               fill="none"
-              stroke="rgba(255, 255, 255, 0.1)"
-              strokeWidth="4"
+              stroke={modeTheme.path[1]}
+              strokeOpacity="0.22"
+              strokeWidth="6"
               vectorEffect="non-scaling-stroke"
-              strokeDasharray="8, 12"
+              strokeDasharray="10, 14"
               strokeLinecap="round"
             />
             {/* Completed Path */}
@@ -432,10 +430,10 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
                 d={completedPathD}
                 fill="none"
                 stroke={`url(#pathGradient-${selectedMode})`}
-                strokeWidth="6"
+                strokeWidth="8"
                 vectorEffect="non-scaling-stroke"
                 strokeLinecap="round"
-                className="drop-shadow-[0_0_10px_rgba(167,139,250,0.8)]"
+                className="drop-shadow-[0_0_12px_rgba(125,211,252,0.9)]"
               />
             )}
           </svg>
@@ -462,7 +460,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
                 className={`
                   absolute transform -translate-x-1/2 -translate-y-1/2
                   ${sizeClass} rounded-full flex items-center justify-center font-bold transition-all duration-500
-                  ${!isUnlocked && !isCurrent && !isCompleted ? 'bg-slate-800 text-slate-500 border-2 border-slate-700 cursor-not-allowed opacity-60 z-10' : ''}
+                  ${!isUnlocked && !isCurrent && !isCompleted ? 'bg-slate-800/90 text-white/50 border-2 border-white/15 cursor-not-allowed opacity-75 z-10' : ''}
                   ${isCompleted ? `bg-gradient-to-br ${bg} text-white border-2 border-white/30 z-20 hover:scale-110` : ''}
                   ${isCurrent ? `bg-gradient-to-br ${bg} text-white scale-125 z-30 border-4 border-white animate-pulse` : ''}
                 `}
@@ -498,7 +496,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
                   </div>
                 )}
 
-                {!isUnlocked && <Lock className="w-5 h-5 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-30" />}
+                {!isUnlocked && <Lock className="absolute right-1 top-1 h-3.5 w-3.5 opacity-55" />}
 
                 {/* The Rocket for current level */}
                 {isCurrent && (
@@ -507,7 +505,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
                   </div>
                 )}
 
-                <span className={`relative z-10 drop-shadow-md ${!isUnlocked ? 'opacity-0' : ''}`}>{p.level}</span>
+                <span className={`relative z-10 drop-shadow-md ${!isUnlocked ? 'text-[10px] text-white/55' : ''}`}>{p.level}</span>
 
                 {/* Milestone Label */}
                 {isMilestone && (isCurrent || isCompleted) && (
@@ -518,6 +516,35 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
               </button>
             );
           })}
+        </div>
+      </div>
+
+      <div
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-3"
+        style={{ paddingBottom: 'calc(.75rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div
+          aria-label={`${selectedDefinition.name} route progress: level ${player.level} of ${TOTAL_LEVELS}`}
+          className="mx-auto flex max-w-xl items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[#050d28]/95 p-3 shadow-[0_-8px_30px_rgba(2,6,23,.48)] backdrop-blur-xl"
+        >
+          <div className="flex min-w-0 items-center gap-2.5">
+            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 ${MODE_ACCENTS[selectedMode].icon}`}>
+              <SelectedModeIcon className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p className="truncate text-xs font-black text-white">{selectedDefinition.name} route</p>
+              <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white/45">Level {player.level} of {TOTAL_LEVELS}</p>
+            </div>
+          </div>
+          <div className="w-24 shrink-0">
+            <div className="mb-1 flex items-center justify-between text-[9px] font-black uppercase tracking-wider text-cyan-100/60">
+              <span>Progress</span>
+              <span>{routeProgressPercent}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+              <div className="h-full rounded-full bg-gradient-to-r from-cyan-300 to-violet-400" style={{ width: `${routeProgressPercent}%` }} />
+            </div>
+          </div>
         </div>
       </div>
 
