@@ -96,8 +96,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             50% { transform: translate3d(0, -5px, 0) scale(1.04); opacity: .52; }
           }
           @keyframes mq-scene-drift {
-            0%, 100% { transform: translate3d(0, 0, 0) scale(1.012); }
-            50% { transform: translate3d(0, -4px, 0) scale(1.018); }
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1.025) rotate(0deg); }
+            25% { transform: translate3d(-3px, -6px, 0) scale(1.036) rotate(-0.12deg); }
+            50% { transform: translate3d(2px, -10px, 0) scale(1.042) rotate(0.12deg); }
+            75% { transform: translate3d(4px, -4px, 0) scale(1.034) rotate(-0.06deg); }
           }
           @keyframes mq-mode-glow {
             0%, 100% { transform: translate3d(-50%, -50%, 0) scale(.92); opacity: .34; }
