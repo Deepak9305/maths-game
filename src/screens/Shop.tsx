@@ -10,7 +10,7 @@ interface ShopProps {
   rockets: RocketItem[];
   onEquip: (rocket: RocketItem) => void;
   onBuyPowerUp: (type: 'hint' | 'timeFreeze', cost: number) => void;
-  onWatchAd: () => Promise<void>;
+  onWatchAd: () => Promise<boolean>;
   onClose: () => void;
 }
 
@@ -26,6 +26,23 @@ const Shop: React.FC<ShopProps> = ({
   onClose
 }) => {
   const [isWatchingAd, setIsWatchingAd] = React.useState(false);
+  const [adUnavailable, setAdUnavailable] = React.useState(false);
+
+  const watchAdForCoins = async () => {
+    if (isWatchingAd) return;
+
+    setIsWatchingAd(true);
+    setAdUnavailable(false);
+    let rewarded = false;
+    try {
+      rewarded = await onWatchAd();
+    } catch {
+      rewarded = false;
+    } finally {
+      setIsWatchingAd(false);
+    }
+    if (!rewarded) setAdUnavailable(true);
+  };
 
   return (
     <div
@@ -51,17 +68,14 @@ const Shop: React.FC<ShopProps> = ({
              </span>
 
              <button
-                onClick={async () => {
-                  setIsWatchingAd(true);
-                  await onWatchAd();
-                  setIsWatchingAd(false);
-                }}
+                onClick={watchAdForCoins}
                 disabled={isWatchingAd}
                 aria-busy={isWatchingAd}
                 className="flex items-center gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-5 py-2.5 rounded-full font-bold text-sm shadow-lg transition-transform hover:scale-105 active:scale-95"
              >
                 <Video className="w-5 h-5" /> {isWatchingAd ? 'Loading Ad...' : 'Free Coins (+500)'}
              </button>
+             {adUnavailable && <p role="status" className="max-w-xs text-center text-xs font-bold text-red-600">The reward ad is unavailable. Try again later.</p>}
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">

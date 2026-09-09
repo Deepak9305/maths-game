@@ -78,6 +78,7 @@ const QUESTIONS_PER_WAVE = 5;
 const GALAXY_MAP_LEVELS = 50;
 type PrimaryMode = Exclude<GameMode, 'survival'>;
 type ModeProgress = NonNullable<PlayerState['modeProgress']>;
+const BANNER_SCREENS: ScreenState[] = ['map', 'pet', 'shop', 'achievements'];
 
 const clampMapLevel = (value: number | undefined, fallback = 1) => {
   const level = typeof value === 'number' && Number.isFinite(value) ? Math.floor(value) : fallback;
@@ -326,6 +327,18 @@ const App: React.FC = () => {
     }
     return () => music.stop();
   }, [screen, difficulty, isWaveTransition, isPaused, powerUpAdTarget, lossContinueOpen, isDocumentVisible]);
+
+  // Keep native banners out of active play and full-screen reward/completion flows.
+  useEffect(() => {
+    const shouldShowBanner = isLoaded
+      && isDocumentVisible
+      && BANNER_SCREENS.includes(screen)
+      && !isPaused
+      && !powerUpAdTarget
+      && !lossContinueOpen;
+
+    void adMobService.setBannerVisible(shouldShowBanner);
+  }, [screen, isLoaded, isDocumentVisible, isPaused, powerUpAdTarget, lossContinueOpen]);
 
   // Handle Android Back Button
   // Keep screenRef in sync with screen state
@@ -599,7 +612,7 @@ const App: React.FC = () => {
     handleGameCompletion(score, 0, 'lost');
   };
 
-  const handleWatchAdForCoins = async (): Promise<void> => {
+  const handleWatchAdForCoins = async (): Promise<boolean> => {
     playSound.click();
     const success = await adMobService.showRewardVideo('coins');
     if (success) {
@@ -607,6 +620,7 @@ const App: React.FC = () => {
       playSound.levelUp();
       nativeService.haptics.notificationSuccess();
     }
+    return success;
   };
 
   const checkAnswer = useCallback((answerStr: string) => {
@@ -1078,22 +1092,24 @@ const App: React.FC = () => {
     setPowerUpAdTarget(type);
   };
 
-  const handleWatchPowerUpAd = async (): Promise<void> => {
-    if (!powerUpAdTarget) return;
+  const handleWatchPowerUpAd = async (): Promise<boolean> => {
+    if (!powerUpAdTarget) return false;
 
+    const requestedPowerUp = powerUpAdTarget;
     const success = await adMobService.showRewardVideo('power-up');
     if (success) {
       setPlayer(prev => ({
         ...prev,
         powerUps: {
           ...prev.powerUps,
-          [powerUpAdTarget]: prev.powerUps[powerUpAdTarget] + 3
+          [requestedPowerUp]: prev.powerUps[requestedPowerUp] + 3
         }
       }));
       nativeService.haptics.notificationSuccess();
       playSound.powerUp();
+      setPowerUpAdTarget(null);
     }
-    setPowerUpAdTarget(null);
+    return success;
   };
 
   const handleShare = async () => {
@@ -1515,12 +1531,12 @@ const App: React.FC = () => {
           gameCoins={gameCoins}
           gameXp={gameXp}
           didWin={completionOutcome === 'won'}
-          onPlayAgain={() => {
-            adMobService.showInterstitial().catch(() => { });
+          onPlayAgain={async () => {
+            if (completionOutcome === 'won') await adMobService.showInterstitial();
             startMode(gameMode, modeDifficulty, sudokuSize, activeChallengeCode || undefined, isSurvivalMode);
           }}
-          onDashboard={() => {
-            adMobService.showInterstitial().catch(() => { });
+          onDashboard={async () => {
+            if (completionOutcome === 'won') await adMobService.showInterstitial();
             navigate('dashboard');
           }}
           onShare={handleShare}

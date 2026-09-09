@@ -3,12 +3,13 @@ import { Video, X, Zap, Clock } from 'lucide-react';
 
 interface PowerUpAdModalProps {
   type: 'hint' | 'timeFreeze';
-  onWatch: () => Promise<void>;
+  onWatch: () => Promise<boolean>;
   onClose: () => void;
 }
 
 const PowerUpAdModal: React.FC<PowerUpAdModalProps> = ({ type, onWatch, onClose }) => {
   const [isWatching, setIsWatching] = React.useState(false);
+  const [adUnavailable, setAdUnavailable] = React.useState(false);
   const isHint = type === 'hint';
   const title = isHint ? "Need a Hint?" : "Frozen in Time?";
   const Icon = isHint ? Zap : Clock;
@@ -36,12 +37,22 @@ const PowerUpAdModal: React.FC<PowerUpAdModalProps> = ({ type, onWatch, onClose 
           <span className={`font-bold ${color} text-lg`}>+3 FREE {isHint ? 'Hints' : 'Freezes'}</span>!
         </p>
 
+        {adUnavailable && <p role="status" className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-xs font-bold text-red-600">The reward ad is unavailable. Try again or continue without it.</p>}
+
         <div className="space-y-3">
           <button
             onClick={async () => {
               setIsWatching(true);
-              await onWatch();
-              setIsWatching(false);
+              setAdUnavailable(false);
+              let rewarded = false;
+              try {
+                rewarded = await onWatch();
+              } catch {
+                rewarded = false;
+              } finally {
+                setIsWatching(false);
+              }
+              if (!rewarded) setAdUnavailable(true);
             }}
             disabled={isWatching}
             className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-lg font-bold py-4 rounded-2xl shadow-lg transition-transform hover:scale-105 active:scale-95 flex items-center justify-center gap-3"

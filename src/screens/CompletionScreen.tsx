@@ -10,8 +10,8 @@ interface CompletionScreenProps {
   gameCoins: number;
   gameXp: number;
   didWin: boolean;
-  onPlayAgain: () => void;
-  onDashboard: () => void;
+  onPlayAgain: () => Promise<void>;
+  onDashboard: () => Promise<void>;
   onShare: () => void;
   onDoubleCoins: () => Promise<boolean>;
 }
@@ -31,6 +31,38 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
 }) => {
   const [hasDoubled, setHasDoubled] = React.useState(false);
   const [isDoubling, setIsDoubling] = React.useState(false);
+  const [adUnavailable, setAdUnavailable] = React.useState(false);
+  const [isLeaving, setIsLeaving] = React.useState(false);
+
+  const handleDoubleCoins = async () => {
+    if (isDoubling || hasDoubled) return;
+
+    setIsDoubling(true);
+    setAdUnavailable(false);
+    let success = false;
+    try {
+      success = await onDoubleCoins();
+    } catch {
+      success = false;
+    } finally {
+      setIsDoubling(false);
+    }
+    if (success) {
+      setHasDoubled(true);
+    } else {
+      setAdUnavailable(true);
+    }
+  };
+
+  const handleLeave = async (action: () => Promise<void>) => {
+    if (isLeaving) return;
+    setIsLeaving(true);
+    try {
+      await action();
+    } finally {
+      setIsLeaving(false);
+    }
+  };
 
   return (
     <div
@@ -79,24 +111,20 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
             {didWin && !hasDoubled && gameCoins > 0 && (
               <button
                 type="button"
-                onClick={async () => {
-                  setIsDoubling(true);
-                  const success = await onDoubleCoins();
-                  setIsDoubling(false);
-                  if (success) setHasDoubled(true);
-                }}
+                onClick={handleDoubleCoins}
                 disabled={isDoubling}
                 className="flex w-full items-center justify-center gap-2 rounded-2xl border border-yellow-200/40 bg-yellow-300 px-4 py-3.5 text-sm font-black text-slate-950 shadow-lg transition hover:bg-yellow-200 disabled:cursor-wait disabled:opacity-50"
               >
                 <Video className="h-5 w-5" /> {isDoubling ? 'Loading reward...' : 'Double coins · watch ad'}
               </button>
             )}
-            <button type="button" onClick={onPlayAgain} className="flex w-full items-center justify-center gap-2 rounded-2xl border-b-4 border-orange-700/50 bg-orange-400 px-4 py-3.5 text-sm font-black text-slate-950 shadow-lg transition hover:bg-orange-300 active:translate-y-1 active:border-b-0">
+            {adUnavailable && <p role="status" className="rounded-xl bg-red-400/15 px-3 py-2 text-xs font-bold text-red-100">The reward ad is unavailable. Try again later; your mission coins are safe.</p>}
+            <button type="button" onClick={() => handleLeave(onPlayAgain)} disabled={isLeaving} aria-busy={isLeaving} className="flex w-full items-center justify-center gap-2 rounded-2xl border-b-4 border-orange-700/50 bg-orange-400 px-4 py-3.5 text-sm font-black text-slate-950 shadow-lg transition hover:bg-orange-300 active:translate-y-1 active:border-b-0 disabled:cursor-wait disabled:opacity-60">
               Play this mission again <Zap className="h-5 w-5" />
             </button>
             <div className="grid grid-cols-2 gap-2.5">
               <button type="button" onClick={onShare} className="flex items-center justify-center gap-2 rounded-2xl border border-cyan-200/20 bg-cyan-400/10 px-3 py-3 text-xs font-black text-cyan-100 transition hover:bg-cyan-400/20"><Share2 className="h-4 w-4" /> Share score</button>
-              <button type="button" aria-label="Return to homepage" onClick={onDashboard} className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-black text-white/75 transition hover:bg-white/10 hover:text-white"><Home className="h-4 w-4" /> Home <ArrowRight className="h-4 w-4" /></button>
+              <button type="button" aria-label="Return to homepage" onClick={() => handleLeave(onDashboard)} disabled={isLeaving} aria-busy={isLeaving} className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-xs font-black text-white/75 transition hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"><Home className="h-4 w-4" /> Home <ArrowRight className="h-4 w-4" /></button>
             </div>
           </div>
         </section>

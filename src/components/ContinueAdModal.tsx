@@ -15,8 +15,14 @@ const ContinueAdModal: React.FC<ContinueAdModalProps> = ({ modeName, score, onWa
   const continueRun = async () => {
     setIsLoading(true);
     setAdUnavailable(false);
-    const rewarded = await onWatchAndContinue();
-    setIsLoading(false);
+    let rewarded = false;
+    try {
+      rewarded = await onWatchAndContinue();
+    } catch {
+      rewarded = false;
+    } finally {
+      setIsLoading(false);
+    }
     if (!rewarded) setAdUnavailable(true);
   };
 
