@@ -48,6 +48,14 @@ const getAdUnitId = (type: 'banner' | 'interstitial' | 'reward') => {
 // Cooldown configuration
 let lastInterstitialTime = 0;
 const INTERSTITIAL_COOLDOWN_MS = 120000; // 2 minutes
+type RewardPurpose = 'double-coins' | 'continue' | 'power-up' | 'coins';
+
+const WEB_REWARD_MESSAGES: Record<RewardPurpose, string> = {
+  'double-coins': 'Watch a 15-second video to double this mission’s coins?',
+  continue: 'Watch a 15-second video to restore one life and continue this mission?',
+  'power-up': 'Watch a 15-second video to unlock the requested power-ups?',
+  coins: 'Watch a 15-second video to earn 500 coins?'
+};
 
 export const adMobService = {
   initialize: async () => {
@@ -141,7 +149,7 @@ export const adMobService = {
     });
   },
 
-  showRewardVideo: async (): Promise<boolean> => {
+  showRewardVideo: async (purpose: RewardPurpose = 'coins'): Promise<boolean> => {
     // 1. NATIVE IMPLEMENTATION
     if (isNative()) {
       return new Promise<boolean>((resolve) => {
@@ -201,7 +209,7 @@ export const adMobService = {
 
     // 2. WEB FALLBACK (Simulation)
     return new Promise((resolve) => {
-      const userWantsToWatch = window.confirm("📺 [AdMob Simulation]\n\nWatch a 15-second video to earn 500 Coins?");
+      const userWantsToWatch = window.confirm(`📺 [AdMob Simulation]\n\n${WEB_REWARD_MESSAGES[purpose]}`);
       if (userWantsToWatch) {
         setTimeout(() => {
           alert("🎉 Ad Complete! Reward Granted.");

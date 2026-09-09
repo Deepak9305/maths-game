@@ -3,8 +3,8 @@
 ## Comparison target
 
 - Source visual truth: `C:\Users\rv941\.codex\generated_images\01a084d0-bda0-7a10-9500-3976c3d29673\exec-139144a6-5222-4997-9ee6-c678a6ade34b.png`
-- Browser-rendered implementation: [`qa-dashboard-reference-mobile.png`](./qa-dashboard-reference-mobile.png)
-- Combined comparison evidence: [`qa-dashboard-reference-comparison.png`](./qa-dashboard-reference-comparison.png)
+- Browser-rendered implementation: [`qa-dashboard-animated-mobile.png`](./qa-dashboard-animated-mobile.png)
+- Combined comparison evidence: [`qa-dashboard-animated-comparison.png`](./qa-dashboard-animated-comparison.png)
 - State: first-open dashboard, Quick Calc selected, Standard difficulty, no dialog open
 - CSS viewport: 393 × 852 px; device scale factor 1
 - Source pixels: 853 × 1844 px; normalized to 393 × 852 px before comparison
@@ -22,6 +22,10 @@
    - Kept mode selection, difficulty choice, Sudoku size, challenges, share, and navigation in dialogs that appear only after interaction, leaving the source-matched resting state unobscured.
 3. Post-fix comparison — **passed**
    - The side-by-side normalized evidence shows matching artwork, typography, layout, labels, imagery, CTA, and navigation for the selected Quick Calc resting state.
+4. Motion pass — **passed**
+   - Added clipped source-art motion layers: individual mission-orb bobbing, a selected-orb pulse, command-console charge glow, and a Start Mission breathing glow.
+   - The source's original geometry remains visible underneath each layer; motion is disabled for `prefers-reduced-motion`.
+   - The latest browser frame and normalized side-by-side comparison are recorded above.
 
 ## Required fidelity surfaces
 
@@ -38,6 +42,8 @@
 - Target Puzzle selection opened its mission setup state before the interrupted browser session; the selection code and build type-check passed.
 - `npm run lint`: passed.
 - `npm run build`: passed.
+- Browser smoke test at 393 × 852: source-matched dashboard rendered, a live `mq-float-gentle` animation was detected, Target Puzzle opened its mission setup dialog, and Command Deck exposed Missions, Badges, Pet lab, and Shop. No console errors were reported.
+- Rewarded-ad paths: win completion alone exposes the Double Coins action; final-life loss now opens a one-time Continue Mission reward dialog. Native ad delivery itself remains dependent on an installed build and an available ad inventory.
 
 ## Residual scope
 

@@ -10,6 +10,7 @@ import Shop from './screens/Shop';
 import DailyRewardModal from './components/DailyRewardModal';
 import PauseModal from './components/PauseModal';
 import PowerUpAdModal from './components/PowerUpAdModal';
+import ContinueAdModal from './components/ContinueAdModal';
 import MapScreen from './screens/MapScreen';
 import PetScreen from './screens/PetScreen';
 import { PlayerState, ScreenState, Difficulty, Question, RocketItem, AchievementItem, GameMode, ModeDifficulty, SudokuSize } from './types';
@@ -149,6 +150,9 @@ const App: React.FC = () => {
   // Pause & Ad State
   const [isPaused, setIsPaused] = useState(false);
   const [powerUpAdTarget, setPowerUpAdTarget] = useState<'hint' | 'timeFreeze' | null>(null);
+  const [lossContinueOpen, setLossContinueOpen] = useState(false);
+  const [hasUsedRewardContinue, setHasUsedRewardContinue] = useState(false);
+  const [completionOutcome, setCompletionOutcome] = useState<'won' | 'lost'>('won');
 
   // --- Effects ---
 
@@ -268,13 +272,13 @@ const App: React.FC = () => {
 
   // Handle Music
   useEffect(() => {
-    if (screen === 'game' && !isWaveTransition && !isPaused && !powerUpAdTarget) {
+    if (screen === 'game' && !isWaveTransition && !isPaused && !powerUpAdTarget && !lossContinueOpen) {
       music.startGameMusic(difficulty);
     } else {
       music.stop();
     }
     return () => music.stop();
-  }, [screen, difficulty, isWaveTransition, isPaused, powerUpAdTarget]);
+  }, [screen, difficulty, isWaveTransition, isPaused, powerUpAdTarget, lossContinueOpen]);
 
   // Handle Android Back Button
   // Keep screenRef in sync with screen state
@@ -356,6 +360,9 @@ const App: React.FC = () => {
     setIsWaveTransition(false);
     setIsPaused(false);
     setPowerUpAdTarget(null);
+    setLossContinueOpen(false);
+    setHasUsedRewardContinue(false);
+    setCompletionOutcome('won');
     setFeedback('');
     setShowConfetti(false);
     setActivePowerUp(null);
@@ -415,7 +422,8 @@ const App: React.FC = () => {
     }
   }, [player.achievements]);
 
-  const handleGameCompletion = useCallback(async (completedScore = score, completedStreak = streak) => {
+  const handleGameCompletion = useCallback(async (completedScore = score, completedStreak = streak, outcome: 'won' | 'lost' = 'won') => {
+    setCompletionOutcome(outcome);
     setPlayer(prev => {
       const previousStats = prev.modeStats?.[gameMode] ?? { bestScore: 0, bestStreak: 0, gamesPlayed: 0 };
       return {
@@ -432,7 +440,7 @@ const App: React.FC = () => {
       };
     });
 
-    if (!player.achievements.includes('first_win')) {
+    if (outcome === 'won' && !player.achievements.includes('first_win')) {
       unlockAchievement('first_win');
     }
 
@@ -479,8 +487,9 @@ const App: React.FC = () => {
   }, [player.achievements, player.lastRewardDate, dailyStreak, unlockAchievement, gameMode, score, streak]);
 
   const handleDoubleCoins = async (): Promise<boolean> => {
+    if (completionOutcome !== 'won') return false;
     playSound.click();
-    const success = await adMobService.showRewardVideo();
+    const success = await adMobService.showRewardVideo('double-coins');
     if (success) {
       // Add the same amount again (doubling total) — don't double-count what's already added
       setPlayer(prev => ({ ...prev, coins: prev.coins + gameCoins }));
@@ -491,9 +500,34 @@ const App: React.FC = () => {
     return success;
   };
 
+  const handleContinueAfterLoss = async (): Promise<boolean> => {
+    if (hasUsedRewardContinue || currentLives === null) return false;
+
+    playSound.click();
+    const rewarded = await adMobService.showRewardVideo('continue');
+    if (!rewarded) return false;
+
+    const settings = getModeConfig(gameMode, modeDifficulty);
+    setHasUsedRewardContinue(true);
+    setLossContinueOpen(false);
+    setCurrentLives(1);
+    setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave));
+    setFeedback('');
+    setShake(false);
+    setTimer(gameMode === 'survival' ? calculateSurvivalTime(currentWave) : settings.time);
+    playSound.levelUp();
+    nativeService.haptics.notificationSuccess();
+    return true;
+  };
+
+  const handleEndLostRun = () => {
+    setLossContinueOpen(false);
+    handleGameCompletion(score, 0, 'lost');
+  };
+
   const handleWatchAdForCoins = async (): Promise<void> => {
     playSound.click();
-    const success = await adMobService.showRewardVideo();
+    const success = await adMobService.showRewardVideo('coins');
     if (success) {
       setPlayer(prev => ({ ...prev, coins: prev.coins + 500 }));
       playSound.levelUp();
@@ -763,7 +797,7 @@ const App: React.FC = () => {
 
       setTimeout(() => {
         if (isGameOver) {
-          handleGameCompletion(score, 0);
+          setLossContinueOpen(true);
         } else {
           setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave));
           setFeedback('');
@@ -882,8 +916,8 @@ const App: React.FC = () => {
   }, [checkAnswer]);
 
   useEffect(() => {
-    // Only run timer if not paused AND not watching powerup ad
-    if (screen === 'game' && activePowerUp !== 'timeFreeze' && !isWaveTransition && !isPaused && !powerUpAdTarget) {
+    // Only run timer while the player can answer; reward dialogs pause the run.
+    if (screen === 'game' && activePowerUp !== 'timeFreeze' && !isWaveTransition && !isPaused && !powerUpAdTarget && !lossContinueOpen) {
       const interval = setInterval(() => {
         setTimer(t => {
           if (t === null || t <= 0) return t;
@@ -896,7 +930,7 @@ const App: React.FC = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [screen, activePowerUp, isWaveTransition, isPaused, powerUpAdTarget, question]);
+  }, [screen, activePowerUp, isWaveTransition, isPaused, powerUpAdTarget, lossContinueOpen, question]);
 
   const handleUsePowerUp = (type: 'hint' | 'timeFreeze') => {
     if (player.powerUps[type] <= 0) return;
@@ -927,7 +961,7 @@ const App: React.FC = () => {
   const handleWatchPowerUpAd = async (): Promise<void> => {
     if (!powerUpAdTarget) return;
 
-    const success = await adMobService.showRewardVideo();
+    const success = await adMobService.showRewardVideo('power-up');
     if (success) {
       setPlayer(prev => ({
         ...prev,
@@ -1252,6 +1286,15 @@ const App: React.FC = () => {
         />
       )}
 
+      {lossContinueOpen && (
+        <ContinueAdModal
+          modeName={GAME_MODE_DEFINITIONS[gameMode].name}
+          score={score}
+          onWatchAndContinue={handleContinueAfterLoss}
+          onEndRun={handleEndLostRun}
+        />
+      )}
+
       {screen === 'splash' && (
         <SplashScreen
           playerName={player.name}
@@ -1353,6 +1396,7 @@ const App: React.FC = () => {
           sessionConfig={getModeConfig(gameMode, modeDifficulty)}
           gameCoins={gameCoins}
           gameXp={gameXp}
+          didWin={completionOutcome === 'won'}
           onPlayAgain={() => {
             adMobService.showInterstitial().catch(() => { });
             startMode(gameMode, modeDifficulty, sudokuSize, activeChallengeCode || undefined);

@@ -67,6 +67,36 @@ const Dashboard: React.FC<DashboardProps> = ({
         className="relative mx-auto h-[100dvh] w-full max-w-[430px] overflow-hidden bg-[#040d2d]"
         aria-label="Math Quest mission hub"
       >
+        <style>{`
+          @keyframes mq-float-gentle {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(0, -3px, 0); }
+          }
+          @keyframes mq-float-reverse {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(0, 2px, 0); }
+          }
+          @keyframes mq-console-charge {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(34, 211, 238, 0)); transform: scale(1); }
+            50% { filter: brightness(1.12) drop-shadow(0 0 10px rgba(34, 211, 238, .65)); transform: scale(1.012); }
+          }
+          @keyframes mq-selected-pulse {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(251, 191, 36, 0)); transform: scale(1); }
+            50% { filter: brightness(1.08) drop-shadow(0 0 11px rgba(251, 191, 36, .68)); transform: scale(1.016); }
+          }
+          @keyframes mq-launch-breathe {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(251, 146, 60, 0)); }
+            50% { filter: brightness(1.12) drop-shadow(0 0 13px rgba(251, 146, 60, .75)); }
+          }
+          .mq-float-gentle { animation: mq-float-gentle 3.8s ease-in-out infinite; }
+          .mq-float-reverse { animation: mq-float-reverse 4.6s ease-in-out infinite; }
+          .mq-console-charge { animation: mq-console-charge 2.8s ease-in-out infinite; transform-origin: 50% 48%; }
+          .mq-selected-pulse { animation: mq-selected-pulse 2.2s ease-in-out infinite; transform-origin: 20% 41%; }
+          .mq-launch-breathe { animation: mq-launch-breathe 2.4s ease-in-out infinite; }
+          @media (prefers-reduced-motion: reduce) {
+            .mq-float-gentle, .mq-float-reverse, .mq-console-charge, .mq-selected-pulse, .mq-launch-breathe { animation: none !important; }
+          }
+        `}</style>
         <img
           src="/assets/orbit-selector-reference.png"
           alt=""
@@ -74,6 +104,58 @@ const Dashboard: React.FC<DashboardProps> = ({
           draggable={false}
           className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
         />
+
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+          <img
+            src="/assets/orbit-selector-reference.png"
+            alt=""
+            draggable={false}
+            className="mq-float-gentle absolute inset-0 h-full w-full select-none object-fill"
+            style={{ clipPath: 'circle(9% at 50% 32%)' }}
+          />
+          <img
+            src="/assets/orbit-selector-reference.png"
+            alt=""
+            draggable={false}
+            className="mq-selected-pulse absolute inset-0 h-full w-full select-none object-fill"
+            style={{ clipPath: 'circle(14% at 20% 41%)' }}
+          />
+          <img
+            src="/assets/orbit-selector-reference.png"
+            alt=""
+            draggable={false}
+            className="mq-float-reverse absolute inset-0 h-full w-full select-none object-fill"
+            style={{ clipPath: 'circle(10% at 79% 41%)' }}
+          />
+          <img
+            src="/assets/orbit-selector-reference.png"
+            alt=""
+            draggable={false}
+            className="mq-float-gentle absolute inset-0 h-full w-full select-none object-fill"
+            style={{ animationDelay: '-1.3s', clipPath: 'circle(11% at 22% 56%)' }}
+          />
+          <img
+            src="/assets/orbit-selector-reference.png"
+            alt=""
+            draggable={false}
+            className="mq-float-reverse absolute inset-0 h-full w-full select-none object-fill"
+            style={{ animationDelay: '-2.1s', clipPath: 'circle(11% at 78% 56%)' }}
+          />
+          <img
+            src="/assets/orbit-selector-reference.png"
+            alt=""
+            draggable={false}
+            className="mq-console-charge absolute inset-0 h-full w-full select-none object-fill"
+            style={{ clipPath: 'circle(15% at 50% 48%)' }}
+          />
+          <img
+            src="/assets/orbit-selector-reference.png"
+            alt=""
+            draggable={false}
+            className="mq-launch-breathe absolute inset-0 h-full w-full select-none object-fill"
+            style={{ clipPath: 'inset(77% 13% 12% 13% round 5%)' }}
+          />
+        </div>
 
         <section aria-label="Choose a mission" className="absolute inset-0">
           {(Object.keys(MODE_HOTSPOTS) as PrimaryMode[]).map(mode => (

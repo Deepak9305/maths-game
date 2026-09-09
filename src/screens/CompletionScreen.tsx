@@ -9,6 +9,7 @@ interface CompletionScreenProps {
   sessionConfig: ModeSessionConfig;
   gameCoins: number;
   gameXp: number;
+  didWin: boolean;
   onPlayAgain: () => void;
   onDashboard: () => void;
   onShare: () => void;
@@ -22,6 +23,7 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
   sessionConfig,
   gameCoins,
   gameXp,
+  didWin,
   onPlayAgain,
   onDashboard,
   onShare,
@@ -48,8 +50,8 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-yellow-300/40 bg-yellow-300/10 text-yellow-200 shadow-[0_0_32px_rgba(250,204,21,.2)]">
             <Trophy className="h-11 w-11" />
           </div>
-          <p className="mt-5 text-xs font-black uppercase tracking-[0.24em] text-cyan-200/65">Mission complete</p>
-          <h1 className="mt-2 font-['Press_Start_2P'] text-xl leading-relaxed text-white sm:text-2xl">Sector cleared</h1>
+          <p className="mt-5 text-xs font-black uppercase tracking-[0.24em] text-cyan-200/65">{didWin ? 'Mission complete' : 'Mission ended'}</p>
+          <h1 className="mt-2 font-['Press_Start_2P'] text-xl leading-relaxed text-white sm:text-2xl">{didWin ? 'Sector cleared' : 'Run complete'}</h1>
           <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-cyan-300/25 bg-cyan-400/10 px-3 py-1.5 text-xs font-black uppercase tracking-wider text-cyan-100">
             <Orbit className="h-4 w-4" /> {modeName} · {modeDifficulty}
           </div>
@@ -74,7 +76,7 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
           <p className="mt-4 text-xs leading-relaxed text-blue-100/55">{sessionConfig.description}</p>
 
           <div className="mt-5 space-y-2.5">
-            {!hasDoubled && gameCoins > 0 && (
+            {didWin && !hasDoubled && gameCoins > 0 && (
               <button
                 type="button"
                 onClick={async () => {
