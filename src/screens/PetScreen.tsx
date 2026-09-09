@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PlayerState } from '../types';
-import { Heart, Activity, Zap, Star, Edit2, Check, Info, X, ShoppingBag } from 'lucide-react';
+import { Heart, Activity, Star, Edit2, Check, Info, X, ShoppingBag } from 'lucide-react';
 import { playSound } from '../services/audioService';
 import { nativeService } from '../services/nativeService';
 import { PetCharacter, PetStage, PetEmotion } from '../components/PetCharacters';
@@ -21,6 +21,12 @@ const AVAILABLE_PETS = [
   { id: 'phoenix', name: 'Solar Phoenix', cost: 1000, description: 'A majestic bird of cosmic fire.' }
 ];
 
+const PET_BACKSTORIES: Record<string, string> = {
+  alien: 'Astro hatched from a star-seed drifting through Sector 7. Every correct answer sends a little more starlight into its shell.',
+  wolf: 'Nebula Wolf crossed the comet belt alone until your signal reached it. Now it maps safe routes through the dark for its pilot.',
+  phoenix: 'Solar Phoenix rose from a sunflare fragment that refused to burn out. It follows brave pilots and turns every setback into fuel.'
+};
+
 export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, onClose, onRename, onBuyPet, onEquipPet }) => {
   const activePetId = player.activePetId || 'alien';
   const pet = player.pets?.[activePetId] || { id: 'alien', name: 'Astro', happiness: 100, hunger: 0, level: 1, xp: 0, lastInteractionTime: Date.now() };
@@ -33,6 +39,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
   useEffect(() => { setEditName(pet.name); }, [activePetId, pet.name]);
   const [showEvolutionModal, setShowEvolutionModal] = useState(false);
   const [showShopModal, setShowShopModal] = useState(false);
+  const [showBackstory, setShowBackstory] = useState(true);
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
@@ -118,10 +125,24 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
   }
 
   const isPerkActive = pet.happiness >= 80 && pet.hunger <= 20;
+  const pilotName = player.name.trim() || 'captain';
+  const petName = pet.name.trim() || 'Astro';
+  const petDialogue = isAnimating && animationType === 'feed'
+    ? `Mmm, thanks ${pilotName}! My fuel cells are glowing.`
+    : isAnimating && animationType === 'play'
+      ? `Zoomies! Race you around the galaxy, ${pilotName}!`
+      : pet.hunger > 70
+        ? 'My fuel cells are getting low... snack mission?'
+        : pet.happiness < 35
+          ? 'The stars feel quiet today. Want to play?'
+          : isPerkActive
+            ? `All systems bright, ${pilotName}! We make a great crew.`
+            : `I found a new star to explore, ${pilotName}.`;
+  const originStory = PET_BACKSTORIES[pet.id] || PET_BACKSTORIES.alien;
 
   return (
     <div
-      className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-4 flex flex-col"
+      className="relative min-h-screen overflow-x-hidden bg-[#040b28] p-4 text-white flex flex-col"
       style={{
         paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
         paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
@@ -129,26 +150,68 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
       }}
     >
+      <style>{`
+        @keyframes pet-breathe {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+          50% { transform: translate3d(0, -7px, 0) scale(1.025); }
+        }
+        @keyframes pet-orbit {
+          to { transform: rotate(360deg); }
+        }
+        @keyframes pet-sparkle {
+          0%, 100% { opacity: .25; transform: scale(.75) rotate(0deg); }
+          50% { opacity: 1; transform: scale(1.15) rotate(18deg); }
+        }
+        @keyframes pet-play {
+          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+          30% { transform: translateY(-16px) rotate(-6deg) scale(1.04); }
+          65% { transform: translateY(2px) rotate(6deg) scale(.98); }
+        }
+        @keyframes pet-feed {
+          0%, 100% { transform: scale(1) rotate(0deg); }
+          45% { transform: scale(1.1) rotate(-2deg); }
+          70% { transform: scale(1.04) rotate(2deg); }
+        }
+        .pet-idle { animation: pet-breathe 3.2s ease-in-out infinite; }
+        .pet-orbit { animation: pet-orbit 16s linear infinite; }
+        .pet-sparkle { animation: pet-sparkle 2.2s ease-in-out infinite; }
+        .pet-play { animation: pet-play .9s cubic-bezier(.2,.8,.2,1); }
+        .pet-feed { animation: pet-feed .9s ease-in-out; }
+        @media (prefers-reduced-motion: reduce) {
+          .pet-idle, .pet-orbit, .pet-sparkle, .pet-play, .pet-feed { animation: none; }
+        }
+      `}</style>
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute -right-24 bottom-32 h-80 w-80 rounded-full bg-fuchsia-500/10 blur-3xl" />
+      </div>
       <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center mb-6 bg-black/30 p-4 rounded-2xl backdrop-blur-md border border-white/10">
+        <div className="relative z-10 flex justify-between items-center mb-4 bg-[#0a1942]/90 p-4 rounded-2xl backdrop-blur-md border border-cyan-200/20 shadow-[0_12px_35px_rgba(0,0,0,.22)]">
           <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold text-white">Space Pet</h2>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200/30 bg-cyan-400/10">
+              <Heart className="h-5 w-5 text-pink-300" fill="currentColor" />
+            </div>
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-cyan-200/70">Companion deck</p>
+              <h2 className="text-xl font-black tracking-tight text-white">Pet Lab</h2>
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="bg-yellow-400/20 px-3 py-1 rounded-lg text-yellow-300 font-bold border border-yellow-400/30">
+            <span className="rounded-lg border border-yellow-400/30 bg-yellow-400/10 px-3 py-1 text-sm font-bold text-yellow-200">
               {player.coins} 💰
             </span>
             <button
               onClick={() => setShowShopModal(true)}
-              className="bg-blue-500/20 hover:bg-blue-500/40 transition-colors p-2 rounded-xl text-blue-300 border border-blue-400/30"
+              className="rounded-xl border border-cyan-300/30 bg-cyan-400/10 p-2 text-cyan-200 transition-colors hover:bg-cyan-400/20"
               title="Pet Shop"
+              aria-label="Open pet shop"
             >
               <ShoppingBag className="w-5 h-5" />
             </button>
             <button
               onClick={onClose}
-              className="bg-white/20 hover:bg-white/30 transition-colors px-3 py-1.5 rounded-xl text-white font-bold"
+              className="rounded-xl border border-white/10 bg-white/10 px-3 py-1.5 font-bold text-white transition-colors hover:bg-white/20"
             >
               Back
             </button>
@@ -156,18 +219,28 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
         </div>
 
         {/* Pet Display */}
-        <div className="flex-1 bg-black/20 rounded-3xl p-6 backdrop-blur-sm border border-white/10 flex flex-col items-center justify-center relative overflow-hidden mb-6">
+        <div className="relative mb-4 flex-1 flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-cyan-200/20 bg-gradient-to-b from-[#0b2362]/95 via-[#081944]/95 to-[#050c27] p-4 shadow-[0_18px_45px_rgba(0,0,0,.28)] backdrop-blur-sm sm:p-6">
           {/* Background decoration */}
-          <div className="absolute inset-0 opacity-10 flex items-center justify-center">
-            <Star className="w-64 h-64 text-white animate-spin-slow" />
+          <div className="absolute inset-0 flex items-center justify-center opacity-20">
+            <div className="pet-orbit h-64 w-64 rounded-full border border-cyan-200/30 border-dashed" />
+            <Star className="absolute h-52 w-52 text-cyan-100/50" />
           </div>
+          <span className="pet-sparkle pointer-events-none absolute left-8 top-28 text-2xl text-cyan-200/70">✦</span>
+          <span className="pet-sparkle pointer-events-none absolute right-10 top-44 text-lg text-yellow-200/80" style={{ animationDelay: '0.8s' }}>✦</span>
+          <span className="pet-sparkle pointer-events-none absolute bottom-32 left-16 text-sm text-fuchsia-200/70" style={{ animationDelay: '1.4s' }}>✦</span>
 
           {/* Active Perk Indicator */}
-          <div className={`absolute top-4 left-4 right-4 p-2 rounded-xl border text-center text-sm font-bold transition-all ${isPerkActive ? 'bg-yellow-400/20 border-yellow-400/50 text-yellow-300' : 'bg-black/40 border-white/10 text-white/50'}`}>
-            {isPerkActive ? '✨ Happy Bonus: +20% Coins & XP!' : 'Keep happy & fed for a bonus!'}
+          <div className={`absolute left-4 right-4 top-4 rounded-xl border p-2 text-center text-xs font-bold uppercase tracking-wide transition-all ${isPerkActive ? 'border-yellow-400/50 bg-yellow-400/15 text-yellow-200' : 'border-white/10 bg-black/30 text-white/60'}`}>
+            {isPerkActive ? '✨ Happy bonus: +20% coins & XP' : 'Keep happy + fed to activate your bonus'}
           </div>
 
-          <div className={`mt-8 mb-4 relative z-10 transition-transform duration-300 ${isAnimating && animationType === 'play' ? 'animate-bounce' : ''} ${isAnimating && animationType === 'feed' ? 'scale-110' : ''}`}>
+          {/* Talking companion */}
+          <div className="relative z-20 mt-12 min-h-[3.25rem] max-w-[19rem] rounded-2xl border border-cyan-200/25 bg-[#102b66]/90 px-4 py-3 text-center text-xs font-bold leading-relaxed text-cyan-50 shadow-lg shadow-cyan-950/30" aria-live="polite">
+            <span>{petDialogue}</span>
+            <span className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-cyan-200/25 bg-[#102b66]" />
+          </div>
+
+          <div className={`relative z-10 mb-3 mt-3 ${isAnimating && animationType === 'play' ? 'pet-play' : isAnimating && animationType === 'feed' ? 'pet-feed' : 'pet-idle'}`}>
             <PetCharacter stage={stage} emotion={emotion} className="w-48 h-48 drop-shadow-2xl" />
             {isAnimating && animationType === 'play' && <span className="absolute -top-4 -right-4 text-4xl animate-ping">✨</span>}
             {isAnimating && animationType === 'feed' && <span className="absolute -top-4 -right-4 text-4xl animate-pulse">🍖</span>}
@@ -192,7 +265,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
               </div>
             ) : (
               <>
-                <h3 className="text-3xl font-bold text-white">{pet.name}</h3>
+                <h3 className="text-3xl font-black tracking-tight text-white">{petName}</h3>
                 {onRename && (
                   <button onClick={() => setIsEditingName(true)} className="text-white/50 hover:text-white">
                     <Edit2 className="w-4 h-4" />
@@ -201,8 +274,8 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
               </>
             )}
           </div>
-          <div className="flex items-center justify-center gap-2 z-10 mb-6">
-            <p className="text-purple-300 font-medium">Level {pet.level} {speciesName}</p>
+          <div className="z-10 mb-5 flex items-center justify-center gap-2">
+            <p className="rounded-full border border-purple-300/20 bg-purple-300/10 px-3 py-1 text-sm font-bold text-purple-200">Level {pet.level} · {speciesName}</p>
             <button
               onClick={() => setShowEvolutionModal(true)}
               className="text-purple-300 hover:text-white transition-colors"
@@ -213,7 +286,11 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
           </div>
 
           {/* Stats */}
-          <div className="w-full space-y-4 z-10">
+          <div className="z-10 w-full space-y-4">
+            <div className="mb-1 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">
+              <span>Condition report</span>
+              <span>Bond level {pet.level}</span>
+            </div>
             {/* XP Bar */}
             <div>
               <div className="flex justify-between text-xs mb-1">
@@ -256,8 +333,40 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
           </div>
         </div>
 
+        {/* Backstory */}
+        <section className="relative z-10 mb-4 overflow-hidden rounded-2xl border border-purple-200/20 bg-[#0a1942]/90 shadow-lg shadow-black/10">
+          <button
+            type="button"
+            onClick={() => setShowBackstory((visible) => !visible)}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition-colors hover:bg-white/5"
+            aria-expanded={showBackstory}
+          >
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-purple-400/15 text-purple-200">
+                <Info className="h-4 w-4" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[10px] font-bold uppercase tracking-[0.2em] text-purple-200/60">Origin log</span>
+                <span className="block truncate text-sm font-black text-white">{petName}'s backstory</span>
+              </span>
+            </span>
+            <span className="shrink-0 text-[10px] font-bold uppercase tracking-wider text-cyan-200">{showBackstory ? 'Hide' : 'Read'}</span>
+          </button>
+          {showBackstory && (
+            <div className="border-t border-white/10 px-4 pb-4 pt-3">
+              <p className="text-sm leading-relaxed text-slate-200/85">{originStory}</p>
+              <p className="mt-2 text-[10px] font-bold uppercase tracking-wider text-cyan-200/55">Your bond grows with every mission</p>
+            </div>
+          )}
+        </section>
+
         {/* Actions */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="relative z-10 mb-2">
+          <div className="mb-2 flex items-center justify-between px-1">
+            <span className="text-xs font-bold uppercase tracking-[0.2em] text-white/60">Care actions</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-200/60">Spend coins · earn bond XP</span>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <button
               onClick={handleFeed}
@@ -301,6 +410,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
               <p className="text-xs text-red-400/80 text-center">Need 15 coins</p>
             )}
           </div>
+        </div>
         </div>
       </div>
 
