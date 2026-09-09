@@ -373,12 +373,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           </button>
           <button
             type="button"
-            aria-label="Open missions"
+            aria-label="Open Galaxy Map"
             onClick={() => onNavigate('map')}
             className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-white/55 outline-none transition hover:bg-cyan-300/10 hover:text-cyan-100 focus-visible:ring-4 focus-visible:ring-cyan-300/90"
           >
             <Map className="h-5 w-5" />
-            <span className="text-[9px] font-black uppercase tracking-tight">Missions</span>
+            <span className="text-[9px] font-black uppercase tracking-tight">Galaxy Map</span>
           </button>
           <button
             type="button"
@@ -515,7 +515,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
               <p className="mt-3 text-sm text-blue-100/85">Level {player.level} · {player.xp} XP · {dailyStreak}-day streak</p>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                <button type="button" onClick={() => { setSettingsOpen(false); onNavigate('map'); }} className="rounded-xl border border-cyan-200/25 bg-cyan-300/10 p-3 text-left text-sm font-black text-cyan-50">Missions</button>
+                <button type="button" onClick={() => { setSettingsOpen(false); onNavigate('map'); }} className="rounded-xl border border-cyan-200/25 bg-cyan-300/10 p-3 text-left text-sm font-black text-cyan-50">Galaxy Map</button>
                 <button type="button" onClick={() => { setSettingsOpen(false); onNavigate('achievements'); }} className="rounded-xl border border-violet-200/25 bg-violet-300/10 p-3 text-left text-sm font-black text-violet-50">Badges</button>
                 <button type="button" onClick={() => { setSettingsOpen(false); onNavigate('pet'); }} className="rounded-xl border border-emerald-200/25 bg-emerald-300/10 p-3 text-left text-sm font-black text-emerald-50">Pet lab</button>
                 <button type="button" onClick={() => { setSettingsOpen(false); onNavigate('shop'); }} className="rounded-xl border border-yellow-200/25 bg-yellow-300/10 p-3 text-left text-sm font-black text-yellow-50">Shop · {player.coins}</button>
