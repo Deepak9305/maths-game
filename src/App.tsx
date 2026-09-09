@@ -161,22 +161,29 @@ const App: React.FC = () => {
   // Initialization
   useEffect(() => {
     const init = async () => {
-      await nativeService.initialize();
-      await adMobService.initialize();
+      // Keep native setup off the first-render path so the home screen can appear immediately.
+      void (async () => {
+        try {
+          await nativeService.initialize();
+          await adMobService.initialize();
 
-      // Setup Local Notifications for re-engagement
-      const permStatus = await nativeService.notifications.requestPermissions();
-      if (permStatus?.display === 'granted') {
-        await nativeService.notifications.scheduleRecurring();
-      }
+          // Setup Local Notifications for re-engagement after the app is already usable.
+          const permStatus = await nativeService.notifications.requestPermissions();
+          if (permStatus?.display === 'granted') {
+            await nativeService.notifications.scheduleRecurring();
+          }
+        } catch (error) {
+          console.warn('Background native setup failed', error);
+        }
+      })();
 
-      // Load a stable friend code (persisted across sessions)
-      const persistedCode = await storageService.getFriendCode(
-        () => 'QUEST' + Math.floor(Math.random() * 9000 + 1000)
-      );
+      // Load independent local data in parallel before showing the personalized home screen.
+      const [persistedCode, savedData] = await Promise.all([
+        storageService.getFriendCode(() => 'QUEST' + Math.floor(Math.random() * 9000 + 1000)),
+        storageService.loadData()
+      ]);
       setFriendCode(persistedCode);
 
-      const savedData = await storageService.loadData();
       if (savedData) {
         const p = savedData.player;
         if (!p.ownedRockets) p.ownedRockets = ['🚀'];

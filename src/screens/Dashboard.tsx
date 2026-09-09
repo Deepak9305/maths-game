@@ -159,6 +159,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           alt=""
           aria-hidden="true"
           draggable={false}
+          decoding="async"
           className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
         />
 
