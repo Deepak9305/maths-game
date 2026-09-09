@@ -111,6 +111,7 @@ const App: React.FC = () => {
   const [screen, setScreen] = useState<ScreenState>('splash');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDocumentVisible, setIsDocumentVisible] = useState(true);
+  const [settingsOpenRequest, setSettingsOpenRequest] = useState(0);
 
   // Game Configuration State
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -136,6 +137,8 @@ const App: React.FC = () => {
     dailyChallenges: [],
     lastChallengeDate: null,
     showAnimations: true,
+    hapticsEnabled: true,
+    musicEnabled: true,
     modeStats: {},
     modeProgress: getInitialModeProgress()
   });
@@ -226,6 +229,8 @@ const App: React.FC = () => {
         if (typeof p.powerUps.hint !== 'number') p.powerUps.hint = 3;
         if (typeof p.powerUps.timeFreeze !== 'number') p.powerUps.timeFreeze = 2;
         if (p.lastRewardDate === undefined) p.lastRewardDate = null;
+        if (typeof p.hapticsEnabled !== 'boolean') p.hapticsEnabled = true;
+        if (typeof p.musicEnabled !== 'boolean') p.musicEnabled = true;
         if (!p.dailyChallenges) p.dailyChallenges = [];
         if (!p.modeStats) p.modeStats = {};
         p.modeProgress = getInitialModeProgress(p);
@@ -316,19 +321,25 @@ const App: React.FC = () => {
     }
   }, [player, dailyStreak, isLoaded]);
 
+  // Keep device feedback preferences in sync with the saved player settings.
+  useEffect(() => {
+    nativeService.haptics.setEnabled(player.hapticsEnabled !== false);
+    music.setEnabled(player.musicEnabled !== false);
+  }, [player.hapticsEnabled, player.musicEnabled]);
+
   // Handle Music
   useEffect(() => {
     if (!isDocumentVisible) {
       music.stop();
-    } else if (screen === 'dashboard') {
+    } else if (player.musicEnabled !== false && screen === 'dashboard') {
       music.startMenuMusic();
-    } else if (screen === 'game' && !isWaveTransition && !isPaused && !powerUpAdTarget && !lossContinueOpen) {
+    } else if (player.musicEnabled !== false && screen === 'game' && !isWaveTransition && !isPaused && !powerUpAdTarget && !lossContinueOpen) {
       music.startGameMusic(difficulty);
     } else {
       music.stop();
     }
     return () => music.stop();
-  }, [screen, difficulty, isWaveTransition, isPaused, powerUpAdTarget, lossContinueOpen, isDocumentVisible]);
+  }, [screen, difficulty, isWaveTransition, isPaused, powerUpAdTarget, lossContinueOpen, isDocumentVisible, player.musicEnabled]);
 
   // Keep native banners out of active play and full-screen reward/completion flows.
   useEffect(() => {
@@ -391,6 +402,11 @@ const App: React.FC = () => {
     playSound.click();
     nativeService.haptics.impactLight();
     setScreen(newScreen);
+  };
+
+  const openSettingsFromNavigation = () => {
+    setSettingsOpenRequest(request => request + 1);
+    navigate('dashboard');
   };
 
   const calculateSurvivalTime = (wave: number) => {
@@ -1249,6 +1265,14 @@ const App: React.FC = () => {
     setPlayer(prev => ({ ...prev, showAnimations: !(prev.showAnimations ?? true) }));
   };
 
+  const handleToggleHaptics = () => {
+    setPlayer(prev => ({ ...prev, hapticsEnabled: !(prev.hapticsEnabled ?? true) }));
+  };
+
+  const handleToggleMusic = () => {
+    setPlayer(prev => ({ ...prev, musicEnabled: !(prev.musicEnabled ?? true) }));
+  };
+
   const handleQuitGame = () => {
     playSound.click();
     setIsPaused(false);
@@ -1482,6 +1506,9 @@ const App: React.FC = () => {
           onNavigate={(s) => {
             navigate(s as ScreenState);
           }}
+          settingsOpenRequest={settingsOpenRequest}
+          onToggleHaptics={handleToggleHaptics}
+          onToggleMusic={handleToggleMusic}
           onShare={handleShare}
           onJoinChallenge={handleJoinChallenge}
           onClaimChallenge={handleClaimChallenge}
@@ -1493,6 +1520,8 @@ const App: React.FC = () => {
           player={player}
           onStartMode={(mode, tier, selectedSize, survival, routeLevel) => startMode(mode, tier, selectedSize, undefined, survival, routeLevel)}
           onClose={() => navigate('dashboard')}
+          onNavigate={(s) => navigate(s)}
+          onOpenSettings={openSettingsFromNavigation}
         />
       )}
 
@@ -1505,6 +1534,8 @@ const App: React.FC = () => {
           onBuyPet={handleBuyPet}
           onEquipPet={handleEquipPet}
           onClose={() => navigate('dashboard')}
+          onNavigate={(s) => navigate(s)}
+          onOpenSettings={openSettingsFromNavigation}
         />
       )}
 
@@ -1583,6 +1614,8 @@ const App: React.FC = () => {
           unlockedAchievements={player.achievements}
           achievementsList={ACHIEVEMENTS_LIST}
           onClose={() => navigate('dashboard')}
+          onNavigate={(s) => navigate(s)}
+          onOpenSettings={openSettingsFromNavigation}
         />
       )}
 
@@ -1597,6 +1630,8 @@ const App: React.FC = () => {
           onBuyPowerUp={handleBuyPowerUp}
           onWatchAd={handleWatchAdForCoins}
           onClose={() => navigate('dashboard')}
+          onNavigate={(s) => navigate(s)}
+          onOpenSettings={openSettingsFromNavigation}
         />
       )}
     </>

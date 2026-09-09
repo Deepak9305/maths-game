@@ -110,6 +110,8 @@ export interface PlayerState {
   pets?: Record<string, PetState>;
   activePetId?: string;
   showAnimations?: boolean;
+  hapticsEnabled?: boolean;
+  musicEnabled?: boolean;
 
   // Per-mode personal bests. Optional for backwards compatibility with v1 saves.
   modeStats?: Partial<Record<GameMode, ModeStats>>;

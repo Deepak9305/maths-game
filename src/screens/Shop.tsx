@@ -1,6 +1,7 @@
 import React from 'react';
 import { X, Video, Zap, Clock } from 'lucide-react';
 import { RocketItem } from '../types';
+import PrimaryNavigation, { NavigationDestination } from '../components/PrimaryNavigation';
 
 interface ShopProps {
   coins: number;
@@ -12,6 +13,8 @@ interface ShopProps {
   onBuyPowerUp: (type: 'hint' | 'timeFreeze', cost: number) => void;
   onWatchAd: () => Promise<boolean>;
   onClose: () => void;
+  onNavigate: (screen: NavigationDestination) => void;
+  onOpenSettings: () => void;
 }
 
 const Shop: React.FC<ShopProps> = ({
@@ -23,7 +26,9 @@ const Shop: React.FC<ShopProps> = ({
   onEquip,
   onBuyPowerUp,
   onWatchAd,
-  onClose
+  onClose,
+  onNavigate,
+  onOpenSettings
 }) => {
   const [isWatchingAd, setIsWatchingAd] = React.useState(false);
   const [adUnavailable, setAdUnavailable] = React.useState(false);
@@ -49,7 +54,7 @@ const Shop: React.FC<ShopProps> = ({
       className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4"
       style={{
         paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
       }}
@@ -187,6 +192,7 @@ const Shop: React.FC<ShopProps> = ({
 
         </div>
       </div>
+      <PrimaryNavigation activeScreen="shop" onNavigate={onNavigate} onOpenSettings={onOpenSettings} />
     </div>
   );
 };

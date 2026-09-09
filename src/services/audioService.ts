@@ -4,6 +4,7 @@ let musicInterval: ReturnType<typeof setInterval> | null = null;
 let musicGain: GainNode | null = null;
 let activeMusicTrack: 'menu' | 'game' | null = null;
 let audioAvailable = true;
+let musicEnabled = true;
 
 const GAME_MUSIC_VOLUME = 0.35;
 const MENU_MUSIC_VOLUME = 0.16;
@@ -106,7 +107,12 @@ export const playSound = {
 };
 
 export const music = {
+  setEnabled: (enabled: boolean) => {
+    musicEnabled = enabled;
+    if (!enabled) music.stop();
+  },
   startMenuMusic: () => {
+    if (!musicEnabled) return;
     if (activeMusicTrack === 'menu' && musicInterval) return;
 
     clearMusicLoop();
@@ -175,6 +181,7 @@ export const music = {
     }, 5200);
   },
   startGameMusic: (difficulty: string) => {
+    if (!musicEnabled) return;
     clearMusicLoop();
 
     const ctx = initAudio();

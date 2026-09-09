@@ -4,12 +4,15 @@ import { Heart, Activity, Star, Edit2, Check, Info, X, ShoppingBag } from 'lucid
 import { playSound } from '../services/audioService';
 import { nativeService } from '../services/nativeService';
 import { PetCharacter, PetStage, PetEmotion } from '../components/PetCharacters';
+import PrimaryNavigation, { NavigationDestination } from '../components/PrimaryNavigation';
 
 interface PetScreenProps {
   player: PlayerState;
   onFeed: () => void;
   onPlay: () => void;
   onClose: () => void;
+  onNavigate: (screen: NavigationDestination) => void;
+  onOpenSettings: () => void;
   onRename?: (newName: string) => void;
   onBuyPet?: (petId: string, cost: number) => void;
   onEquipPet?: (petId: string) => void;
@@ -27,7 +30,7 @@ const PET_BACKSTORIES: Record<string, string> = {
   phoenix: 'Solar Phoenix rose from a sunflare fragment that refused to burn out. It follows brave pilots and turns every setback into fuel.'
 };
 
-export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, onClose, onRename, onBuyPet, onEquipPet }) => {
+export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, onClose, onRename, onBuyPet, onEquipPet, onNavigate, onOpenSettings }) => {
   const activePetId = player.activePetId || 'alien';
   const pet = player.pets?.[activePetId] || { id: 'alien', name: 'Astro', happiness: 100, hunger: 0, level: 1, xp: 0, lastInteractionTime: Date.now() };
   const [isAnimating, setIsAnimating] = useState(false);
@@ -142,10 +145,10 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
 
   return (
     <div
-      className="relative min-h-screen overflow-x-hidden bg-[#040b28] p-4 text-white flex flex-col"
+      className="relative h-[100dvh] max-h-[100dvh] min-h-screen overflow-x-hidden overflow-y-auto overscroll-contain bg-[#040b28] p-4 text-white flex flex-col touch-pan-y"
       style={{
         paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
       }}
@@ -413,6 +416,8 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
         </div>
         </div>
       </div>
+
+      <PrimaryNavigation activeScreen="pet" onNavigate={onNavigate} onOpenSettings={onOpenSettings} />
 
       {/* Shop Modal */}
       {showShopModal && (

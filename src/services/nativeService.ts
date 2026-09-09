@@ -11,6 +11,8 @@ import { Network } from '@capacitor/network';
 import { Dialog } from '@capacitor/dialog';
 import { Toast } from '@capacitor/toast';
 
+let hapticsEnabled = true;
+
 export const nativeService = {
   initialize: async () => {
     if (Capacitor.isNativePlatform()) {
@@ -58,28 +60,31 @@ export const nativeService = {
   },
 
   haptics: {
+    setEnabled: (enabled: boolean) => {
+      hapticsEnabled = enabled;
+    },
     impactLight: async () => {
-      if (Capacitor.isNativePlatform()) {
+      if (hapticsEnabled && Capacitor.isNativePlatform()) {
         try { await Haptics.impact({ style: ImpactStyle.Light }); } catch (e) { }
       }
     },
     impactMedium: async () => {
-      if (Capacitor.isNativePlatform()) {
+      if (hapticsEnabled && Capacitor.isNativePlatform()) {
         try { await Haptics.impact({ style: ImpactStyle.Medium }); } catch (e) { }
       }
     },
     impactHeavy: async () => {
-      if (Capacitor.isNativePlatform()) {
+      if (hapticsEnabled && Capacitor.isNativePlatform()) {
         try { await Haptics.impact({ style: ImpactStyle.Heavy }); } catch (e) { }
       }
     },
     notificationSuccess: async () => {
-      if (Capacitor.isNativePlatform()) {
+      if (hapticsEnabled && Capacitor.isNativePlatform()) {
         try { await Haptics.notification({ type: NotificationType.Success }); } catch (e) { }
       }
     },
     notificationError: async () => {
-      if (Capacitor.isNativePlatform()) {
+      if (hapticsEnabled && Capacitor.isNativePlatform()) {
         try { await Haptics.notification({ type: NotificationType.Error }); } catch (e) { }
       }
     }

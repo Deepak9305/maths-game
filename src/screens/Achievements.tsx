@@ -1,20 +1,23 @@
 import React from 'react';
 import { X, Award } from 'lucide-react';
 import { AchievementItem } from '../types';
+import PrimaryNavigation, { NavigationDestination } from '../components/PrimaryNavigation';
 
 interface AchievementsProps {
   unlockedAchievements: string[];
   achievementsList: AchievementItem[];
   onClose: () => void;
+  onNavigate: (screen: NavigationDestination) => void;
+  onOpenSettings: () => void;
 }
 
-const Achievements: React.FC<AchievementsProps> = ({ unlockedAchievements, achievementsList, onClose }) => {
+const Achievements: React.FC<AchievementsProps> = ({ unlockedAchievements, achievementsList, onClose, onNavigate, onOpenSettings }) => {
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 p-4"
       style={{
         paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))',
-        paddingBottom: 'calc(4rem + env(safe-area-inset-bottom, 0px))',
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
         paddingLeft: 'max(1rem, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(1rem, env(safe-area-inset-right, 0px))'
       }}
@@ -73,6 +76,7 @@ const Achievements: React.FC<AchievementsProps> = ({ unlockedAchievements, achie
           </div>
         </div>
       </div>
+      <PrimaryNavigation activeScreen="achievements" onNavigate={onNavigate} onOpenSettings={onOpenSettings} />
     </div>
   );
 };

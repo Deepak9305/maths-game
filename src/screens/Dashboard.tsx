@@ -1,14 +1,18 @@
-import React, { useState } from 'react';
-import { Award, Home, Map, PawPrint, Settings, ShoppingBag } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Award, PawPrint, ShoppingBag, Vibrate, Volume2, VolumeX } from 'lucide-react';
 import { GameMode, ModeDifficulty, PlayerState, SudokuSize } from '../types';
 import { GAME_MODE_DEFINITIONS, MODE_DIFFICULTY_LABELS } from '../services/modeService';
+import PrimaryNavigation, { NavigationDestination } from '../components/PrimaryNavigation';
 
 interface DashboardProps {
   player: PlayerState;
   dailyStreak: number;
   friendCode: string;
   onStartGame: (mode: GameMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize, survival: boolean) => void;
-  onNavigate: (screen: 'shop' | 'achievements' | 'privacy' | 'map' | 'pet') => void;
+  onNavigate: (screen: NavigationDestination | 'shop' | 'achievements' | 'privacy') => void;
+  settingsOpenRequest?: number;
+  onToggleHaptics: () => void;
+  onToggleMusic: () => void;
   onShare: () => void;
   onJoinChallenge: (code: string) => void;
   onClaimChallenge: (id: string) => void;
@@ -54,6 +58,9 @@ const Dashboard: React.FC<DashboardProps> = ({
   friendCode,
   onStartGame,
   onNavigate,
+  settingsOpenRequest = 0,
+  onToggleHaptics,
+  onToggleMusic,
   onShare,
   onJoinChallenge,
   onClaimChallenge
@@ -65,6 +72,10 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [missionSetupOpen, setMissionSetupOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [challengeInput, setChallengeInput] = useState('');
+
+  useEffect(() => {
+    if (settingsOpenRequest > 0) setSettingsOpen(true);
+  }, [settingsOpenRequest]);
 
   const selectedDefinition = GAME_MODE_DEFINITIONS[selectedMode];
   const nextChallenge = player.dailyChallenges?.find(challenge => !challenge.claimed);
@@ -94,12 +105,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           @keyframes mq-ambient-drift {
             0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: .28; }
             50% { transform: translate3d(0, -5px, 0) scale(1.04); opacity: .52; }
-          }
-          @keyframes mq-scene-drift {
-            0%, 100% { transform: translate3d(0, 0, 0) scale(1.025) rotate(0deg); }
-            25% { transform: translate3d(-3px, -6px, 0) scale(1.036) rotate(-0.12deg); }
-            50% { transform: translate3d(2px, -10px, 0) scale(1.042) rotate(0.12deg); }
-            75% { transform: translate3d(4px, -4px, 0) scale(1.034) rotate(-0.06deg); }
           }
           @keyframes mq-mode-glow {
             0%, 100% { transform: translate3d(-50%, -50%, 0) scale(.92); opacity: .34; }
@@ -132,7 +137,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             50% { opacity: .7; transform: scale(1.12); }
           }
           .mq-ambient-drift { animation: mq-ambient-drift 4.8s ease-in-out infinite; }
-          .mq-scene-drift { animation: mq-scene-drift 8s ease-in-out infinite; transform-origin: center; will-change: transform; }
           .mq-mode-glow { animation: mq-mode-glow 2.6s ease-in-out infinite; }
           .mq-launch-breathe { animation: mq-launch-breathe 2.4s ease-in-out infinite; }
           .mq-mode-label { animation: mq-label-drift 3.2s ease-in-out infinite; }
@@ -141,7 +145,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           .mq-shortcut-dock { animation: mq-shortcut-dock 4.2s ease-in-out infinite; }
           .mq-console-ping { animation: mq-console-ping 2.8s ease-in-out infinite; transform-origin: center; }
           @media (prefers-reduced-motion: reduce) {
-            .mq-ambient-drift, .mq-scene-drift, .mq-mode-glow, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock, .mq-console-ping { animation: none !important; }
+            .mq-ambient-drift, .mq-mode-glow, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock, .mq-console-ping { animation: none !important; }
           }
         `}</style>
         <img
@@ -152,7 +156,14 @@ const Dashboard: React.FC<DashboardProps> = ({
           loading="eager"
           decoding="async"
           fetchPriority="high"
-          className={`pointer-events-none absolute inset-0 h-full w-full select-none object-fill ${showAnimations ? 'mq-scene-drift' : ''}`}
+          className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
+        />
+
+        {/* The source artwork includes a legacy three-item footer. Mask that
+            artwork before rendering the live four-item navigation below. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 top-[86%] z-[8] bg-[#040d2d]"
         />
 
         {showAnimations && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -259,7 +270,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         <div
           aria-label="Quick access"
-          className={`absolute left-[4%] right-[4%] top-[86.3%] z-30 grid grid-cols-3 gap-1.5 ${showAnimations ? 'mq-shortcut-dock' : ''}`}
+          className={`absolute left-[4%] right-[4%] top-[86.3%] z-40 grid grid-cols-3 gap-1.5 ${showAnimations ? 'mq-shortcut-dock' : ''}`}
         >
           <button
             type="button"
@@ -290,44 +301,12 @@ const Dashboard: React.FC<DashboardProps> = ({
           </button>
         </div>
 
-        <nav aria-label="Primary navigation" className="absolute inset-x-0 bottom-0 z-20 grid h-[12%] grid-cols-4 border-t border-cyan-200/15 bg-[#061638] px-1">
-          <button
-            type="button"
-            aria-label="Math Quest home"
-            aria-current="page"
-            className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-cyan-300 outline-none transition hover:bg-cyan-300/10 focus-visible:ring-4 focus-visible:ring-cyan-300/90"
-          >
-            <Home className="h-5 w-5" />
-            <span className="text-[9px] font-black uppercase tracking-tight">Math Quest</span>
-          </button>
-          <button
-            type="button"
-            aria-label="Open Galaxy Map"
-            onClick={() => onNavigate('map')}
-            className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-white/55 outline-none transition hover:bg-cyan-300/10 hover:text-cyan-100 focus-visible:ring-4 focus-visible:ring-cyan-300/90"
-          >
-            <Map className="h-5 w-5" />
-            <span className="text-[9px] font-black uppercase tracking-tight">Galaxy Map</span>
-          </button>
-          <button
-            type="button"
-            aria-label="Open pets"
-            onClick={() => onNavigate('pet')}
-            className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-white/55 outline-none transition hover:bg-emerald-300/10 hover:text-emerald-100 focus-visible:ring-4 focus-visible:ring-emerald-300/90"
-          >
-            <PawPrint className="h-5 w-5" />
-            <span className="text-[9px] font-black uppercase tracking-tight">Pets</span>
-          </button>
-          <button
-            type="button"
-            aria-label="Open settings"
-            onClick={() => setSettingsOpen(true)}
-            className="flex h-full flex-col items-center justify-end gap-1 rounded-t-xl pb-3 text-white/55 outline-none transition hover:bg-cyan-300/10 hover:text-cyan-100 focus-visible:ring-4 focus-visible:ring-cyan-300/90"
-          >
-            <Settings className="h-5 w-5" />
-            <span className="text-[9px] font-black uppercase tracking-tight">Settings</span>
-          </button>
-        </nav>
+        <PrimaryNavigation
+          activeScreen={settingsOpen ? 'settings' : 'dashboard'}
+          onNavigate={onNavigate}
+          onOpenSettings={() => setSettingsOpen(true)}
+          variant="dashboard"
+        />
 
         <button
           type="button"
@@ -443,6 +422,39 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               <p className="mt-3 text-sm text-blue-100/85">Level {player.level} · {player.xp} XP · {dailyStreak}-day streak</p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  aria-pressed={player.hapticsEnabled !== false}
+                  onClick={onToggleHaptics}
+                  className={`flex items-center justify-between gap-2 rounded-xl border p-3 text-left transition ${player.hapticsEnabled !== false ? 'border-cyan-200/35 bg-cyan-300/10 text-cyan-50' : 'border-white/10 bg-black/20 text-white/55'}`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <Vibrate className="h-4 w-4 shrink-0" />
+                    <span className="min-w-0">
+                      <span className="block text-xs font-black">Haptics</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider opacity-60">{player.hapticsEnabled !== false ? 'On' : 'Off'}</span>
+                    </span>
+                  </span>
+                  {player.hapticsEnabled !== false ? <Vibrate className="h-4 w-4 shrink-0 opacity-70" /> : <span className="text-[10px] font-black">OFF</span>}
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={player.musicEnabled !== false}
+                  onClick={onToggleMusic}
+                  className={`flex items-center justify-between gap-2 rounded-xl border p-3 text-left transition ${player.musicEnabled !== false ? 'border-violet-200/35 bg-violet-300/10 text-violet-50' : 'border-white/10 bg-black/20 text-white/55'}`}
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    {player.musicEnabled !== false ? <Volume2 className="h-4 w-4 shrink-0" /> : <VolumeX className="h-4 w-4 shrink-0" />}
+                    <span className="min-w-0">
+                      <span className="block text-xs font-black">Music</span>
+                      <span className="block text-[10px] font-bold uppercase tracking-wider opacity-60">{player.musicEnabled !== false ? 'On' : 'Off'}</span>
+                    </span>
+                  </span>
+                  {player.musicEnabled !== false ? <span className="text-[10px] font-black">ON</span> : <VolumeX className="h-4 w-4 shrink-0 opacity-70" />}
+                </button>
+              </div>
+              <p className="mt-2 text-[10px] font-bold text-white/45">Music controls menu and gameplay tracks. Sound effects stay available.</p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button type="button" onClick={() => { setSettingsOpen(false); onNavigate('map'); }} className="rounded-xl border border-cyan-200/25 bg-cyan-300/10 p-3 text-left text-sm font-black text-cyan-50">Galaxy Map</button>
                 <button type="button" onClick={() => { setSettingsOpen(false); onNavigate('achievements'); }} className="rounded-xl border border-violet-200/25 bg-violet-300/10 p-3 text-left text-sm font-black text-violet-50">Badges</button>

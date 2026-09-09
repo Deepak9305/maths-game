@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BarChart3, Calculator, CheckCircle, Grid2X2, Lock, Map, Rocket, Square, Target } from 'lucide-react';
 import { GameMode, ModeDifficulty, PlayerState, SudokuSize } from '../types';
 import { GAME_MODE_DEFINITIONS, getGalaxyMapDifficulty, getGalaxyMapDifficultyLabel, PRIMARY_GAME_MODES } from '../services/modeService';
+import PrimaryNavigation, { NavigationDestination } from '../components/PrimaryNavigation';
 
 type PrimaryMode = Exclude<GameMode, 'survival'>;
 
@@ -9,6 +10,8 @@ interface MapScreenProps {
   player: PlayerState;
   onStartMode: (mode: PrimaryMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize, survival: boolean, routeLevel?: number) => void;
   onClose: () => void;
+  onNavigate: (screen: NavigationDestination) => void;
+  onOpenSettings: () => void;
 }
 
 const MODE_ICONS: Record<PrimaryMode, React.ComponentType<{ className?: string }>> = {
@@ -115,7 +118,7 @@ const getPlanetColors = (level: number, mode: PrimaryMode) => {
   return planets[(level - 1) % planets.length];
 };
 
-const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) => {
+const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose, onNavigate, onOpenSettings }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedMode, setSelectedMode] = useState<PrimaryMode>('quick-calc');
   const [sudokuSize, setSudokuSize] = useState<SudokuSize>(4);
@@ -527,7 +530,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
 
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-3"
-        style={{ paddingBottom: 'calc(.75rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
       >
         <div
           aria-label={`${selectedDefinition.name} route progress: level ${modeLevel} of ${TOTAL_LEVELS}`}
@@ -553,6 +556,8 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
           </div>
         </div>
       </div>
+
+      <PrimaryNavigation activeScreen="map" onNavigate={onNavigate} onOpenSettings={onOpenSettings} />
 
       {launchLevel !== null && (
         <div className="fixed inset-0 z-[60] flex items-end bg-black/85 p-4 pt-24">
