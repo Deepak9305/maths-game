@@ -40,20 +40,12 @@ const MODE_CARD_DESCRIPTIONS: Record<PrimaryMode, string> = {
   'target-puzzle': 'Match the equation to the target.'
 };
 
-const MODE_ART_CLIPS: Record<PrimaryMode, string> = {
-  'square-sprint': 'circle(10% at 50% 32%)',
-  'quick-calc': 'circle(14% at 20% 41%)',
-  'log-lab': 'circle(10% at 79% 41%)',
-  'mini-sudoku': 'circle(11% at 22% 56%)',
-  'target-puzzle': 'circle(11% at 78% 56%)'
-};
-
-const MODE_ART_ORIGINS: Record<PrimaryMode, string> = {
-  'square-sprint': '50% 32%',
-  'quick-calc': '20% 41%',
-  'log-lab': '79% 41%',
-  'mini-sudoku': '22% 56%',
-  'target-puzzle': '78% 56%'
+const MODE_GLOW_POSITIONS: Record<PrimaryMode, { left: string; top: string; color: string }> = {
+  'square-sprint': { left: '50%', top: '32%', color: 'rgba(167, 139, 250, .78)' },
+  'quick-calc': { left: '20%', top: '41%', color: 'rgba(34, 211, 238, .82)' },
+  'log-lab': { left: '79%', top: '41%', color: 'rgba(52, 211, 153, .78)' },
+  'mini-sudoku': { left: '22%', top: '56%', color: 'rgba(251, 146, 60, .8)' },
+  'target-puzzle': { left: '78%', top: '56%', color: 'rgba(251, 113, 133, .8)' }
 };
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -99,33 +91,17 @@ const Dashboard: React.FC<DashboardProps> = ({
         aria-label="Math Quest mission hub"
       >
         <style>{`
-          @keyframes mq-float-gentle {
-            0%, 100% { transform: translate3d(0, 0, 0); }
-            50% { transform: translate3d(0, -6px, 0); }
+          @keyframes mq-ambient-drift {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: .28; }
+            50% { transform: translate3d(0, -5px, 0) scale(1.04); opacity: .52; }
           }
-          @keyframes mq-float-reverse {
-            0%, 100% { transform: translate3d(0, 0, 0); }
-            50% { transform: translate3d(0, 4px, 0); }
-          }
-          @keyframes mq-logo-float {
-            0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-            50% { transform: translate3d(0, -4px, 0) scale(1.018); }
-          }
-          @keyframes mq-hud-breathe {
-            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(125, 211, 252, 0)); }
-            50% { filter: brightness(1.08) drop-shadow(0 0 11px rgba(125, 211, 252, .46)); }
-          }
-          @keyframes mq-console-charge {
-            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(34, 211, 238, 0)); transform: scale(1); }
-            50% { filter: brightness(1.18) drop-shadow(0 0 17px rgba(34, 211, 238, .8)); transform: scale(1.028); }
-          }
-          @keyframes mq-selected-pulse {
-            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(251, 191, 36, 0)); transform: scale(1); }
-            50% { filter: brightness(1.14) drop-shadow(0 0 17px rgba(251, 191, 36, .82)); transform: scale(1.03); }
+          @keyframes mq-mode-glow {
+            0%, 100% { transform: translate3d(-50%, -50%, 0) scale(.92); opacity: .34; }
+            50% { transform: translate3d(-50%, -50%, 0) scale(1.08); opacity: .7; }
           }
           @keyframes mq-launch-breathe {
-            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(251, 146, 60, 0)); }
-            50% { filter: brightness(1.18) drop-shadow(0 0 19px rgba(251, 146, 60, .9)); }
+            0%, 100% { opacity: .08; transform: scaleX(.94); }
+            50% { opacity: .28; transform: scaleX(1); }
           }
           @keyframes mq-label-drift {
             0%, 100% { transform: translate3d(0, 0, 0); opacity: .78; }
@@ -149,12 +125,8 @@ const Dashboard: React.FC<DashboardProps> = ({
             0%, 100% { opacity: .12; transform: scale(.88); }
             50% { opacity: .7; transform: scale(1.12); }
           }
-          .mq-float-gentle { animation: mq-float-gentle 3.8s ease-in-out infinite; }
-          .mq-float-reverse { animation: mq-float-reverse 4.6s ease-in-out infinite; }
-          .mq-logo-float { animation: mq-logo-float 4.8s ease-in-out infinite; transform-origin: 50% 17%; }
-          .mq-hud-breathe { animation: mq-hud-breathe 3.6s ease-in-out infinite; }
-          .mq-console-charge { animation: mq-console-charge 2.8s ease-in-out infinite; transform-origin: 50% 48%; }
-          .mq-selected-pulse { animation: mq-selected-pulse 2.2s ease-in-out infinite; }
+          .mq-ambient-drift { animation: mq-ambient-drift 4.8s ease-in-out infinite; }
+          .mq-mode-glow { animation: mq-mode-glow 2.6s ease-in-out infinite; }
           .mq-launch-breathe { animation: mq-launch-breathe 2.4s ease-in-out infinite; }
           .mq-mode-label { animation: mq-label-drift 3.2s ease-in-out infinite; }
           .mq-star-twinkle { animation: mq-star-twinkle 2.8s ease-in-out infinite; }
@@ -162,7 +134,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           .mq-shortcut-dock { animation: mq-shortcut-dock 4.2s ease-in-out infinite; }
           .mq-console-ping { animation: mq-console-ping 2.8s ease-in-out infinite; transform-origin: center; }
           @media (prefers-reduced-motion: reduce) {
-            .mq-float-gentle, .mq-float-reverse, .mq-logo-float, .mq-hud-breathe, .mq-console-charge, .mq-selected-pulse, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock, .mq-console-ping { animation: none !important; }
+            .mq-ambient-drift, .mq-mode-glow, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock, .mq-console-ping { animation: none !important; }
           }
         `}</style>
         <img
@@ -170,77 +142,27 @@ const Dashboard: React.FC<DashboardProps> = ({
           alt=""
           aria-hidden="true"
           draggable={false}
+          loading="eager"
           decoding="async"
+          fetchPriority="high"
           className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
         />
 
         {showAnimations && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-hud-breathe absolute inset-0 h-full w-full select-none object-fill"
-            style={{ clipPath: 'inset(0 0 86% 0)' }}
-          />
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-logo-float absolute inset-0 h-full w-full select-none object-fill"
-            style={{ clipPath: 'circle(13% at 50% 17%)' }}
-          />
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-float-gentle absolute inset-0 h-full w-full select-none object-fill"
-            style={{ clipPath: 'circle(9% at 50% 32%)' }}
-          />
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-selected-pulse absolute inset-0 h-full w-full select-none object-fill"
-            style={{ clipPath: MODE_ART_CLIPS[selectedMode], transformOrigin: MODE_ART_ORIGINS[selectedMode] }}
-          />
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-float-reverse absolute inset-0 h-full w-full select-none object-fill"
-            style={{ clipPath: 'circle(10% at 79% 41%)' }}
-          />
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-float-gentle absolute inset-0 h-full w-full select-none object-fill"
-            style={{ animationDelay: '-1.3s', clipPath: 'circle(11% at 22% 56%)' }}
-          />
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-float-reverse absolute inset-0 h-full w-full select-none object-fill"
-            style={{ animationDelay: '-2.1s', clipPath: 'circle(11% at 78% 56%)' }}
-          />
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-console-charge absolute inset-0 h-full w-full select-none object-fill"
-            style={{ clipPath: 'circle(15% at 50% 48%)' }}
+          <div className="mq-ambient-drift absolute left-[12%] top-[19%] h-[22%] w-[76%] rounded-full bg-cyan-300/10" />
+          <div
+            className="mq-mode-glow absolute aspect-square w-[24%] rounded-full border border-white/20"
+            style={{
+              left: MODE_GLOW_POSITIONS[selectedMode].left,
+              top: MODE_GLOW_POSITIONS[selectedMode].top,
+              background: `radial-gradient(circle, ${MODE_GLOW_POSITIONS[selectedMode].color} 0%, transparent 72%)`,
+              boxShadow: `0 0 24px ${MODE_GLOW_POSITIONS[selectedMode].color}`
+            }}
           />
           <div className="mq-console-ping absolute left-[38%] top-[40%] aspect-square w-[24%] rounded-full border border-cyan-200/55 shadow-[0_0_18px_rgba(103,232,249,.35)]" />
           <div className="mq-console-ping absolute left-[35%] top-[37%] aspect-square w-[30%] rounded-full border border-cyan-200/20" style={{ animationDelay: '-1.4s' }} />
-          <img
-            src="/assets/orbit-selector-labeled.png"
-            alt=""
-            draggable={false}
-            className="mq-launch-breathe absolute inset-0 h-full w-full select-none object-fill"
-            style={{ clipPath: 'inset(77% 13% 12% 13% round 5%)' }}
-          />
-          <div className="mq-energy-sweep absolute left-[18%] top-[27%] h-[38%] w-[64%] bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent blur-sm" />
+          <div className="mq-launch-breathe absolute left-[18%] top-[77%] h-[7%] w-[64%] rounded-full bg-orange-300/30" />
+          <div className="mq-energy-sweep absolute left-[18%] top-[27%] h-[38%] w-[64%] bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent" />
           <span className="mq-star-twinkle absolute left-[14%] top-[28%] h-1 w-1 rounded-full bg-cyan-200 shadow-[0_0_8px_2px_rgba(103,232,249,.7)]" style={{ animationDelay: '-.8s' }} />
           <span className="mq-star-twinkle absolute right-[16%] top-[23%] h-1.5 w-1.5 rounded-full bg-violet-200 shadow-[0_0_8px_2px_rgba(196,181,253,.65)]" style={{ animationDelay: '-1.7s' }} />
           <span className="mq-star-twinkle absolute left-[31%] top-[54%] h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_8px_2px_rgba(253,224,71,.65)]" style={{ animationDelay: '-2.2s' }} />

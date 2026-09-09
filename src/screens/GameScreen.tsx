@@ -171,12 +171,12 @@ const GameScreen: React.FC<GameScreenProps> = ({
             type="button"
             onClick={onExit}
             aria-label="Pause game"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-200/20 bg-[#0b1b48]/90 text-cyan-100 shadow-lg backdrop-blur-md transition hover:bg-cyan-400/15 active:scale-95"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-cyan-200/20 bg-[#0b1b48]/95 text-cyan-100 shadow-lg transition hover:bg-cyan-400/15 active:scale-95"
           >
             <Pause className="h-5 w-5" />
           </button>
 
-          <div className="min-w-0 flex-1 rounded-2xl border border-cyan-200/20 bg-[#0b1b48]/90 px-3 py-2 shadow-lg backdrop-blur-md">
+          <div className="min-w-0 flex-1 rounded-2xl border border-cyan-200/20 bg-[#0b1b48]/95 px-3 py-2 shadow-lg">
             <div className="flex items-center gap-2">
               <Icon className={`h-5 w-5 shrink-0 ${accent.icon}`} />
               <div className="min-w-0">
@@ -190,7 +190,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
           </div>
 
           {timer !== null && (
-            <div className={`flex h-11 min-w-[4.5rem] shrink-0 items-center justify-center gap-1 rounded-2xl border border-cyan-200/20 bg-[#0b1b48]/90 px-3 text-sm font-black tabular-nums text-white shadow-lg backdrop-blur-md ${timer <= 5 ? 'border-red-300/50 bg-red-400/20 text-red-100 animate-pulse' : ''}`}>
+            <div className={`flex h-11 min-w-[4.5rem] shrink-0 items-center justify-center gap-1 rounded-2xl border border-cyan-200/20 bg-[#0b1b48]/95 px-3 text-sm font-black tabular-nums text-white shadow-lg ${timer <= 5 ? 'border-red-300/50 bg-red-400/20 text-red-100 animate-pulse' : ''}`}>
               <TimerReset className="h-4 w-4" />
               {timer}s
             </div>
@@ -198,15 +198,15 @@ const GameScreen: React.FC<GameScreenProps> = ({
         </header>
 
         <div className="mt-3 grid grid-cols-3 gap-2">
-          <div className="rounded-2xl border border-cyan-200/15 bg-[#0b1b48]/85 px-3 py-2 backdrop-blur-md">
+          <div className="rounded-2xl border border-cyan-200/15 bg-[#0b1b48]/95 px-3 py-2">
             <p className="text-[9px] font-black uppercase tracking-wider text-cyan-200/55">Score</p>
             <p className="mt-1 text-lg font-black text-white tabular-nums">{score}</p>
           </div>
-          <div className={`rounded-2xl border px-3 py-2 backdrop-blur-md ${streak > 0 ? 'border-orange-300/30 bg-orange-400/10' : 'border-white/10 bg-[#0b1b48]/85'}`}>
+          <div className={`rounded-2xl border px-3 py-2 ${streak > 0 ? 'border-orange-300/30 bg-orange-400/10' : 'border-white/10 bg-[#0b1b48]/95'}`}>
             <p className="text-[9px] font-black uppercase tracking-wider text-orange-200/60">Streak</p>
             <p className="mt-1 flex items-center gap-1 text-lg font-black text-orange-100 tabular-nums"><Zap className="h-4 w-4" />{streak}</p>
           </div>
-          <div className="rounded-2xl border border-cyan-200/15 bg-[#0b1b48]/85 px-3 py-2 backdrop-blur-md">
+          <div className="rounded-2xl border border-cyan-200/15 bg-[#0b1b48]/95 px-3 py-2">
             <p className="text-[9px] font-black uppercase tracking-wider text-cyan-200/55">Lives</p>
             <div className="mt-1 flex min-h-7 items-center gap-1" aria-label={currentLivesLabel}>
               {currentLives === null ? (

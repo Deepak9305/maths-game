@@ -154,17 +154,17 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
   };
 
   // Generate background decorations (Nebulas) - Reduced for mobile performance
-  const decorations = Array.from({ length: 8 }).map((_, i) => ({
+  const decorations = React.useMemo(() => Array.from({ length: 5 }).map((_, i) => ({
     id: i,
     x: pseudoRandom(i * 10) * 100,
     y: pseudoRandom(i * 10 + 1) * containerHeight,
     size: pseudoRandom(i * 10 + 2) * 400 + 200,
     color: ['bg-purple-900/40', 'bg-blue-900/40', 'bg-fuchsia-900/30', 'bg-indigo-900/40'][Math.floor(pseudoRandom(i * 10 + 3) * 4)],
     opacity: pseudoRandom(i * 10 + 4) * 0.4 + 0.2,
-  }));
+  })), [containerHeight]);
 
   // Generate Stars - Reduced for performance
-  const stars = Array.from({ length: 150 }).map((_, i) => {
+  const stars = React.useMemo(() => Array.from({ length: 90 }).map((_, i) => {
     const size = pseudoRandom(i * 20 + 2) * 2.5 + 0.5;
     const colors = ['bg-white', 'bg-blue-100', 'bg-purple-100', 'bg-yellow-50'];
     return {
@@ -174,22 +174,22 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
       size,
       color: colors[Math.floor(pseudoRandom(i * 20 + 5) * colors.length)],
       opacity: pseudoRandom(i * 20 + 3) * 0.7 + 0.1,
-      twinkle: pseudoRandom(i * 20 + 4) > 0.7, // 30% of stars twinkle
+      twinkle: pseudoRandom(i * 20 + 4) > 0.88, // Keep only a few animated stars on mobile
     };
-  });
+  }), [containerHeight]);
 
   // Generate Background Planets
-  const bgPlanets = Array.from({ length: 6 }).map((_, i) => ({
+  const bgPlanets = React.useMemo(() => Array.from({ length: 4 }).map((_, i) => ({
     id: i,
     x: pseudoRandom(i * 30) * 100,
     y: pseudoRandom(i * 30 + 1) * containerHeight,
     size: pseudoRandom(i * 30 + 2) * 120 + 40,
     color: ['from-emerald-500/60 to-teal-900/60', 'from-red-500/60 to-rose-900/60', 'from-indigo-500/60 to-purple-900/60', 'from-amber-500/60 to-orange-900/60', 'from-cyan-400/60 to-blue-800/60', 'from-fuchsia-500/60 to-pink-900/60'][Math.floor(pseudoRandom(i * 30 + 3) * 6)],
     opacity: pseudoRandom(i * 30 + 4) * 0.5 + 0.2,
-  }));
+  })), [containerHeight]);
 
   // Generate Asteroids
-  const asteroids = Array.from({ length: 15 }).map((_, i) => ({
+  const asteroids = React.useMemo(() => Array.from({ length: 8 }).map((_, i) => ({
     id: i,
     x: pseudoRandom(i * 40) * 100,
     y: pseudoRandom(i * 40 + 1) * containerHeight,
@@ -197,10 +197,10 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
     rotation: pseudoRandom(i * 40 + 3) * 360,
     color: ['bg-stone-600', 'bg-slate-600', 'bg-zinc-600', 'bg-neutral-600', 'bg-amber-900/80', 'bg-purple-900/80'][Math.floor(pseudoRandom(i * 40 + 5) * 6)],
     opacity: pseudoRandom(i * 40 + 4) * 0.6 + 0.2,
-  }));
+  })), [containerHeight]);
 
   // Generate Comets
-  const comets = Array.from({ length: 5 }).map((_, i) => ({
+  const comets = React.useMemo(() => Array.from({ length: 3 }).map((_, i) => ({
     id: i,
     x: pseudoRandom(i * 50) * 100,
     y: pseudoRandom(i * 50 + 1) * containerHeight,
@@ -208,7 +208,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
     angle: pseudoRandom(i * 50 + 3) * 360, // 0 to 360 degrees
     color: ['rgba(56,189,248,', 'rgba(167,139,250,', 'rgba(52,211,153,', 'rgba(251,146,60,', 'rgba(255,255,255,'][Math.floor(pseudoRandom(i * 50 + 5) * 5)],
     opacity: pseudoRandom(i * 50 + 4) * 0.7 + 0.3,
-  }));
+  })), [containerHeight]);
 
   // Auto-scroll to current level
   useEffect(() => {
