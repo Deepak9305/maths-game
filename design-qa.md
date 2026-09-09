@@ -44,6 +44,7 @@
 - `npm run build`: passed.
 - Browser smoke test at 393 × 852: source-matched dashboard rendered, a live `mq-float-gentle` animation was detected, Target Puzzle opened its mission setup dialog, and Command Deck exposed Missions, Badges, Pet lab, and Shop. No console errors were reported.
 - Rewarded-ad paths: win completion alone exposes the Double Coins action; final-life loss now opens a one-time Continue Mission reward dialog. Native ad delivery itself remains dependent on an installed build and an available ad inventory.
+- Survival smoke test: Quick Calc, Square Sprint, Log Lab, Mini Sudoku, and Target Puzzle each entered Survival from the mission setup dialog. Five correct Quick Calc Survival answers advanced the UI from Wave 1 to Wave 2, confirming the endless wave loop and escalating-wave state.
 
 ## Residual scope
 

@@ -6,7 +6,7 @@ interface DashboardProps {
   player: PlayerState;
   dailyStreak: number;
   friendCode: string;
-  onStartGame: (mode: GameMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize) => void;
+  onStartGame: (mode: GameMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize, survival: boolean) => void;
   onNavigate: (screen: 'shop' | 'achievements' | 'privacy' | 'map' | 'pet') => void;
   onShare: () => void;
   onJoinChallenge: (code: string) => void;
@@ -44,6 +44,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [selectedMode, setSelectedMode] = useState<GameMode>('quick-calc');
   const [selectedDifficulty, setSelectedDifficulty] = useState<ModeDifficulty>('standard');
   const [sudokuSize, setSudokuSize] = useState<SudokuSize>(4);
+  const [survivalMode, setSurvivalMode] = useState(false);
   const [missionSetupOpen, setMissionSetupOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [challengeInput, setChallengeInput] = useState('');
@@ -53,7 +54,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const startSelectedMission = () => {
     setMissionSetupOpen(false);
-    onStartGame(selectedMode, selectedDifficulty, sudokuSize);
+    onStartGame(selectedMode, selectedDifficulty, sudokuSize, survivalMode);
   };
 
   const chooseMode = (mode: PrimaryMode) => {
@@ -237,6 +238,26 @@ const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               <p className="mt-3 text-sm leading-6 text-blue-100/85">{selectedDefinition.description}</p>
+              <p className="mt-4 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Run type</p>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  aria-pressed={!survivalMode}
+                  onClick={() => setSurvivalMode(false)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-black transition ${!survivalMode ? 'border-cyan-200 bg-cyan-300 text-slate-950' : 'border-cyan-200/25 bg-white/5 text-cyan-50 hover:bg-white/10'}`}
+                >
+                  Mission
+                </button>
+                <button
+                  type="button"
+                  aria-pressed={survivalMode}
+                  onClick={() => setSurvivalMode(true)}
+                  className={`rounded-xl border px-3 py-2 text-xs font-black transition ${survivalMode ? 'border-red-200 bg-red-400 text-slate-950' : 'border-red-200/25 bg-red-400/10 text-red-100 hover:bg-red-400/20'}`}
+                >
+                  Survival ∞
+                </button>
+              </div>
+              {survivalMode && <p className="mt-2 text-xs leading-5 text-red-100/80">Unlimited waves. Every five answers raises the pressure, with faster timers and harder problems.</p>}
               <p className="mt-4 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Difficulty</p>
               <div className="mt-2 grid grid-cols-3 gap-2">
                 {(Object.keys(MODE_DIFFICULTY_LABELS) as ModeDifficulty[]).map(difficulty => (

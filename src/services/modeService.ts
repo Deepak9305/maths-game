@@ -112,6 +112,27 @@ export const MODE_DIFFICULTY_LABELS: Record<ModeDifficulty, string> = {
 export const getModeConfig = (mode: GameMode, difficulty: ModeDifficulty): ModeSessionConfig =>
   MODE_DIFFICULTY_CONFIGS[mode][difficulty];
 
+export const getSurvivalConfig = (
+  mode: GameMode,
+  difficulty: ModeDifficulty,
+  wave = 1
+): ModeSessionConfig => {
+  const baseMode: Exclude<GameMode, 'survival'> = mode === 'survival' ? 'quick-calc' : mode;
+  const base = getModeConfig(baseMode, difficulty);
+  const fasterBy = Math.min(6, Math.floor((wave - 1) / 3));
+  const baseTime = base.time ?? (baseMode === 'mini-sudoku' ? null : 12);
+
+  return {
+    ...base,
+    mode: baseMode,
+    name: `${base.name} Survival`,
+    time: baseTime === null ? null : Math.max(5, baseTime - fasterBy),
+    questions: Number.POSITIVE_INFINITY,
+    lives: 1,
+    description: `Endless ${base.name} waves. Wave ${wave} gets tougher and faster.`
+  };
+};
+
 export const modeDifficultyToLegacyDifficulty = (difficulty: ModeDifficulty): Difficulty => {
   if (difficulty === 'beginner') return 'easy';
   if (difficulty === 'expert') return 'hard';
@@ -137,8 +158,9 @@ const subscript = (value: number) => String(value).split('').map(char => (
   }[char] || char
 )).join('');
 
-const generateSquareQuestion = (difficulty: ModeDifficulty, rng: () => number): Question => {
-  const maxBase = difficulty === 'beginner' ? 12 : difficulty === 'standard' ? 20 : 35;
+const generateSquareQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
+  const startingMax = difficulty === 'beginner' ? 12 : difficulty === 'standard' ? 20 : 35;
+  const maxBase = startingMax + (survival ? Math.min(80, (wave - 1) * 4) : 0);
   const base = randomInt(2, maxBase, rng);
   const isRoot = rng() > 0.5;
   if (isRoot) {
@@ -147,10 +169,12 @@ const generateSquareQuestion = (difficulty: ModeDifficulty, rng: () => number): 
   return { display: `${base}² = ?`, answer: base * base, visualAid: null };
 };
 
-const generateLogQuestion = (difficulty: ModeDifficulty, rng: () => number): Question => {
-  const bases = difficulty === 'beginner' ? [2, 10] : difficulty === 'standard' ? [2, 3, 5, 10] : [2, 3, 4, 5, 10];
+const generateLogQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
+  const baseSet = difficulty === 'beginner' ? [2, 10] : difficulty === 'standard' ? [2, 3, 5, 10] : [2, 3, 4, 5, 10];
+  const bases = survival && wave >= 4 ? [...baseSet, 7] : baseSet;
   const base = bases[randomInt(0, bases.length - 1, rng)];
-  const maxExponent = difficulty === 'beginner' ? 3 : difficulty === 'standard' ? 4 : 5;
+  const startingExponent = difficulty === 'beginner' ? 3 : difficulty === 'standard' ? 4 : 5;
+  const maxExponent = startingExponent + (survival ? Math.min(7, Math.floor((wave - 1) / 2)) : 0);
   const exponent = randomInt(1, maxExponent, rng);
   return {
     display: `log${subscript(base)} ${base ** exponent} = ?`,
@@ -159,11 +183,13 @@ const generateLogQuestion = (difficulty: ModeDifficulty, rng: () => number): Que
   };
 };
 
-const generateTargetQuestion = (difficulty: ModeDifficulty, rng: () => number): Question => {
-  const max = difficulty === 'beginner' ? 6 : difficulty === 'standard' ? 9 : 12;
+const generateTargetQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
+  const startingMax = difficulty === 'beginner' ? 6 : difficulty === 'standard' ? 9 : 12;
+  const max = startingMax + (survival ? Math.min(30, (wave - 1) * 2) : 0);
   const a = randomInt(2, max, rng);
   const b = randomInt(2, max, rng);
-  const c = randomInt(2, difficulty === 'expert' ? 8 : 6, rng);
+  const cStartingMax = difficulty === 'expert' ? 8 : 6;
+  const c = randomInt(2, cStartingMax + (survival ? Math.min(18, wave - 1) : 0), rng);
   const target = a + b * c;
   const candidates = [
     { label: `${a} + ${b} × ${c}`, value: target },
@@ -192,21 +218,22 @@ export const generateModeQuestion = (
   mode: GameMode,
   difficulty: ModeDifficulty,
   rng: () => number = Math.random,
-  wave = 1
+  wave = 1,
+  survival = false
 ): Question => {
   switch (mode) {
     case 'square-sprint':
-      return generateSquareQuestion(difficulty, rng);
+      return generateSquareQuestion(difficulty, rng, wave, survival);
     case 'log-lab':
-      return generateLogQuestion(difficulty, rng);
+      return generateLogQuestion(difficulty, rng, wave, survival);
     case 'target-puzzle':
-      return generateTargetQuestion(difficulty, rng);
+      return generateTargetQuestion(difficulty, rng, wave, survival);
     case 'survival':
       return generateQuestion('survival', rng, wave);
     case 'quick-calc':
     case 'mini-sudoku':
     default:
-      return generateQuestion(modeDifficultyToLegacyDifficulty(difficulty), rng, 1);
+      return generateQuestion(survival ? 'survival' : modeDifficultyToLegacyDifficulty(difficulty), rng, wave);
   }
 };
 
@@ -222,13 +249,17 @@ const createSudokuSolution = (size: SudokuSize, rng: () => number): number[][] =
 export const generateSudokuPuzzle = (
   size: SudokuSize,
   difficulty: ModeDifficulty,
-  rng: () => number = Math.random
+  rng: () => number = Math.random,
+  wave = 1,
+  survival = false
 ): SudokuPuzzle => {
   const solution = createSudokuSolution(size, rng);
   const puzzle = solution.map(row => [...row]);
-  const removalCount = size === 4
+  const baseRemovalCount = size === 4
     ? difficulty === 'beginner' ? 5 : difficulty === 'standard' ? 7 : 9
     : difficulty === 'beginner' ? 34 : difficulty === 'standard' ? 45 : 54;
+  const maxRemovals = size === 4 ? 12 : 64;
+  const removalCount = Math.min(maxRemovals, baseRemovalCount + (survival ? Math.floor((wave - 1) * (size === 4 ? 1 : 2)) : 0));
 
   const cells = shuffle(Array.from({ length: size * size }, (_, index) => index), rng);
   cells.slice(0, removalCount).forEach(index => {

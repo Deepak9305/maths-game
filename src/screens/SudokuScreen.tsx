@@ -11,6 +11,8 @@ interface SudokuScreenProps {
   feedback: string;
   shake: boolean;
   showAnimations: boolean;
+  currentWave?: number;
+  isWaveTransition?: boolean;
   onSelectCell: (row: number, column: number) => void;
   onInput: (value: number) => void;
   onErase: () => void;
@@ -26,6 +28,8 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
   feedback,
   shake,
   showAnimations,
+  currentWave,
+  isWaveTransition,
   onSelectCell,
   onInput,
   onErase,
@@ -59,6 +63,17 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
 
   return (
     <div className="fixed inset-0 z-40 overflow-y-auto bg-[#050d29] text-white font-['Lexend']">
+      {isWaveTransition && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/90 px-6 text-center animate-fade-in">
+          <div>
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl border border-red-300/40 bg-red-400/15 text-red-200 shadow-[0_0_40px_rgba(248,113,113,.25)]">
+              <Grid2X2 className="h-10 w-10 animate-pulse" />
+            </div>
+            <h2 className="font-['Press_Start_2P'] text-3xl text-red-200 sm:text-5xl">Wave {currentWave}</h2>
+            <p className="mt-4 text-sm font-bold uppercase tracking-[0.28em] text-white/60">New puzzle incoming</p>
+          </div>
+        </div>
+      )}
       <div className="mx-auto flex min-h-full w-full max-w-xl flex-col px-4 py-4 sm:px-6 sm:py-6" style={{ paddingBottom: 'max(1.5rem, env(safe-area-inset-bottom, 0px))' }}>
         <header className="flex items-center justify-between gap-3">
           <button type="button" onClick={onExit} aria-label="Pause game" className="flex h-11 w-11 items-center justify-center rounded-2xl border border-cyan-300/20 bg-[#0b1b48] text-cyan-100 transition hover:bg-cyan-400/15 active:scale-95">
@@ -68,7 +83,7 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
             <Grid2X2 className="h-5 w-5 text-orange-300" />
             <div>
               <p className="font-['Press_Start_2P'] text-sm text-white">Mini Sudoku</p>
-              <p className="mt-1 text-center text-xs font-bold uppercase tracking-wider text-cyan-200/60">{size} × {size} grid</p>
+              <p className="mt-1 text-center text-xs font-bold uppercase tracking-wider text-cyan-200/60">{size} × {size} grid{currentWave ? ` · Wave ${currentWave}` : ''}</p>
             </div>
           </div>
           <div className="flex items-center gap-1.5 rounded-2xl border border-red-300/20 bg-red-400/10 px-3 py-2 text-xs font-black text-red-100">
