@@ -78,7 +78,7 @@ const CompletionScreen: React.FC<CompletionScreenProps> = ({
       }}
     >
       <div className="mx-auto flex min-h-[calc(100dvh-2.5rem)] max-w-md items-center">
-        <section className="w-full rounded-[2rem] border border-cyan-200/25 bg-[#0b1b48]/95 p-5 text-center shadow-2xl backdrop-blur-md sm:p-7">
+        <section className="w-full rounded-[2rem] border border-cyan-200/25 bg-[#0b1b48]/98 p-5 text-center shadow-2xl sm:p-7">
           <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl border border-yellow-300/40 bg-yellow-300/10 text-yellow-200 shadow-[0_0_32px_rgba(250,204,21,.2)]">
             <Trophy className="h-11 w-11" />
           </div>

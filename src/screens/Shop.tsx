@@ -58,11 +58,11 @@ const Shop: React.FC<ShopProps> = ({
         <button onClick={onClose} aria-label="Close shop" className="mb-6 bg-white/20 hover:bg-white/30 p-3 rounded-full transition-colors">
           <X className="w-6 h-6 text-white" />
         </button>
-        <div className="bg-white/95 backdrop-blur-md rounded-3xl p-4 md:p-8 shadow-2xl overflow-y-auto max-h-[calc(100dvh-7rem)]">
+        <div className="bg-white rounded-3xl p-4 md:p-8 shadow-2xl overflow-y-auto max-h-[calc(100dvh-7rem)]">
           <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">🚀 Pilot Shop</h2>
 
           {/* Coin Balance & Ad Button */}
-          <div className="flex flex-col items-center justify-center gap-4 mb-8 sticky top-0 bg-white/90 p-4 rounded-xl z-10 shadow-sm backdrop-blur">
+          <div className="flex flex-col items-center justify-center gap-4 mb-8 sticky top-0 bg-white p-4 rounded-xl z-10 shadow-sm">
              <span className="inline-block bg-yellow-100 text-yellow-800 px-6 py-2 rounded-full font-bold text-2xl border-4 border-yellow-300 shadow-sm">
                 💰 {coins}
              </span>

@@ -236,7 +236,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
 
   return (
     <div
-      className="relative flex h-[100dvh] flex-col overflow-hidden bg-slate-950 to-black"
+      className="relative flex h-[100dvh] min-h-0 flex-col overflow-hidden bg-slate-950 to-black"
       style={{ background: `radial-gradient(ellipse at top, ${modeTheme.glow} 0%, rgba(15, 23, 42, .96) 46%, #020617 100%)` }}
     >
       {/* Header - Fixed at top with safe area support */}
@@ -244,7 +244,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
         className="absolute top-0 left-0 right-0 z-50 p-4 pointer-events-none"
         style={{ paddingTop: 'calc(1rem + env(safe-area-inset-top, 0px))' }}
       >
-        <div className="max-w-4xl mx-auto flex flex-col bg-black/80 p-3 md:p-4 rounded-2xl backdrop-blur-xl border border-white/10 pointer-events-auto shadow-2xl gap-3">
+        <div className="max-w-4xl mx-auto flex flex-col bg-black/90 p-3 md:p-4 rounded-2xl border border-white/10 pointer-events-auto shadow-2xl gap-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 md:gap-3 min-w-0">
               <div className="p-1.5 md:p-2 bg-blue-500/20 rounded-lg border border-blue-500/30 flex-shrink-0">
@@ -313,7 +313,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
           {decorations.map(d => (
             <div
               key={`dec-${d.id}`}
-              className={`absolute rounded-full blur-[64px] ${d.color} pointer-events-none`}
+              className={`absolute rounded-full blur-[32px] ${d.color} pointer-events-none`}
               style={{
                 left: `${d.x}%`,
                 top: `${d.y}px`,
@@ -515,7 +515,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
 
                 {/* Milestone Label */}
                 {isMilestone && (isCurrent || isCompleted) && (
-                  <div className="absolute top-full mt-2 whitespace-nowrap text-xs font-black tracking-widest text-white/80 uppercase bg-black/50 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm shadow-lg">
+                  <div className="absolute top-full mt-2 whitespace-nowrap text-xs font-black tracking-widest text-white/80 uppercase bg-black/75 px-2 py-0.5 rounded-full border border-white/10 shadow-lg">
                     Sector {p.level / 10} Boss
                   </div>
                 )}
@@ -531,7 +531,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
       >
         <div
           aria-label={`${selectedDefinition.name} route progress: level ${modeLevel} of ${TOTAL_LEVELS}`}
-          className="mx-auto flex max-w-xl items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[#050d28]/95 p-3 shadow-[0_-8px_30px_rgba(2,6,23,.48)] backdrop-blur-xl"
+          className="mx-auto flex max-w-xl items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[#050d28]/98 p-3 shadow-[0_-8px_30px_rgba(2,6,23,.48)]"
         >
           <div className="flex min-w-0 items-center gap-2.5">
             <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/10 ${MODE_ACCENTS[selectedMode].icon}`}>
@@ -555,7 +555,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
       </div>
 
       {launchLevel !== null && (
-        <div className="fixed inset-0 z-[60] flex items-end bg-black/75 p-4 pt-24 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[60] flex items-end bg-black/85 p-4 pt-24">
           <section
             role="dialog"
             aria-modal="true"

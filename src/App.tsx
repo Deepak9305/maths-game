@@ -1420,10 +1420,11 @@ const App: React.FC = () => {
   };
 
   if (!isLoaded) return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex items-center justify-center">
+    <div className="flex min-h-[100dvh] items-center justify-center bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 px-6 text-center">
       <div className="text-center">
         <div className="text-6xl mb-4 animate-spin-slow">🚀</div>
-        <p className="text-white text-xl font-bold">Loading...</p>
+        <p className="text-base font-black uppercase tracking-[0.18em] text-white">Preparing your mission</p>
+        <p className="mt-2 text-xs font-bold text-cyan-100/65">Loading your cockpit…</p>
       </div>
     </div>
   );

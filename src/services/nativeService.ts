@@ -24,6 +24,7 @@ export const nativeService = {
 
         // 2. Style Status Bar (Match the deep purple background #312e81)
         try {
+          await StatusBar.setOverlaysWebView({ overlay: false });
           await StatusBar.setStyle({ style: Style.Dark });
           await StatusBar.setBackgroundColor({ color: '#312e81' });
         } catch (e) {

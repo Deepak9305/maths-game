@@ -20,9 +20,9 @@ const StreakBoard: React.FC<StreakBoardProps> = ({ streak }) => {
   };
 
   return (
-    <div className="bg-gradient-to-b from-orange-500/20 to-red-600/20 backdrop-blur-md rounded-3xl p-5 border border-orange-400/30 relative overflow-hidden group h-full flex flex-col justify-between">
+    <div className="bg-gradient-to-b from-orange-500/25 to-red-600/25 rounded-3xl p-5 border border-orange-400/30 relative overflow-hidden group h-full flex flex-col justify-between">
       {/* Background glow */}
-      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-orange-500/20 rounded-full blur-3xl group-hover:bg-orange-500/30 transition-all duration-500"></div>
+      <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-orange-500/20 rounded-full group-hover:bg-orange-500/30 transition-all duration-500"></div>
       
       <div className="flex items-center justify-between mb-4 relative z-10">
         <div>

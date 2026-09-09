@@ -182,12 +182,12 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
         }
       `}</style>
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute -right-24 bottom-32 h-80 w-80 rounded-full bg-fuchsia-500/10 blur-3xl" />
+        <div className="absolute -left-24 top-24 h-72 w-72 rounded-full bg-cyan-500/10" />
+        <div className="absolute -right-24 bottom-32 h-80 w-80 rounded-full bg-fuchsia-500/10" />
       </div>
       <div className="max-w-md mx-auto w-full flex-1 flex flex-col">
         {/* Header */}
-        <div className="relative z-10 flex justify-between items-center mb-4 bg-[#0a1942]/90 p-4 rounded-2xl backdrop-blur-md border border-cyan-200/20 shadow-[0_12px_35px_rgba(0,0,0,.22)]">
+        <div className="relative z-10 flex justify-between items-center mb-4 bg-[#0a1942]/98 p-4 rounded-2xl border border-cyan-200/20 shadow-[0_12px_35px_rgba(0,0,0,.22)]">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-200/30 bg-cyan-400/10">
               <Heart className="h-5 w-5 text-pink-300" fill="currentColor" />
@@ -219,7 +219,7 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
         </div>
 
         {/* Pet Display */}
-        <div className="relative mb-4 flex-1 flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-cyan-200/20 bg-gradient-to-b from-[#0b2362]/95 via-[#081944]/95 to-[#050c27] p-4 shadow-[0_18px_45px_rgba(0,0,0,.28)] backdrop-blur-sm sm:p-6">
+        <div className="relative mb-4 flex-1 flex flex-col items-center justify-center overflow-hidden rounded-[2rem] border border-cyan-200/20 bg-gradient-to-b from-[#0b2362]/98 via-[#081944]/98 to-[#050c27] p-4 shadow-[0_18px_45px_rgba(0,0,0,.28)] sm:p-6">
           {/* Background decoration */}
           <div className="absolute inset-0 flex items-center justify-center opacity-20">
             <div className="pet-orbit h-64 w-64 rounded-full border border-cyan-200/30 border-dashed" />

@@ -254,8 +254,8 @@ const GameScreen: React.FC<GameScreenProps> = ({
         </div>
 
         <section className={`relative mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-[2rem] border border-cyan-100/30 bg-[#f6fbff] p-4 text-center shadow-2xl ${accent.glow} ${shake ? 'animate-shake' : ''}`}>
-          <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-cyan-300/20 blur-2xl" />
-          <div className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-violet-300/20 blur-2xl" />
+          <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-cyan-300/15" />
+          <div className="pointer-events-none absolute -bottom-16 -left-10 h-32 w-32 rounded-full bg-violet-300/15" />
 
           {question.visualAid && (
             <div className="relative mb-2 flex min-h-6 max-h-16 flex-wrap justify-center gap-1.5 overflow-y-auto p-1">

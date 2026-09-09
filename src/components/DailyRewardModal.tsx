@@ -18,34 +18,34 @@ const DailyRewardModal: React.FC<DailyRewardModalProps> = ({ streak, bonus, onCl
   };
 
   return (
-    <div role="alertdialog" aria-modal="true" aria-label="Daily reward earned" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div role="alertdialog" aria-modal="true" aria-label="Daily reward earned" className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-black/90 p-3 animate-fade-in sm:p-4">
       <div aria-hidden="true"><Confetti /></div>
-      <div className="bg-gradient-to-b from-gray-900 to-black rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl border border-white/10 relative animate-bounce-in overflow-hidden">
+      <div className="relative my-auto max-h-[calc(100dvh-1.5rem)] w-full max-w-sm overflow-x-hidden overflow-y-auto rounded-3xl border border-white/10 bg-gradient-to-b from-gray-900 to-black p-5 text-center shadow-2xl animate-bounce-in sm:max-h-[calc(100dvh-2rem)] sm:p-7">
         
         {/* Background glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 -mt-20 w-40 h-40 bg-orange-500/20 rounded-full blur-3xl"></div>
+        <div className="pointer-events-none absolute left-1/2 top-0 h-28 w-28 -translate-x-1/2 -translate-y-1/3 rounded-full bg-orange-500/15"></div>
 
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2">
+        <div className="relative z-10 mx-auto -mt-10 mb-2 flex w-fit">
           <div className="bg-gradient-to-b from-orange-400 to-red-500 text-white p-4 rounded-full shadow-[0_0_20px_rgba(249,115,22,0.5)] border-4 border-gray-900">
             <Flame className="w-10 h-10 animate-pulse" fill="currentColor" />
           </div>
         </div>
 
-        <h2 className="text-3xl font-black text-white mt-8 mb-2 tracking-tight">Streak Kept!</h2>
-        <p className="text-gray-400 font-medium mb-6">You're on fire! Keep it up!</p>
+        <h2 className="mt-1 mb-2 text-3xl font-black tracking-tight text-white">Streak Kept!</h2>
+        <p className="mb-4 font-medium text-gray-400">You're on fire! Keep it up!</p>
 
-        <div className="bg-white/5 rounded-2xl p-6 mb-6 border border-white/10 relative">
-          <div className="flex justify-between items-center mb-6">
+        <div className="relative mb-4 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
              <span className="text-gray-400 font-bold uppercase text-xs tracking-wider">Current Streak</span>
              <span className={`bg-orange-500/20 px-3 py-1 rounded-lg text-sm font-black flex items-center gap-1 ${getFlameColor()}`}>
-               {streak} DAYS <Flame className="w-4 h-4" fill="currentColor" />
+               {streak} {streak === 1 ? 'DAY' : 'DAYS'} <Flame className="w-4 h-4" fill="currentColor" />
              </span>
           </div>
           
           <div className="flex flex-col items-center">
              <div className="relative">
                <span className="text-6xl mb-2 filter drop-shadow-lg relative z-10">💰</span>
-               <div className="absolute inset-0 bg-yellow-400/20 blur-xl rounded-full z-0"></div>
+               <div className="absolute inset-0 rounded-full bg-yellow-400/15 z-0"></div>
              </div>
              <span className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500 mt-2">
                +{bonus}
@@ -56,7 +56,7 @@ const DailyRewardModal: React.FC<DailyRewardModalProps> = ({ streak, bonus, onCl
 
         <button
           onClick={onClose}
-          className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-400 hover:to-red-500 text-white text-xl font-black py-4 rounded-2xl shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2"
+          className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 py-3.5 text-lg font-black text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all hover:from-orange-400 hover:to-red-500 hover:scale-[1.02] active:scale-95"
         >
           <CheckCircle className="w-6 h-6" /> Claim Reward
         </button>

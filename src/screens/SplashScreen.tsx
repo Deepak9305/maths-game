@@ -22,47 +22,47 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ playerName, setPlayerName, 
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.3
+        staggerChildren: 0.05,
+        delayChildren: 0
       }
     }
   };
 
   const itemVariants: any = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 8, opacity: 0 },
     visible: {
       y: 0,
       opacity: 1,
-      transition: { type: "spring", stiffness: 300, damping: 24 }
+      transition: { type: "spring", stiffness: 320, damping: 26, duration: 0.2 }
     }
   };
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 flex flex-col items-center justify-center p-4 overflow-hidden relative">
+    <div className="relative flex min-h-[100dvh] flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-800 p-3 sm:p-4">
       <motion.div
         className="w-full max-w-md z-10"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
-        <div className="text-center bg-white/10 backdrop-blur-md p-6 md:p-8 rounded-3xl shadow-2xl border border-white/20 relative overflow-hidden">
+        <div className="relative max-h-[calc(100dvh-1.5rem)] overflow-y-auto rounded-3xl border border-white/20 bg-white/10 p-5 text-center shadow-2xl sm:max-h-[calc(100dvh-2rem)] sm:p-7">
 
           {/* Decorative background circle */}
-          <div className="absolute -top-20 -left-20 w-40 h-40 bg-purple-500/30 rounded-full blur-3xl pointer-events-none"></div>
-          <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-blue-500/30 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="pointer-events-none absolute -left-20 -top-20 h-40 w-40 rounded-full bg-purple-500/25"></div>
+          <div className="pointer-events-none absolute -bottom-20 -right-20 h-40 w-40 rounded-full bg-blue-500/25"></div>
 
           <motion.div
             variants={itemVariants}
-            initial={{ scale: 0, rotate: -180 }}
+            initial={{ scale: 0.92, rotate: 0 }}
             animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 20, delay: 0.1 }}
+            transition={{ type: "spring", stiffness: 300, damping: 24, duration: 0.25 }}
           >
             {logoFailed ? (
               <div className="text-8xl md:text-9xl mb-4 mx-auto text-center">🚀</div>
             ) : (
               <img
                 src="/logo.png"
-                className="w-48 h-48 md:w-64 md:h-64 mx-auto mb-4 object-contain drop-shadow-[0_10px_10px_rgba(0,0,0,0.5)]"
+                className="mx-auto mb-3 h-36 w-36 object-contain drop-shadow-[0_8px_8px_rgba(0,0,0,0.45)] sm:h-48 sm:w-48 md:h-64 md:w-64"
                 alt="Math Quest Logo"
                 onError={() => setLogoFailed(true)}
               />
@@ -71,13 +71,13 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ playerName, setPlayerName, 
 
           <motion.h1
             variants={itemVariants}
-            className="text-5xl md:text-6xl font-bold text-white mb-2 tracking-tight drop-shadow-md"
+            className="mb-2 text-4xl font-bold tracking-tight text-white drop-shadow-md sm:text-5xl md:text-6xl"
           >
             Math Quest
           </motion.h1>
           <motion.p
             variants={itemVariants}
-            className="text-xl md:text-2xl text-yellow-300 mb-8 font-medium drop-shadow-sm"
+            className="mb-5 text-lg font-medium text-yellow-300 drop-shadow-sm sm:mb-8 sm:text-xl md:text-2xl"
           >
             🌟 Space Adventure! 🌟
           </motion.p>
@@ -91,7 +91,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ playerName, setPlayerName, 
                 value={playerName}
                 onChange={(e) => setPlayerName(e.target.value)}
                 placeholder="Enter Pilot Name"
-                className="w-full px-6 py-4 text-xl md:text-2xl font-bold rounded-2xl text-center border-4 border-yellow-400 focus:border-yellow-300 outline-none bg-white/95 focus:bg-white text-indigo-900 placeholder-indigo-300 shadow-inner transition-all transform focus:scale-[1.02]"
+                className="w-full rounded-2xl border-4 border-yellow-400 bg-white/95 px-5 py-3 text-lg font-bold text-indigo-900 text-center outline-none shadow-inner transition-all focus:border-yellow-300 focus:bg-white focus:scale-[1.01] sm:py-4 sm:text-xl md:text-2xl"
                 maxLength={15}
                 autoComplete="off"
                 autoCorrect="off"
@@ -104,7 +104,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ playerName, setPlayerName, 
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={!playerName.trim()}
-              className="w-full bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed text-white text-2xl font-bold py-4 md:py-5 rounded-2xl shadow-xl border-b-4 border-green-700/50"
+              className="w-full rounded-2xl border-b-4 border-green-700/50 bg-gradient-to-r from-green-500 to-blue-500 py-3.5 text-xl font-bold text-white shadow-xl hover:from-green-600 hover:to-blue-600 disabled:cursor-not-allowed disabled:grayscale disabled:opacity-50 sm:py-4 md:py-5 md:text-2xl"
             >
               Launch 🚀
             </motion.button>
