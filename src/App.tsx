@@ -160,6 +160,7 @@ const App: React.FC = () => {
   const [sudokuSelectedCell, setSudokuSelectedCell] = useState<{ row: number; column: number } | null>(null);
   const [sudokuMistakes, setSudokuMistakes] = useState(0);
   const sudokuCompleteRef = useRef(false);
+  const sudokuInputLockRef = useRef(false);
 
   // Survival Mode State
   const [currentWave, setCurrentWave] = useState(1);
@@ -438,6 +439,7 @@ const App: React.FC = () => {
     setSudokuMistakes(0);
     setSudokuSelectedCell(null);
     sudokuCompleteRef.current = false;
+    sudokuInputLockRef.current = false;
 
     const settings = survival ? getSurvivalConfig(mode, tier, 1) : getModeConfig(mode, tier);
     setCurrentLives(settings.lives);
@@ -906,15 +908,19 @@ const App: React.FC = () => {
   const handleSudokuSelectCell = (row: number, column: number) => {
     if (!sudokuBoard || !sudokuGiven || sudokuCompleteRef.current || sudokuGiven[row]?.[column]) return;
     playSound.click();
+    sudokuInputLockRef.current = false;
     setSudokuSelectedCell({ row, column });
     setFeedback('');
   };
 
   const handleSudokuInput = (value: number) => {
     if (!sudokuBoard || !sudokuSolution || !sudokuGiven || !sudokuSelectedCell || sudokuCompleteRef.current) return;
+    if (sudokuInputLockRef.current) return;
 
     const { row, column } = sudokuSelectedCell;
-    if (sudokuGiven[row]?.[column]) return;
+    if (sudokuGiven[row]?.[column] || sudokuBoard[row]?.[column] !== 0) return;
+
+    sudokuInputLockRef.current = true;
 
     if (sudokuSolution[row]?.[column] === value) {
       playSound.correct();
@@ -927,6 +933,7 @@ const App: React.FC = () => {
       const nextStreak = streak + 1;
       setSudokuBoard(nextBoard);
       setStreak(nextStreak);
+      setSudokuSelectedCell(null);
       setProgress((filledCells / totalCells) * 100);
       setFeedback(filledCells === totalCells ? 'Sector cleared!' : 'Correct cell locked in.');
 
@@ -1013,6 +1020,9 @@ const App: React.FC = () => {
     } else {
       playSound.wrong();
       nativeService.haptics.notificationError();
+      setStreak(0);
+      setCombo(0);
+      sudokuInputLockRef.current = false;
       setSudokuMistakes(previous => {
         const nextMistakes = previous + 1;
         if (isSurvivalMode && nextMistakes >= getSurvivalSudokuMistakeLimit(currentWave)) {
