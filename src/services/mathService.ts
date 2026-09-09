@@ -23,7 +23,7 @@ export const createSeededRandom = (seedStr: string) => {
   };
 };
 
-export const generateQuestion = (diff: Difficulty, rng: () => number = Math.random, wave: number = 1): Question => {
+export const generateQuestion = (diff: Difficulty, rng: () => number = Math.random, wave: number = 1, routeLevel = 1): Question => {
   let num1: number, num2: number, operation: string, answer: number, display: string;
   let visualAid: number | null = null;
 
@@ -50,6 +50,9 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
   } else {
     // Standard Scaling
     maxNum = diff === 'easy' ? 20 : diff === 'medium' ? 70 : 140;
+    if (routeLevel >= 36) {
+      maxNum += Math.min(100, (routeLevel - 35) * 8);
+    }
   }
 
   if (mode === 'hard') {
@@ -73,7 +76,7 @@ export const generateQuestion = (diff: Difficulty, rng: () => number = Math.rand
     } else { // '*'
       const limit = diff === 'survival'
         ? Math.min(10 + Math.floor(wave / 2), 25)
-        : 20;
+        : Math.min(30, 20 + (routeLevel >= 36 ? Math.floor((routeLevel - 35) / 2) : 0));
       num1 = randomInt(3, limit);
       num2 = randomInt(3, limit);
       part1Result = num1 * num2;

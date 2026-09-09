@@ -16,7 +16,7 @@ import PetScreen from './screens/PetScreen';
 import { PlayerState, ScreenState, Difficulty, Question, RocketItem, AchievementItem, GameMode, ModeDifficulty, SudokuSize } from './types';
 import type { PluginListenerHandle } from '@capacitor/core';
 import { createSeededRandom, generateDailyChallenges } from './services/mathService';
-import { GAME_MODE_DEFINITIONS, generateModeQuestion, generateSudokuPuzzle, getModeConfig, getSurvivalConfig, modeDifficultyToLegacyDifficulty, countFilledSudokuCells, PRIMARY_GAME_MODES } from './services/modeService';
+import { GAME_MODE_DEFINITIONS, generateModeQuestion, generateSudokuPuzzle, getGalaxyMapDifficulty, getModeConfig, getSurvivalConfig, modeDifficultyToLegacyDifficulty, countFilledSudokuCells, PRIMARY_GAME_MODES } from './services/modeService';
 import { playSound, music } from './services/audioService';
 import { adMobService } from './services/adMobService';
 import { nativeService } from './services/nativeService';
@@ -397,6 +397,24 @@ const App: React.FC = () => {
     return Math.max(3, 10 - Math.floor((wave - 1) * 0.5));
   };
 
+  const getRunConfig = (
+    mode: GameMode,
+    tier: ModeDifficulty,
+    wave: number,
+    survival: boolean,
+    routeLevel = activeMapRun?.level
+  ) => {
+    const config = survival ? getSurvivalConfig(mode, tier, wave) : getModeConfig(mode, tier);
+    if (!survival && routeLevel !== undefined && routeLevel >= 36 && config.time !== null) {
+      return {
+        ...config,
+        time: Math.max(5, config.time - 2),
+        description: `Galaxy Level ${routeLevel}: ${config.description}`
+      };
+    }
+    return config;
+  };
+
   const startMode = (
     requestedMode: GameMode,
     tier: ModeDifficulty,
@@ -409,10 +427,12 @@ const App: React.FC = () => {
     const mode = requestedMode === 'survival' ? 'quick-calc' : requestedMode;
     const survival = requestedSurvival || requestedMode === 'survival';
     setActiveMapRun(mapLevel === undefined ? null : { mode, level: clampMapLevel(mapLevel) });
+    const routeLevel = mapLevel === undefined ? undefined : clampMapLevel(mapLevel);
+    const effectiveTier = routeLevel === undefined ? tier : getGalaxyMapDifficulty(routeLevel);
     setGameMode(mode);
     setIsSurvivalMode(survival);
-    setModeDifficulty(tier);
-    setDifficulty(survival ? 'survival' : modeDifficultyToLegacyDifficulty(tier));
+    setModeDifficulty(effectiveTier);
+    setDifficulty(survival ? 'survival' : modeDifficultyToLegacyDifficulty(effectiveTier));
 
     if (challengeCode) {
       rngRef.current = createSeededRandom(challengeCode);
@@ -444,11 +464,11 @@ const App: React.FC = () => {
     sudokuCompleteRef.current = false;
     sudokuInputLockRef.current = false;
 
-    const settings = survival ? getSurvivalConfig(mode, tier, 1) : getModeConfig(mode, tier);
+    const settings = getRunConfig(mode, effectiveTier, 1, survival, routeLevel);
     setCurrentLives(settings.lives);
 
     if (mode === 'mini-sudoku') {
-      const puzzle = generateSudokuPuzzle(selectedSudokuSize, tier, rngRef.current, 1, survival);
+      const puzzle = generateSudokuPuzzle(selectedSudokuSize, effectiveTier, rngRef.current, 1, survival, routeLevel);
       setSudokuSize(selectedSudokuSize);
       setSudokuBoard(puzzle.puzzle);
       setSudokuSolution(puzzle.solution);
@@ -459,7 +479,7 @@ const App: React.FC = () => {
       setSudokuBoard(null);
       setSudokuSolution(null);
       setSudokuGiven(null);
-      setQuestion(generateModeQuestion(mode, tier, rngRef.current, 1, survival));
+      setQuestion(generateModeQuestion(mode, effectiveTier, rngRef.current, 1, survival, routeLevel));
       setTimer(settings.time);
     }
 
@@ -595,7 +615,7 @@ const App: React.FC = () => {
     const rewarded = await adMobService.showRewardVideo('continue');
     if (!rewarded) return false;
 
-    const settings = isSurvivalMode ? getSurvivalConfig(gameMode, modeDifficulty, currentWave) : getModeConfig(gameMode, modeDifficulty);
+    const settings = getRunConfig(gameMode, modeDifficulty, currentWave, isSurvivalMode);
     setHasUsedRewardContinue(true);
     setLossContinueOpen(false);
     setCurrentLives(1);
@@ -604,9 +624,9 @@ const App: React.FC = () => {
       setSudokuSelectedCell(null);
       setFeedback('');
     } else {
-      setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave, isSurvivalMode));
+      setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave, isSurvivalMode, activeMapRun?.level));
       setFeedback('');
-      setTimer(isSurvivalMode ? getSurvivalConfig(gameMode, modeDifficulty, currentWave).time : settings.time);
+      setTimer(settings.time);
     }
     setShake(false);
     playSound.levelUp();
@@ -637,7 +657,7 @@ const App: React.FC = () => {
     const correct = question.choices
       ? submittedValue === question.answer
       : Math.abs(submittedValue - question.answer) < 0.0001;
-    const settings = isSurvivalMode ? getSurvivalConfig(gameMode, modeDifficulty, currentWave) : getModeConfig(gameMode, modeDifficulty);
+    const settings = getRunConfig(gameMode, modeDifficulty, currentWave, isSurvivalMode);
 
     if (correct) {
       playSound.correct();
@@ -820,10 +840,10 @@ const App: React.FC = () => {
 
           setTimeout(() => {
             setIsWaveTransition(false);
-            setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, nextWave, true));
+            setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, nextWave, true, activeMapRun?.level));
             setFeedback('');
             setActivePowerUp(null);
-            setTimer(getSurvivalConfig(gameMode, modeDifficulty, nextWave).time);
+            setTimer(getRunConfig(gameMode, modeDifficulty, nextWave, true).time);
           }, 3000);
 
           setFeedback(`${['Awesome!', 'Perfect!', 'Amazing!'][Math.floor(Math.random() * 3)]} +${points}`);
@@ -861,11 +881,11 @@ const App: React.FC = () => {
         // Capture currentWave in a local variable so the timeout closure doesn't use stale state
         const waveForNextQ = currentWave;
         setTimeout(() => {
-          setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, waveForNextQ, isSurvivalMode));
+          setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, waveForNextQ, isSurvivalMode, activeMapRun?.level));
           setFeedback('');
           setActivePowerUp(null);
           if (isSurvivalMode) {
-            setTimer(getSurvivalConfig(gameMode, modeDifficulty, waveForNextQ).time);
+            setTimer(getRunConfig(gameMode, modeDifficulty, waveForNextQ, true).time);
           } else if (settings.time) {
             setTimer(settings.time);
           }
@@ -898,17 +918,17 @@ const App: React.FC = () => {
             setLossContinueOpen(true);
           }
         } else {
-          setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave, isSurvivalMode));
+          setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave, isSurvivalMode, activeMapRun?.level));
           setFeedback('');
           if (isSurvivalMode) {
-            setTimer(getSurvivalConfig(gameMode, modeDifficulty, currentWave).time);
+            setTimer(getRunConfig(gameMode, modeDifficulty, currentWave, true).time);
           } else if (settings.time) {
             setTimer(settings.time);
           }
         }
       }, isGameOver ? 1500 : 2000);
     }
-  }, [question, difficulty, gameMode, modeDifficulty, score, streak, combo, questionsAnswered, timer, handleGameCompletion, currentWave, currentLives, unlockAchievement, isSurvivalMode, hasUsedRewardContinue]);
+  }, [question, difficulty, gameMode, modeDifficulty, score, streak, combo, questionsAnswered, timer, handleGameCompletion, currentWave, currentLives, unlockAchievement, isSurvivalMode, hasUsedRewardContinue, activeMapRun]);
 
   const handleSudokuSelectCell = (row: number, column: number) => {
     if (!sudokuBoard || !sudokuGiven || sudokuCompleteRef.current || sudokuGiven[row]?.[column]) return;
@@ -944,9 +964,7 @@ const App: React.FC = () => {
 
       if (filledCells === totalCells) {
         sudokuCompleteRef.current = true;
-        const settings = isSurvivalMode
-          ? getSurvivalConfig('mini-sudoku', modeDifficulty, currentWave)
-          : getModeConfig('mini-sudoku', modeDifficulty);
+        const settings = getRunConfig('mini-sudoku', modeDifficulty, currentWave, isSurvivalMode);
         const baseScore = sudokuSize === 4 ? 400 : 900;
         const basePoints = Math.max(100, baseScore + (filledCells * 15) - (sudokuMistakes * 50));
         const points = isSurvivalMode ? Math.floor(basePoints * (1 + (currentWave * 0.2))) : basePoints;
@@ -1010,7 +1028,7 @@ const App: React.FC = () => {
           setSudokuSelectedCell(null);
           setFeedback(`Sector cleared! +${points}`);
           setTimeout(() => {
-            const nextPuzzle = generateSudokuPuzzle(sudokuSize, modeDifficulty, rngRef.current, nextWave, true);
+            const nextPuzzle = generateSudokuPuzzle(sudokuSize, modeDifficulty, rngRef.current, nextWave, true, activeMapRun?.level);
             setSudokuBoard(nextPuzzle.puzzle);
             setSudokuSolution(nextPuzzle.solution);
             setSudokuGiven(nextPuzzle.given);
@@ -1514,7 +1532,7 @@ const App: React.FC = () => {
           mode={gameMode}
           modeName={`${GAME_MODE_DEFINITIONS[gameMode].name}${isSurvivalMode ? ' Survival' : ''}`}
           modeDifficulty={modeDifficulty}
-          sessionConfig={isSurvivalMode ? getSurvivalConfig(gameMode, modeDifficulty, currentWave) : getModeConfig(gameMode, modeDifficulty)}
+          sessionConfig={getRunConfig(gameMode, modeDifficulty, currentWave, isSurvivalMode)}
           difficulty={difficulty}
           score={score}
           streak={streak}
@@ -1542,7 +1560,7 @@ const App: React.FC = () => {
           score={score}
           modeName={`${GAME_MODE_DEFINITIONS[gameMode].name}${isSurvivalMode ? ' Survival' : ''}`}
           modeDifficulty={modeDifficulty}
-          sessionConfig={isSurvivalMode ? getSurvivalConfig(gameMode, modeDifficulty, currentWave) : getModeConfig(gameMode, modeDifficulty)}
+          sessionConfig={getRunConfig(gameMode, modeDifficulty, currentWave, isSurvivalMode)}
           gameCoins={gameCoins}
           gameXp={gameXp}
           didWin={completionOutcome === 'won'}

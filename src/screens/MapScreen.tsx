@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BarChart3, Calculator, CheckCircle, Grid2X2, Lock, Map, Rocket, Square, Target } from 'lucide-react';
 import { GameMode, ModeDifficulty, PlayerState, SudokuSize } from '../types';
-import { GAME_MODE_DEFINITIONS, MODE_DIFFICULTY_LABELS, PRIMARY_GAME_MODES } from '../services/modeService';
+import { GAME_MODE_DEFINITIONS, getGalaxyMapDifficulty, getGalaxyMapDifficultyLabel, PRIMARY_GAME_MODES } from '../services/modeService';
 
 type PrimaryMode = Exclude<GameMode, 'survival'>;
 
@@ -118,7 +118,6 @@ const getPlanetColors = (level: number, mode: PrimaryMode) => {
 const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedMode, setSelectedMode] = useState<PrimaryMode>('quick-calc');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<ModeDifficulty>('standard');
   const [sudokuSize, setSudokuSize] = useState<SudokuSize>(4);
   const [survivalMode, setSurvivalMode] = useState(false);
   const [launchLevel, setLaunchLevel] = useState<number | null>(null);
@@ -460,7 +459,9 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
                 key={p.level}
                 id={`level-${p.level}`}
                 disabled={!isUnlocked}
-                onClick={() => setLaunchLevel(p.level)}
+                onClick={() => {
+                  setLaunchLevel(p.level);
+                }}
                 aria-label={`${isCompleted ? 'Replay' : 'Start'} level ${p.level} with ${selectedDefinition.name}`}
                 className={`
                   absolute transform -translate-x-1/2 -translate-y-1/2
@@ -603,19 +604,14 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
             </div>
             {survivalMode && <p className="mt-2 text-xs leading-5 text-red-100/80">Unlimited waves. Every five correct answers raises the pressure.</p>}
 
-            <p className="mt-4 text-[10px] font-black uppercase tracking-[0.16em] text-cyan-200">Difficulty</p>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {(Object.keys(MODE_DIFFICULTY_LABELS) as ModeDifficulty[]).map(difficulty => (
-                <button
-                  key={difficulty}
-                  type="button"
-                  aria-pressed={selectedDifficulty === difficulty}
-                  onClick={() => setSelectedDifficulty(difficulty)}
-                  className={`rounded-xl border px-2 py-2 text-xs font-black transition ${selectedDifficulty === difficulty ? 'border-yellow-200 bg-yellow-300 text-slate-950' : 'border-cyan-200/25 bg-white/5 text-cyan-50 hover:bg-white/10'}`}
-                >
-                  {MODE_DIFFICULTY_LABELS[difficulty]}
-                </button>
-              ))}
+            <div className="mt-4 rounded-xl border border-yellow-200/25 bg-yellow-300/10 p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-[10px] font-black uppercase tracking-[0.16em] text-yellow-100/75">Route difficulty</p>
+                <span className="rounded-full border border-yellow-200/40 bg-yellow-300/15 px-2 py-1 text-xs font-black text-yellow-100">
+                  {getGalaxyMapDifficultyLabel(launchLevel)}
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-yellow-50/70">Map difficulty rises automatically: levels 1-15 Medium, 16-35 Hard, 36-50 Hardest.</p>
             </div>
 
             {selectedMode === 'mini-sudoku' && (
@@ -640,7 +636,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
             <button
               type="button"
               onClick={() => {
-                onStartMode(selectedMode, selectedDifficulty, sudokuSize, survivalMode, launchLevel);
+                onStartMode(selectedMode, getGalaxyMapDifficulty(launchLevel), sudokuSize, survivalMode, launchLevel);
                 setLaunchLevel(null);
               }}
               className="mt-4 w-full rounded-xl border-b-4 border-orange-700 bg-gradient-to-b from-yellow-300 to-orange-400 px-4 py-3 font-['Press_Start_2P'] text-xs text-[#071238] shadow-[0_0_24px_rgba(251,191,36,.42)] transition hover:brightness-110 active:translate-y-0.5"

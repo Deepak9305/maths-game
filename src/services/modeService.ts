@@ -109,6 +109,17 @@ export const MODE_DIFFICULTY_LABELS: Record<ModeDifficulty, string> = {
   expert: 'Expert'
 };
 
+export const getGalaxyMapDifficulty = (level: number): ModeDifficulty => {
+  if (level <= 15) return 'standard';
+  return 'expert';
+};
+
+export const getGalaxyMapDifficultyLabel = (level: number): string => {
+  if (level <= 15) return 'Medium';
+  if (level <= 35) return 'Hard';
+  return 'Hardest';
+};
+
 export const getModeConfig = (mode: GameMode, difficulty: ModeDifficulty): ModeSessionConfig =>
   MODE_DIFFICULTY_CONFIGS[mode][difficulty];
 
@@ -158,9 +169,10 @@ const subscript = (value: number) => String(value).split('').map(char => (
   }[char] || char
 )).join('');
 
-const generateSquareQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
+const generateSquareQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false, routeLevel = 1): Question => {
   const startingMax = difficulty === 'beginner' ? 12 : difficulty === 'standard' ? 28 : 45;
-  const maxBase = startingMax + (survival ? Math.min(80, (wave - 1) * 4) : 0);
+  const routeBoost = !survival && routeLevel >= 36 ? Math.min(55, (routeLevel - 35) * 4) : 0;
+  const maxBase = startingMax + (survival ? Math.min(80, (wave - 1) * 4) : routeBoost);
   const base = randomInt(2, maxBase, rng);
   const isRoot = rng() > 0.5;
   if (isRoot) {
@@ -169,12 +181,13 @@ const generateSquareQuestion = (difficulty: ModeDifficulty, rng: () => number, w
   return { display: `${base}² = ?`, answer: base * base, visualAid: null };
 };
 
-const generateLogQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
+const generateLogQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false, routeLevel = 1): Question => {
   const baseSet = difficulty === 'beginner' ? [2, 10] : difficulty === 'standard' ? [2, 3, 5, 7, 10] : [2, 3, 4, 5, 7, 10];
   const bases = survival && wave >= 4 ? Array.from(new Set([...baseSet, 7])) : baseSet;
   const base = bases[randomInt(0, bases.length - 1, rng)];
   const startingExponent = difficulty === 'beginner' ? 3 : difficulty === 'standard' ? 6 : 7;
-  const maxExponent = startingExponent + (survival ? Math.min(7, Math.floor((wave - 1) / 2)) : 0);
+  const routeBoost = !survival && routeLevel >= 36 ? Math.min(4, Math.floor((routeLevel - 35) / 4)) : 0;
+  const maxExponent = startingExponent + (survival ? Math.min(7, Math.floor((wave - 1) / 2)) : routeBoost);
   const exponent = randomInt(1, maxExponent, rng);
   return {
     display: `log${subscript(base)} ${base ** exponent} = ?`,
@@ -183,9 +196,10 @@ const generateLogQuestion = (difficulty: ModeDifficulty, rng: () => number, wave
   };
 };
 
-const generateTargetQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false): Question => {
+const generateTargetQuestion = (difficulty: ModeDifficulty, rng: () => number, wave = 1, survival = false, routeLevel = 1): Question => {
   const startingMax = difficulty === 'beginner' ? 6 : difficulty === 'standard' ? 13 : 18;
-  const max = startingMax + (survival ? Math.min(30, (wave - 1) * 2) : 0);
+  const routeBoost = !survival && routeLevel >= 36 ? Math.min(24, (routeLevel - 35) * 2) : 0;
+  const max = startingMax + (survival ? Math.min(30, (wave - 1) * 2) : routeBoost);
   const a = randomInt(2, max, rng);
   const b = randomInt(2, max, rng);
   const cStartingMax = difficulty === 'expert' ? 10 : difficulty === 'standard' ? 8 : 6;
@@ -219,21 +233,22 @@ export const generateModeQuestion = (
   difficulty: ModeDifficulty,
   rng: () => number = Math.random,
   wave = 1,
-  survival = false
+  survival = false,
+  routeLevel = 1
 ): Question => {
   switch (mode) {
     case 'square-sprint':
-      return generateSquareQuestion(difficulty, rng, wave, survival);
+      return generateSquareQuestion(difficulty, rng, wave, survival, routeLevel);
     case 'log-lab':
-      return generateLogQuestion(difficulty, rng, wave, survival);
+      return generateLogQuestion(difficulty, rng, wave, survival, routeLevel);
     case 'target-puzzle':
-      return generateTargetQuestion(difficulty, rng, wave, survival);
+      return generateTargetQuestion(difficulty, rng, wave, survival, routeLevel);
     case 'survival':
       return generateQuestion('survival', rng, wave);
     case 'quick-calc':
     case 'mini-sudoku':
     default:
-      return generateQuestion(survival ? 'survival' : modeDifficultyToLegacyDifficulty(difficulty), rng, wave);
+      return generateQuestion(survival ? 'survival' : modeDifficultyToLegacyDifficulty(difficulty), rng, wave, routeLevel);
   }
 };
 
@@ -251,7 +266,8 @@ export const generateSudokuPuzzle = (
   difficulty: ModeDifficulty,
   rng: () => number = Math.random,
   wave = 1,
-  survival = false
+  survival = false,
+  routeLevel = 1
 ): SudokuPuzzle => {
   const solution = createSudokuSolution(size, rng);
   const puzzle = solution.map(row => [...row]);
@@ -259,7 +275,8 @@ export const generateSudokuPuzzle = (
     ? difficulty === 'beginner' ? 5 : difficulty === 'standard' ? 9 : 11
     : difficulty === 'beginner' ? 34 : difficulty === 'standard' ? 50 : 60;
   const maxRemovals = size === 4 ? 12 : 64;
-  const removalCount = Math.min(maxRemovals, baseRemovalCount + (survival ? Math.floor((wave - 1) * (size === 4 ? 1 : 2)) : 0));
+  const routeBoost = !survival && routeLevel >= 36 ? Math.min(3, Math.floor((routeLevel - 35) / 5)) : 0;
+  const removalCount = Math.min(maxRemovals, baseRemovalCount + (survival ? Math.floor((wave - 1) * (size === 4 ? 1 : 2)) : routeBoost));
 
   const cells = shuffle(Array.from({ length: size * size }, (_, index) => index), rng);
   cells.slice(0, removalCount).forEach(index => {
