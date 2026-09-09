@@ -34,8 +34,11 @@ const PrimaryNavigation: React.FC<PrimaryNavigationProps> = ({ activeScreen, onN
   return (
     <nav
       aria-label="Primary navigation"
-      className={`${variant === 'dashboard' ? 'absolute h-[14%]' : 'fixed'} inset-x-0 bottom-0 z-30 px-2`}
-      style={{ paddingBottom: 'max(.5rem, env(safe-area-inset-bottom, 0px))' }}
+      className={`${variant === 'dashboard' ? 'absolute h-[9%]' : 'fixed'} inset-x-0 bottom-0 z-30 px-2`}
+      style={{
+        bottom: variant === 'dashboard' ? undefined : 'var(--native-banner-inset, 0px)',
+        paddingBottom: 'max(.5rem, env(safe-area-inset-bottom, 0px))'
+      }}
     >
       <div className={`mx-auto grid h-full w-full max-w-[430px] grid-cols-4 rounded-t-2xl border border-cyan-200/15 bg-[#061638]/98 px-1 shadow-[0_-8px_28px_rgba(2,6,23,.42)] ${variant === 'dashboard' ? 'min-h-[5rem]' : 'h-[4.5rem]'}`}>
         {NAV_ITEMS.map(({ id, label, icon: Icon, tone }) => {

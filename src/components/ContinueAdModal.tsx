@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Heart, Video, X } from 'lucide-react';
 
 interface ContinueAdModalProps {
@@ -11,6 +11,15 @@ interface ContinueAdModalProps {
 const ContinueAdModal: React.FC<ContinueAdModalProps> = ({ modeName, score, onWatchAndContinue, onEndRun }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [adUnavailable, setAdUnavailable] = useState(false);
+
+  useEffect(() => {
+    const handleBack = (event: Event) => {
+      event.preventDefault();
+      if (!isLoading) onEndRun();
+    };
+    window.addEventListener('mathquest-back-dismiss', handleBack);
+    return () => window.removeEventListener('mathquest-back-dismiss', handleBack);
+  }, [isLoading, onEndRun]);
 
   const continueRun = async () => {
     setIsLoading(true);
@@ -46,7 +55,7 @@ const ContinueAdModal: React.FC<ContinueAdModalProps> = ({ modeName, score, onWa
         >
           <Video className="h-5 w-5" /> {isLoading ? 'Loading reward…' : 'Watch ad · Continue'}
         </button>
-        <button type="button" onClick={onEndRun} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black text-blue-100/70 transition hover:bg-white/10 hover:text-white">
+        <button type="button" disabled={isLoading} onClick={onEndRun} className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-black text-blue-100/70 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-40">
           <X className="h-4 w-4" /> End mission
         </button>
       </section>

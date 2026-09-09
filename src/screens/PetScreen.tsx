@@ -46,9 +46,30 @@ export const PetScreen: React.FC<PetScreenProps> = ({ player, onFeed, onPlay, on
   const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
+    const dismissPetDialog = (event: Event) => {
+      if (showEvolutionModal) {
+        setShowEvolutionModal(false);
+      } else if (showShopModal) {
+        setShowShopModal(false);
+      } else if (isEditingName) {
+        setIsEditingName(false);
+      } else {
+        return;
+      }
+      event.preventDefault();
+    };
+    window.addEventListener('mathquest-back-dismiss', dismissPetDialog);
+    return () => window.removeEventListener('mathquest-back-dismiss', dismissPetDialog);
+  }, [showEvolutionModal, showShopModal, isEditingName]);
+
+  useEffect(() => {
+    const hasActiveCooldown = [pet.lastFedTime, pet.lastPlayedTime]
+      .some(timestamp => timestamp && Date.now() - timestamp < 60000);
+    if (!hasActiveCooldown) return;
+    setNow(Date.now());
     const interval = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [pet.lastFedTime, pet.lastPlayedTime]);
 
   const feedCooldown = pet.lastFedTime ? Math.max(0, 60000 - (now - pet.lastFedTime)) : 0;
   const playCooldown = pet.lastPlayedTime ? Math.max(0, 60000 - (now - pet.lastPlayedTime)) : 0;

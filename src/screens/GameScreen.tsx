@@ -42,6 +42,7 @@ interface GameScreenProps {
   showConfetti: boolean;
   currentWave?: number;
   isWaveTransition?: boolean;
+  isAnswerResolving?: boolean;
   showAnimations?: boolean;
 }
 
@@ -87,6 +88,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
   showConfetti,
   currentWave,
   isWaveTransition,
+  isAnswerResolving = false,
   showAnimations = true
 }) => {
   const [userAnswer, setUserAnswer] = useState('');
@@ -112,7 +114,7 @@ const GameScreen: React.FC<GameScreenProps> = ({
     return () => element.removeEventListener('touchmove', prevent);
   }, []);
 
-  const isProcessing = Boolean(feedback && !isHintVisible);
+  const isProcessing = isAnswerResolving || Boolean(feedback && !isHintVisible);
 
   const submitAnswer = (answer: string) => {
     if (!answer || (answer === '-' && !isChoiceQuestion) || isProcessing || isProcessingRef.current) return;
@@ -238,14 +240,15 @@ const GameScreen: React.FC<GameScreenProps> = ({
         <div className="mt-3 flex gap-2">
           <button
             type="button"
+            disabled={isProcessing}
             onClick={() => powerUps.hint > 0 ? onUsePowerUp('hint') : onRequestMorePowerUps('hint')}
-            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition active:scale-95 ${powerUps.hint > 0 ? 'border-cyan-300/25 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20' : 'border-white/10 bg-white/5 text-white/55 hover:bg-white/10'}`}
+            className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${powerUps.hint > 0 ? 'border-cyan-300/25 bg-cyan-400/10 text-cyan-100 hover:bg-cyan-400/20' : 'border-white/10 bg-white/5 text-white/55 hover:bg-white/10'}`}
           >
             <Lightbulb className="h-4 w-4" /> {powerUps.hint > 0 ? `Hint · ${powerUps.hint}` : 'Watch ad · Hint'}
           </button>
           <button
             type="button"
-            disabled={timer === null}
+            disabled={timer === null || isProcessing}
             onClick={() => powerUps.timeFreeze > 0 ? onUsePowerUp('timeFreeze') : onRequestMorePowerUps('timeFreeze')}
             className={`flex flex-1 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-black transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-35 ${powerUps.timeFreeze > 0 ? 'border-violet-300/25 bg-violet-400/10 text-violet-100 hover:bg-violet-400/20' : 'border-white/10 bg-white/5 text-white/55 hover:bg-white/10'}`}
           >

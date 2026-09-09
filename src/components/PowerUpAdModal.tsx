@@ -16,13 +16,25 @@ const PowerUpAdModal: React.FC<PowerUpAdModalProps> = ({ type, onWatch, onClose 
   const color = isHint ? "text-blue-500" : "text-purple-500";
   const bgColor = isHint ? "bg-blue-100" : "bg-purple-100";
 
+  React.useEffect(() => {
+    const handleBack = (event: Event) => {
+      event.preventDefault();
+      if (!isWatching) onClose();
+    };
+    window.addEventListener('mathquest-back-dismiss', handleBack);
+    return () => window.removeEventListener('mathquest-back-dismiss', handleBack);
+  }, [isWatching, onClose]);
+
   return (
     <div role="alertdialog" aria-modal="true" aria-labelledby="powerup-modal-title" className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
       <div className="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full text-center shadow-2xl border-4 border-white relative animate-bounce-in overflow-hidden">
         
-        <button 
+        <button
+          type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-full"
+          disabled={isWatching}
+          aria-label="Close power-up offer"
+          className="absolute top-4 right-4 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <X className="w-6 h-6" />
         </button>
@@ -41,6 +53,7 @@ const PowerUpAdModal: React.FC<PowerUpAdModalProps> = ({ type, onWatch, onClose 
 
         <div className="space-y-3">
           <button
+            type="button"
             onClick={async () => {
               setIsWatching(true);
               setAdUnavailable(false);
@@ -61,8 +74,10 @@ const PowerUpAdModal: React.FC<PowerUpAdModalProps> = ({ type, onWatch, onClose 
           </button>
           
           <button
+            type="button"
             onClick={onClose}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold py-3 rounded-2xl transition-colors"
+            disabled={isWatching}
+            className="w-full rounded-2xl bg-gray-100 py-3 font-bold text-gray-600 transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
           >
             No Thanks
           </button>

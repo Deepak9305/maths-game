@@ -124,6 +124,16 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose, onN
   const [sudokuSize, setSudokuSize] = useState<SudokuSize>(4);
   const [survivalMode, setSurvivalMode] = useState(false);
   const [launchLevel, setLaunchLevel] = useState<number | null>(null);
+
+  useEffect(() => {
+    const dismissLaunch = (event: Event) => {
+      if (launchLevel === null) return;
+      setLaunchLevel(null);
+      event.preventDefault();
+    };
+    window.addEventListener('mathquest-back-dismiss', dismissLaunch);
+    return () => window.removeEventListener('mathquest-back-dismiss', dismissLaunch);
+  }, [launchLevel]);
   const modeTheme = MODE_MAP_THEMES[selectedMode];
   const modeLevel = clampRouteLevel(player.modeProgress?.[selectedMode]);
   const routeProgressPercent = Math.round(((modeLevel - 1) / (TOTAL_LEVELS - 1)) * 100);
@@ -463,6 +473,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose, onN
                 id={`level-${p.level}`}
                 disabled={!isUnlocked}
                 onClick={() => {
+                  setSurvivalMode(false);
                   setLaunchLevel(p.level);
                 }}
                 aria-label={`${isCompleted ? 'Replay' : 'Start'} level ${p.level} with ${selectedDefinition.name}`}
@@ -530,7 +541,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose, onN
 
       <div
         className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-3"
-        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom, 0px) + var(--native-banner-inset, 0px))' }}
       >
         <div
           aria-label={`${selectedDefinition.name} route progress: level ${modeLevel} of ${TOTAL_LEVELS}`}
@@ -607,7 +618,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose, onN
                 Survival ∞
               </button>
             </div>
-            {survivalMode && <p className="mt-2 text-xs leading-5 text-red-100/80">Unlimited waves. Every five correct answers raises the pressure.</p>}
+            {survivalMode && <p className="mt-2 text-xs leading-5 text-red-100/80">Unlimited waves. Every five correct answers raises the pressure. Survival runs do not advance Galaxy Map levels.</p>}
 
             <div className="mt-4 rounded-xl border border-yellow-200/25 bg-yellow-300/10 p-3">
               <div className="flex items-center justify-between gap-3">

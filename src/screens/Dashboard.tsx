@@ -11,6 +11,7 @@ interface DashboardProps {
   onStartGame: (mode: GameMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize, survival: boolean) => void;
   onNavigate: (screen: NavigationDestination | 'shop' | 'achievements' | 'privacy') => void;
   settingsOpenRequest?: number;
+  onSettingsRequestConsumed?: () => void;
   onToggleHaptics: () => void;
   onToggleMusic: () => void;
   onShare: () => void;
@@ -21,11 +22,11 @@ interface DashboardProps {
 type PrimaryMode = Exclude<GameMode, 'survival'>;
 
 const MODE_HOTSPOTS: Record<PrimaryMode, string> = {
-  'square-sprint': 'left-[35%] top-[25%] h-[15%] w-[30%]',
-  'quick-calc': 'left-[3%] top-[33%] h-[16%] w-[37%]',
-  'log-lab': 'right-[3%] top-[33%] h-[16%] w-[37%]',
-  'mini-sudoku': 'left-[4%] top-[48%] h-[16%] w-[38%]',
-  'target-puzzle': 'right-[4%] top-[48%] h-[16%] w-[38%]'
+  'square-sprint': 'left-[37%] top-[27%] h-[10%] w-[26%]',
+  'quick-calc': 'left-[5%] top-[36%] h-[12%] w-[28%]',
+  'log-lab': 'right-[5%] top-[36%] h-[12%] w-[28%]',
+  'mini-sudoku': 'left-[7%] top-[51%] h-[12%] w-[28%]',
+  'target-puzzle': 'right-[7%] top-[51%] h-[12%] w-[28%]'
 };
 
 const MODE_NAMES: Record<PrimaryMode, string> = {
@@ -59,6 +60,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onStartGame,
   onNavigate,
   settingsOpenRequest = 0,
+  onSettingsRequestConsumed,
   onToggleHaptics,
   onToggleMusic,
   onShare,
@@ -74,8 +76,26 @@ const Dashboard: React.FC<DashboardProps> = ({
   const [challengeInput, setChallengeInput] = useState('');
 
   useEffect(() => {
-    if (settingsOpenRequest > 0) setSettingsOpen(true);
-  }, [settingsOpenRequest]);
+    if (settingsOpenRequest > 0) {
+      setSettingsOpen(true);
+      onSettingsRequestConsumed?.();
+    }
+  }, [settingsOpenRequest, onSettingsRequestConsumed]);
+
+  useEffect(() => {
+    const dismissTopDialog = (event: Event) => {
+      if (settingsOpen) {
+        setSettingsOpen(false);
+      } else if (missionSetupOpen) {
+        setMissionSetupOpen(false);
+      } else {
+        return;
+      }
+      event.preventDefault();
+    };
+    window.addEventListener('mathquest-back-dismiss', dismissTopDialog);
+    return () => window.removeEventListener('mathquest-back-dismiss', dismissTopDialog);
+  }, [settingsOpen, missionSetupOpen]);
 
   const selectedDefinition = GAME_MODE_DEFINITIONS[selectedMode];
   const nextChallenge = player.dailyChallenges?.find(challenge => !challenge.claimed);
@@ -92,6 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const chooseMode = (mode: PrimaryMode) => {
     setSelectedMode(mode);
+    setSurvivalMode(false);
     setMissionSetupOpen(true);
   };
 
@@ -189,13 +210,13 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         <div
           aria-label={`Pilot ${displayName}, level ${player.level}, ${player.xp} of ${nextLevelXp} XP`}
-          className="pointer-events-none absolute left-[17%] top-[1.7%] z-[6] h-[6.2%] w-[31%] overflow-hidden rounded-md border border-cyan-100/15 bg-[#061638] px-[2%] py-[1%] text-left font-['Lexend'] text-[8px] font-black leading-none tracking-tight text-white shadow-[0_2px_8px_rgba(0,0,0,.45)]"
+          className="pointer-events-none absolute left-[17%] top-[1.7%] z-[6] h-[6.2%] w-[31%] overflow-hidden rounded-md border border-cyan-100/15 bg-[#061638] px-[2%] py-[1%] text-left font-['Lexend'] text-[9px] font-black leading-none tracking-tight text-white shadow-[0_2px_8px_rgba(0,0,0,.45)]"
         >
           <p className="flex min-w-0 items-baseline gap-[4%] leading-[1.15]">
-            <span className="shrink-0 font-['Lexend'] text-[clamp(4px,1.1vw,6px)] font-black tracking-[0.08em] text-cyan-200/70">PILOT</span>
-            <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap font-['Press_Start_2P'] text-[clamp(5px,1.45vw,7px)] text-cyan-50" title={displayName}>{displayName}</span>
+            <span className="shrink-0 font-['Lexend'] text-[clamp(7px,1.7vw,9px)] font-black tracking-[0.08em] text-cyan-200/70">PILOT</span>
+            <span className="min-w-0 flex-1 overflow-hidden whitespace-nowrap font-['Press_Start_2P'] text-[clamp(7px,1.8vw,9px)] text-cyan-50" title={displayName}>{displayName}</span>
           </p>
-          <div className="mt-[3%] flex items-center justify-between gap-1 font-['Press_Start_2P'] text-[clamp(5px,1.55vw,8px)] leading-none text-blue-100/85">
+          <div className="mt-[3%] flex items-center justify-between gap-1 font-['Press_Start_2P'] text-[clamp(7px,1.8vw,9px)] leading-none text-blue-100/85">
             <span className="shrink-0">LV {player.level}</span>
             <span className="min-w-0 truncate text-right">{player.xp}/{nextLevelXp} XP</span>
           </div>
@@ -204,7 +225,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[5] font-['Lexend'] text-[8px] font-black leading-none tracking-tight text-white drop-shadow-[0_1px_0_#071238]">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[5] font-['Lexend'] text-[clamp(9px,2.1vw,11px)] font-black leading-none tracking-tight text-white drop-shadow-[0_1px_0_#071238]">
           <span className={`${modeLabelMotion} absolute left-[37%] top-[34.8%] flex h-[2.8%] w-[26%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-.4s' }}>Squares &amp; Roots</span>
           <span className={`${modeLabelMotion} absolute left-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-1.1s' }}>Quick Math</span>
           <span className={`${modeLabelMotion} absolute right-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-1.8s' }}>Powers &amp; Logs</span>
@@ -257,7 +278,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             type="button"
             aria-label="Open badges from the trophy console"
             onClick={() => onNavigate('achievements')}
-            className="absolute left-[33%] top-[42%] z-10 h-[16%] w-[34%] rounded-full outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/90"
+            className="absolute left-[38%] top-[41%] z-10 h-[16%] w-[24%] rounded-full outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/90"
           />
 
           <button
@@ -276,7 +297,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             type="button"
             aria-label="Open badges"
             onClick={() => onNavigate('achievements')}
-            className="flex min-w-0 items-center justify-center gap-1 rounded-xl border border-violet-200/35 bg-[#0b1b48]/95 px-1.5 py-2 text-[9px] font-black text-violet-100 shadow-[0_0_14px_rgba(167,139,250,.2)] backdrop-blur-sm transition hover:border-violet-100 hover:bg-violet-400/20 active:scale-95 focus-visible:ring-2 focus-visible:ring-violet-200"
+            className="flex min-w-0 items-center justify-center gap-1 rounded-xl border border-violet-200/35 bg-[#0b1b48]/95 px-1.5 py-2 text-[10px] font-black text-violet-100 shadow-[0_0_14px_rgba(167,139,250,.2)] backdrop-blur-sm transition hover:border-violet-100 hover:bg-violet-400/20 active:scale-95 focus-visible:ring-2 focus-visible:ring-violet-200"
           >
             <Award className="h-3.5 w-3.5 shrink-0 text-violet-200" />
             <span className="truncate">Badges</span>

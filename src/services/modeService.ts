@@ -213,11 +213,26 @@ const generateTargetQuestion = (difficulty: ModeDifficulty, rng: () => number, w
     { label: `${a * b} - ${c}`, value: a * b - c },
     { label: `${a + c} × ${b}`, value: (a + c) * b }
   ];
-  const unique = candidates.filter((candidate, index, list) => (
-    list.findIndex(item => item.value === candidate.value) === index
-  ));
-  const correct = unique[0];
-  const decoys = shuffle(unique.slice(1), rng).slice(0, 3);
+  const byValue = new Map<number, { label: string; value: number }>();
+  candidates.forEach(candidate => {
+    if (!byValue.has(candidate.value)) byValue.set(candidate.value, candidate);
+  });
+  // Small ranges can make the static candidates collide. Add safe decoys until
+  // the player always receives four different result values.
+  for (let attempts = 0; byValue.size < 4 && attempts < 24; attempts += 1) {
+    const x = randomInt(2, max + 3, rng);
+    const y = randomInt(2, max + 3, rng);
+    const z = randomInt(1, cStartingMax + 3, rng);
+    const candidate = { label: `${x} × ${y} + ${z}`, value: x * y + z };
+    if (candidate.value !== target) byValue.set(candidate.value, candidate);
+  }
+  for (let offset = 1; byValue.size < 4; offset += 1) {
+    const value = target + offset;
+    if (!byValue.has(value)) byValue.set(value, { label: `${value} + 0`, value });
+  }
+  const unique = [...byValue.values()];
+  const correct = unique.find(candidate => candidate.value === target)!;
+  const decoys = shuffle(unique.filter(candidate => candidate.value !== target), rng).slice(0, 3);
   const choices = shuffle([correct, ...decoys], rng);
   return {
     display: `Which equation equals ${target}?`,
@@ -256,9 +271,62 @@ const createSudokuSolution = (size: SudokuSize, rng: () => number): number[][] =
   const box = Math.sqrt(size);
   const numbers = shuffle(Array.from({ length: size }, (_, index) => index + 1), rng);
   const pattern = (row: number, column: number) => (row * box + Math.floor(row / box) + column) % size;
-  return Array.from({ length: size }, (_, row) => (
-    Array.from({ length: size }, (_, column) => numbers[pattern(row, column)])
+  const shuffledStructure = () => shuffle(Array.from({ length: box }, (_, index) => index), rng)
+    .flatMap(group => shuffle(Array.from({ length: box }, (_, index) => group * box + index), rng));
+  const rows = shuffledStructure();
+  const columns = shuffledStructure();
+  return rows.map(row => (
+    columns.map(column => numbers[pattern(row, column)])
   ));
+};
+
+const countSudokuSolutions = (board: number[][], size: SudokuSize, limit = 2): number => {
+  const box = Math.sqrt(size);
+  let solutions = 0;
+
+  const search = (): void => {
+    if (solutions >= limit) return;
+    let targetRow = -1;
+    let targetColumn = -1;
+    let targetCandidates: number[] | null = null;
+
+    for (let row = 0; row < size; row += 1) {
+      for (let column = 0; column < size; column += 1) {
+        if (board[row][column] !== 0) continue;
+        const used = new Set<number>();
+        board[row].forEach(value => used.add(value));
+        for (let index = 0; index < size; index += 1) used.add(board[index][column]);
+        const rowStart = Math.floor(row / box) * box;
+        const columnStart = Math.floor(column / box) * box;
+        for (let r = rowStart; r < rowStart + box; r += 1) {
+          for (let c = columnStart; c < columnStart + box; c += 1) used.add(board[r][c]);
+        }
+        const candidates = Array.from({ length: size }, (_, index) => index + 1).filter(value => !used.has(value));
+        if (!candidates.length) return;
+        if (!targetCandidates || candidates.length < targetCandidates.length) {
+          targetRow = row;
+          targetColumn = column;
+          targetCandidates = candidates;
+          if (candidates.length === 1) break;
+        }
+      }
+      if (targetCandidates?.length === 1) break;
+    }
+
+    if (!targetCandidates) {
+      solutions += 1;
+      return;
+    }
+    targetCandidates.forEach(value => {
+      if (solutions >= limit) return;
+      board[targetRow][targetColumn] = value;
+      search();
+      board[targetRow][targetColumn] = 0;
+    });
+  };
+
+  search();
+  return solutions;
 };
 
 export const generateSudokuPuzzle = (
@@ -279,10 +347,20 @@ export const generateSudokuPuzzle = (
   const removalCount = Math.min(maxRemovals, baseRemovalCount + (survival ? Math.floor((wave - 1) * (size === 4 ? 1 : 2)) : routeBoost));
 
   const cells = shuffle(Array.from({ length: size * size }, (_, index) => index), rng);
-  cells.slice(0, removalCount).forEach(index => {
+  let removed = 0;
+  // Keep each tentative removal only when the puzzle still has one solution.
+  // The bounded pass avoids costly retry loops on sparse 9×9 expert boards.
+  cells.slice(0, Math.min(cells.length, removalCount + (size === 9 ? 18 : 4))).forEach(index => {
+    if (removed >= removalCount) return;
     const row = Math.floor(index / size);
     const column = index % size;
+    const previous = puzzle[row][column];
     puzzle[row][column] = 0;
+    if (countSudokuSolutions(puzzle, size, 2) === 1) {
+      removed += 1;
+    } else {
+      puzzle[row][column] = previous;
+    }
   });
 
   return {

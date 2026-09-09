@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:android-debug": "tsc && vite build --mode development",
     "lint": "tsc --noEmit",
     "preview": "vite preview"
   },

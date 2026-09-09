@@ -6,6 +6,8 @@ import {
   BannerAdOptions,
   BannerAdSize,
   BannerAdPosition,
+  BannerAdPluginEvents,
+  AdMobBannerSize,
   MaxAdContentRating,
   InterstitialAdPluginEvents
 } from '@capacitor-community/admob';
@@ -19,6 +21,11 @@ import type { PluginListenerHandle } from '@capacitor/core';
 // Keep these ad unit IDs public, but use AdMob test-device tooling when testing.
 const isNative = () => Capacitor.isNativePlatform();
 const isDevelopment = Boolean((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV);
+// `vite build --mode development` is the safe path for Capacitor debug APKs.
+// Production builds keep the configured production IDs and live-ad behaviour.
+const useTestAds = isDevelopment
+  || (import.meta as ImportMeta & { env?: { MODE?: string; VITE_ADMOB_TESTING?: string } }).env?.MODE === 'development'
+  || (import.meta as ImportMeta & { env?: { VITE_ADMOB_TESTING?: string } }).env?.VITE_ADMOB_TESTING === 'true';
 
 const AD_UNITS = {
   android: {
@@ -39,7 +46,7 @@ const getAdUnitId = (type: 'banner' | 'interstitial' | 'reward') => {
 
 const INTERSTITIAL_COOLDOWN_MS = 120000;
 const AD_LOAD_TIMEOUT_MS = 8000;
-const REWARDED_TIMEOUT_MS = 30000;
+const REWARDED_TIMEOUT_MS = 120000;
 type RewardPurpose = 'double-coins' | 'continue' | 'power-up' | 'coins';
 
 const WEB_REWARD_MESSAGES: Record<RewardPurpose, string> = {
@@ -61,6 +68,32 @@ let interstitialShowing = false;
 let rewardReady = false;
 let rewardLoading: Promise<boolean> | null = null;
 let rewardShowing = false;
+let bannerSizeListenerInstalled = false;
+let bannerHeight = 0;
+const bannerSizeSubscribers = new Set<(height: number) => void>();
+
+const publishBannerHeight = (height: number) => {
+  bannerHeight = Math.max(0, Math.round(height));
+  bannerSizeSubscribers.forEach(listener => listener(bannerHeight));
+};
+
+const installBannerSizeListener = async () => {
+  if (!isNative() || bannerSizeListenerInstalled) return;
+  bannerSizeListenerInstalled = true;
+  try {
+    await AdMob.addListener(BannerAdPluginEvents.SizeChanged, (size: AdMobBannerSize) => {
+      publishBannerHeight(size.height);
+      logAdEvent('banner_size_changed', { height: size.height, width: size.width });
+    });
+    await AdMob.addListener(BannerAdPluginEvents.FailedToLoad, error => {
+      publishBannerHeight(0);
+      logAdFailure('banner_failed_to_load', error);
+    });
+  } catch (error) {
+    bannerSizeListenerInstalled = false;
+    logAdFailure('banner_listener_failed', error);
+  }
+};
 
 const logAdEvent = (event: string, details?: Record<string, unknown>) => {
   if (isDevelopment) console.debug(`[ads] ${event}`, details ?? {});
@@ -94,7 +127,7 @@ const applyBannerVisibility = async () => {
         adSize: BannerAdSize.ADAPTIVE_BANNER,
         position: BannerAdPosition.BOTTOM_CENTER,
         margin: 0,
-        isTesting: false
+        isTesting: useTestAds
       };
       await AdMob.showBanner(options);
       bannerVisible = true;
@@ -104,9 +137,11 @@ const applyBannerVisibility = async () => {
       // its local visibility flag while the native ad view remains attached.
       await AdMob.removeBanner();
       bannerVisible = false;
+      publishBannerHeight(0);
       logAdEvent('banner_hidden');
     }
   } catch (error) {
+    if (!bannerRequested) publishBannerHeight(0);
     logAdFailure(bannerRequested ? 'banner_failed' : 'banner_hide_failed', error);
   }
 };
@@ -127,7 +162,7 @@ const loadInterstitial = async (): Promise<boolean> => {
     try {
       const options: AdOptions = {
         adId: getAdUnitId('interstitial'),
-        isTesting: false
+        isTesting: useTestAds
       };
       await withTimeout(AdMob.prepareInterstitial(options), AD_LOAD_TIMEOUT_MS);
       interstitialReady = true;
@@ -157,7 +192,7 @@ const loadRewardVideo = async (): Promise<boolean> => {
     try {
       const options: RewardAdOptions = {
         adId: getAdUnitId('reward'),
-        isTesting: false
+        isTesting: useTestAds
       };
       await withTimeout(AdMob.prepareRewardVideoAd(options), AD_LOAD_TIMEOUT_MS);
       rewardReady = true;
@@ -199,7 +234,7 @@ const initialize = async (): Promise<void> => {
       }
 
       await withTimeout(AdMob.initialize({
-        initializeForTesting: false,
+        initializeForTesting: useTestAds,
         maxAdContentRating: MaxAdContentRating.General,
         // Conservative defaults for this mixed/unknown-age audience.
         tagForChildDirectedTreatment: true,
@@ -207,6 +242,7 @@ const initialize = async (): Promise<void> => {
       }), AD_LOAD_TIMEOUT_MS);
       initialized = true;
       logAdEvent('initialized');
+      await installBannerSizeListener();
 
       // Preloading and banner reconciliation must never delay the app UI.
       void preloadInterstitial();
@@ -338,8 +374,6 @@ const showRewardVideo = async (purpose: RewardPurpose = 'coins'): Promise<boolea
         listenerHandles.push(await AdMob.addListener(RewardAdPluginEvents.FailedToShow, () => finish(false, 'reward_failed_to_show')));
         listenerHandles.push(await AdMob.addListener(RewardAdPluginEvents.Dismissed, () => finish(false, 'reward_dismissed')));
 
-        timeoutHandle = setTimeout(() => finish(false, 'reward_timeout'), REWARDED_TIMEOUT_MS);
-
         if (!rewardReady) {
           const loaded = await loadRewardVideo();
           if (!loaded) {
@@ -349,8 +383,10 @@ const showRewardVideo = async (purpose: RewardPurpose = 'coins'): Promise<boolea
         }
 
         rewardReady = false;
+        // Start the safety timer only after a reward is loaded and show has
+        // begun; a normal video is allowed to use its native lifecycle.
+        timeoutHandle = setTimeout(() => finish(false, 'reward_timeout'), REWARDED_TIMEOUT_MS);
         await AdMob.showRewardVideoAd();
-        if (!settled) finish(false, 'reward_completed_without_event');
       } catch (error) {
         logAdFailure('reward_failed_to_show', error);
         finish(false, 'reward_error');
@@ -373,5 +409,10 @@ export const adMobService = {
   showRewardVideo,
   showBanner: () => requestBannerVisibility(true),
   hideBanner: () => requestBannerVisibility(false),
-  setBannerVisible: requestBannerVisibility
+  setBannerVisible: requestBannerVisibility,
+  onBannerSizeChange: (listener: (height: number) => void) => {
+    bannerSizeSubscribers.add(listener);
+    listener(bannerHeight);
+    return () => bannerSizeSubscribers.delete(listener);
+  }
 };

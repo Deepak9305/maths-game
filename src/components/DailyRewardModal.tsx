@@ -32,7 +32,7 @@ const DailyRewardModal: React.FC<DailyRewardModalProps> = ({ streak, bonus, onCl
         </div>
 
         <h2 className="mt-1 mb-2 text-3xl font-black tracking-tight text-white">Streak Kept!</h2>
-        <p className="mb-4 font-medium text-gray-400">You're on fire! Keep it up!</p>
+        <p className="mb-4 font-medium text-gray-400">Your daily visit is counted and the bonus is already collected.</p>
 
         <div className="relative mb-4 rounded-2xl border border-white/10 bg-white/5 p-4 sm:p-5">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
@@ -58,7 +58,7 @@ const DailyRewardModal: React.FC<DailyRewardModalProps> = ({ streak, bonus, onCl
           onClick={onClose}
           className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-red-600 py-3.5 text-lg font-black text-white shadow-[0_0_20px_rgba(249,115,22,0.3)] transition-all hover:from-orange-400 hover:to-red-500 hover:scale-[1.02] active:scale-95"
         >
-          <CheckCircle className="w-6 h-6" /> Claim Reward
+          <CheckCircle className="w-6 h-6" /> Continue
         </button>
       </div>
     </div>

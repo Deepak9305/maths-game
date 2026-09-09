@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle2, Delete, Grid2X2, Pause, XCircle } from 'lucide-react';
+import { CheckCircle2, Grid2X2, Pause, XCircle } from 'lucide-react';
 import { SudokuSize } from '../types';
 
 interface SudokuScreenProps {
@@ -15,7 +15,6 @@ interface SudokuScreenProps {
   isWaveTransition?: boolean;
   onSelectCell: (row: number, column: number) => void;
   onInput: (value: number) => void;
-  onErase: () => void;
   onExit: () => void;
 }
 
@@ -32,7 +31,6 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
   isWaveTransition,
   onSelectCell,
   onInput,
-  onErase,
   onExit
 }) => {
   const boxSize = Math.sqrt(size);
@@ -43,6 +41,7 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
     const isSelected = selectedCell?.row === row && selectedCell.column === column;
     const sharesSelection = selectedCell && (selectedCell.row === row || selectedCell.column === column);
     const isGiven = given[row]?.[column];
+    const isLocked = isGiven || board[row]?.[column] !== 0;
     const borders = [
       row % boxSize === 0 ? 'border-t-2' : '',
       column % boxSize === 0 ? 'border-l-2' : '',
@@ -55,7 +54,7 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
         ? 'z-10 bg-cyan-300 text-slate-950 shadow-[0_0_18px_rgba(103,232,249,0.55)]'
         : sharesSelection
           ? 'bg-cyan-300/15 text-white'
-          : isGiven
+          : isLocked
             ? 'bg-[#102c66] text-cyan-100'
             : 'bg-[#071b4b] text-orange-200 hover:bg-cyan-300/10'
       }`;
@@ -108,10 +107,11 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
               <button
                 type="button"
                 key={`${rowIndex}-${columnIndex}`}
-                aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}${value ? `, value ${value}` : ', empty'}`}
+                aria-label={`Row ${rowIndex + 1}, column ${columnIndex + 1}${value ? `, value ${value}, locked` : ', empty'}`}
                 aria-pressed={selectedCell?.row === rowIndex && selectedCell.column === columnIndex}
+                disabled={Boolean(given[rowIndex]?.[columnIndex] || value)}
                 onClick={() => onSelectCell(rowIndex, columnIndex)}
-                className={cellClass(rowIndex, columnIndex)}
+                className={`${cellClass(rowIndex, columnIndex)} disabled:cursor-default`}
               >
                 {value || ''}
               </button>
@@ -134,13 +134,6 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
               {value}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={onErase}
-            className="col-span-3 flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-red-300/20 bg-red-400/10 text-sm font-black text-red-100 transition hover:bg-red-400/20 active:translate-y-0.5"
-          >
-            <Delete className="h-5 w-5" /> Erase selected cell
-          </button>
         </div>
 
         <div className="mt-5 flex items-center justify-center gap-2 text-xs font-bold text-white/45">

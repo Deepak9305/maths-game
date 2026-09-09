@@ -20,7 +20,7 @@ import { GAME_MODE_DEFINITIONS, generateModeQuestion, generateSudokuPuzzle, getG
 import { playSound, music } from './services/audioService';
 import { adMobService } from './services/adMobService';
 import { nativeService } from './services/nativeService';
-import { storageService } from './services/storageService';
+import { normalizePlayerState, storageService } from './services/storageService';
 
 // Constants
 const ROCKETS: RocketItem[] = [
@@ -36,7 +36,7 @@ const ACHIEVEMENTS_LIST: AchievementItem[] = [
   { id: 'speed_demon', name: 'Speed Demon', icon: '⚡', reward: 100, description: 'Answer correctly with under 3s left' },
   { id: 'perfect_game', name: 'Perfect Game', icon: '💯', reward: 150, description: 'Answer every question correctly' },
   { id: 'level_5', name: 'High Flyer', icon: '🦅', reward: 300, description: 'Reach player level 5' },
-  { id: 'coin_1000', name: 'Treasure Hunter', icon: '💎', reward: 250, description: 'Earn 1,000 coins total' },
+  { id: 'coin_1000', name: 'Treasure Hunter', icon: '💎', reward: 250, description: 'Hold 1,000 coins at once' },
   { id: 'score_5000', name: 'Brainiac', icon: '🧠', reward: 400, description: 'Reach a lifetime score of 5,000' },
   { id: 'combo_10', name: 'Combo King', icon: '👑', reward: 150, description: 'Build a 10x combo multiplier' },
   { id: 'wave_20', name: 'Survivor', icon: '🛡️', reward: 500, description: 'Reach wave 20 in Survival mode' },
@@ -79,6 +79,7 @@ const GALAXY_MAP_LEVELS = 50;
 type PrimaryMode = Exclude<GameMode, 'survival'>;
 type ModeProgress = NonNullable<PlayerState['modeProgress']>;
 const BANNER_SCREENS: ScreenState[] = ['map', 'pet', 'shop', 'achievements'];
+const BACK_DISMISS_EVENT = 'mathquest-back-dismiss';
 
 const clampMapLevel = (value: number | undefined, fallback = 1) => {
   const level = typeof value === 'number' && Number.isFinite(value) ? Math.floor(value) : fallback;
@@ -87,18 +88,13 @@ const clampMapLevel = (value: number | undefined, fallback = 1) => {
 
 const getInitialModeProgress = (savedPlayer?: PlayerState): ModeProgress => {
   const legacyLevel = clampMapLevel(savedPlayer?.level);
-  const hasSavedModeProgress = savedPlayer?.modeProgress !== undefined;
-
   return PRIMARY_GAME_MODES.reduce<ModeProgress>((progress, mode) => {
     const savedLevel = savedPlayer?.modeProgress?.[mode];
     const gamesPlayed = savedPlayer?.modeStats?.[mode]?.gamesPlayed;
-    const legacyModeLevel = hasSavedModeProgress
-      ? 1
-      : gamesPlayed !== undefined
-        ? clampMapLevel(gamesPlayed + 1)
-        : legacyLevel;
-
-    progress[mode] = clampMapLevel(savedLevel, legacyModeLevel);
+    const fallback = typeof gamesPlayed === 'number' && Number.isFinite(gamesPlayed)
+      ? clampMapLevel(gamesPlayed + 1)
+      : legacyLevel;
+    progress[mode] = clampMapLevel(savedLevel, fallback);
     return progress;
   }, {});
 };
@@ -106,12 +102,46 @@ const getInitialModeProgress = (savedPlayer?: PlayerState): ModeProgress => {
 const isPrimaryMode = (mode: GameMode): mode is PrimaryMode => PRIMARY_GAME_MODES.includes(mode as PrimaryMode);
 const getSurvivalSudokuMistakeLimit = (wave: number) => Math.max(1, 3 - Math.floor((wave - 1) / 4));
 
+const getSharedAchievementIds = ({
+  level, coins, totalScore, score, streak, difficulty, survival, wave
+}: {
+  level: number; coins: number; totalScore: number; score: number; streak: number;
+  difficulty: ModeDifficulty; survival: boolean; wave: number;
+}) => {
+  const ids: string[] = [];
+  if (level >= 5) ids.push('level_5');
+  if (level >= 10) ids.push('level_10');
+  if (level >= 20) ids.push('level_20');
+  if (level >= 50) ids.push('level_50');
+  if (coins >= 1000) ids.push('coin_1000');
+  if (coins >= 2000) ids.push('hoarder_coins');
+  if (coins >= 5000) ids.push('wealthy_coins');
+  if (totalScore >= 5000) ids.push('score_5000');
+  if (totalScore >= 10000) ids.push('total_score_10k');
+  if (totalScore >= 50000) ids.push('total_score_50k');
+  if (totalScore >= 100000) ids.push('total_score_100k');
+  if (score >= 5000) ids.push('score_game_5000');
+  if (streak >= 10) ids.push('streak_10');
+  if (streak >= 25) ids.push('streak_25');
+  if (streak >= 50) ids.push('streak_50');
+  if (streak >= 100) ids.push('streak_100');
+  if (difficulty === 'expert' && streak >= 20) ids.push('hard_streak_20');
+  if (survival) {
+    if (wave >= 5) ids.push('wave_5');
+    if (wave >= 10) ids.push('wave_10');
+    if (wave >= 20) ids.push('wave_20');
+    if (wave >= 30) ids.push('wave_30');
+  }
+  return ids;
+};
+
 const App: React.FC = () => {
   // Navigation State
   const [screen, setScreen] = useState<ScreenState>('splash');
   const [isLoaded, setIsLoaded] = useState(false);
   const [isDocumentVisible, setIsDocumentVisible] = useState(true);
   const [settingsOpenRequest, setSettingsOpenRequest] = useState(0);
+  const [bannerInset, setBannerInset] = useState(0);
 
   // Game Configuration State
   const [difficulty, setDifficulty] = useState<Difficulty>('easy');
@@ -164,6 +194,7 @@ const App: React.FC = () => {
   const [sudokuMistakes, setSudokuMistakes] = useState(0);
   const sudokuCompleteRef = useRef(false);
   const sudokuInputLockRef = useRef(false);
+  const sudokuMistakesRef = useRef(0);
 
   // Survival Mode State
   const [currentWave, setCurrentWave] = useState(1);
@@ -184,6 +215,12 @@ const App: React.FC = () => {
   const [activePowerUp, setActivePowerUp] = useState<'timeFreeze' | null>(null);
   const [timer, setTimer] = useState<number | null>(null);
   const lastRewardProcessedRef = useRef<string | null>(null);
+  const saveReadFailedRef = useRef(false);
+  const latestSaveRef = useRef<{ player: PlayerState; dailyStreak: number } | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveInFlightRef = useRef(false);
+  const saveQueuedRef = useRef(false);
+  const saveErrorReportedRef = useRef(false);
 
   // Pause & Ad State
   const [isPaused, setIsPaused] = useState(false);
@@ -191,6 +228,64 @@ const App: React.FC = () => {
   const [lossContinueOpen, setLossContinueOpen] = useState(false);
   const [hasUsedRewardContinue, setHasUsedRewardContinue] = useState(false);
   const [completionOutcome, setCompletionOutcome] = useState<'won' | 'lost'>('won');
+  const modalStateRef = useRef({ daily: false, paused: false, powerUp: false, continue: false });
+  const [isAnswerResolving, setIsAnswerResolving] = useState(false);
+  const gameSessionRef = useRef(0);
+  const gameTimeoutsRef = useRef(new Set<ReturnType<typeof setTimeout>>());
+  const answerLockedRef = useRef(false);
+  const hintedQuestionRef = useRef<number | null>(null);
+  const questionVersionRef = useRef(0);
+  const runHadMistakeRef = useRef(false);
+  const sudokuLockedCellsRef = useRef(new Set<string>());
+  const freezeActiveRef = useRef(false);
+
+  const clearGameTimeouts = () => {
+    gameTimeoutsRef.current.forEach(handle => clearTimeout(handle));
+    gameTimeoutsRef.current.clear();
+  };
+
+  const invalidateGameSession = () => {
+    gameSessionRef.current += 1;
+    clearGameTimeouts();
+    answerLockedRef.current = true;
+    sudokuInputLockRef.current = true;
+    freezeActiveRef.current = false;
+    setIsAnswerResolving(true);
+  };
+
+  const beginGameSession = () => {
+    clearGameTimeouts();
+    gameSessionRef.current += 1;
+    answerLockedRef.current = false;
+    sudokuInputLockRef.current = false;
+    hintedQuestionRef.current = null;
+    questionVersionRef.current = 0;
+    runHadMistakeRef.current = false;
+    sudokuLockedCellsRef.current.clear();
+    freezeActiveRef.current = false;
+    sudokuMistakesRef.current = 0;
+    setIsAnswerResolving(false);
+    return gameSessionRef.current;
+  };
+
+  const scheduleGameTask = (callback: () => void, delay: number, sessionId = gameSessionRef.current) => {
+    const handle = setTimeout(() => {
+      gameTimeoutsRef.current.delete(handle);
+      if (sessionId === gameSessionRef.current) callback();
+    }, delay);
+    gameTimeoutsRef.current.add(handle);
+    return handle;
+  };
+
+  const setReadyQuestion = (nextQuestion: Question) => {
+    questionVersionRef.current += 1;
+    hintedQuestionRef.current = null;
+    answerLockedRef.current = false;
+    setIsAnswerResolving(false);
+    setQuestion(nextQuestion);
+  };
+
+  useEffect(() => () => clearGameTimeouts(), []);
 
   // --- Effects ---
 
@@ -213,85 +308,62 @@ const App: React.FC = () => {
         }
       })();
 
-      // Load independent local data in parallel before showing the personalized home screen.
-      const [persistedCode, savedData] = await Promise.all([
-        storageService.getFriendCode(() => 'QUEST' + Math.floor(Math.random() * 9000 + 1000)),
-        storageService.loadData()
-      ]);
-      setFriendCode(persistedCode);
+      try {
+        const [codeResult, saveResult] = await Promise.allSettled([
+          storageService.getFriendCode(() => 'QUEST' + Math.floor(Math.random() * 9000 + 1000)),
+          storageService.loadDataResult()
+        ]);
+        const persistedCode = codeResult.status === 'fulfilled'
+          ? codeResult.value
+          : 'QUEST' + Math.floor(Math.random() * 9000 + 1000);
+        const loadResult = saveResult.status === 'fulfilled' ? saveResult.value : { data: null, failed: true };
+        saveReadFailedRef.current = loadResult.failed;
+        setFriendCode(persistedCode);
 
-      if (savedData) {
-        const p = savedData.player;
-        if (!p.ownedRockets) p.ownedRockets = ['🚀'];
-        if (!p.equippedRocket) p.equippedRocket = '🚀';
-        if (!p.achievements) p.achievements = [];
-        if (!p.powerUps) p.powerUps = { hint: 3, timeFreeze: 2 };
-        if (typeof p.powerUps.hint !== 'number') p.powerUps.hint = 3;
-        if (typeof p.powerUps.timeFreeze !== 'number') p.powerUps.timeFreeze = 2;
-        if (p.lastRewardDate === undefined) p.lastRewardDate = null;
-        if (typeof p.hapticsEnabled !== 'boolean') p.hapticsEnabled = true;
-        if (typeof p.musicEnabled !== 'boolean') p.musicEnabled = true;
-        if (!p.dailyChallenges) p.dailyChallenges = [];
-        if (!p.modeStats) p.modeStats = {};
-        p.modeProgress = getInitialModeProgress(p);
-
-        // Check if we need to generate new challenges
         const today = new Date().toDateString();
+        const now = Date.now();
+        const saved = loadResult.data;
+        const p = normalizePlayerState(saved?.player);
+        p.modeProgress = getInitialModeProgress(p);
         if (p.lastChallengeDate !== today) {
           p.dailyChallenges = generateDailyChallenges();
           p.lastChallengeDate = today;
         }
+        Object.values(p.pets ?? {}).forEach(pet => {
+          const hoursPassed = Math.max(0, (now - pet.lastInteractionTime) / (1000 * 60 * 60));
+          if (hoursPassed >= 1) {
+            const decay = Math.floor(hoursPassed * 5);
+            pet.happiness = Math.max(0, pet.happiness - decay);
+            pet.hunger = Math.min(100, pet.hunger + decay);
+            pet.lastInteractionTime = now;
+          }
+        });
 
-        // Handle Pet Decay and Defaults
-        if (p.pet && !p.pets) {
-          // Migrate legacy pet
-          p.pets = {
-            'alien': { ...p.pet, id: 'alien' }
-          };
-          p.activePetId = 'alien';
-          delete p.pet;
-        }
-
-        if (!p.pets) {
-          p.pets = {
-            'alien': { id: 'alien', name: 'Astro', happiness: 100, hunger: 0, level: 1, xp: 0, lastInteractionTime: Date.now() }
-          };
-          p.activePetId = 'alien';
-        }
-
-        if (p.pets) {
-          const now = Date.now();
-          Object.values(p.pets).forEach(pet => {
-            if (pet.xp === undefined) pet.xp = 0;
-            if (pet.lastInteractionTime === undefined) pet.lastInteractionTime = now;
-
-            const hoursPassed = (now - pet.lastInteractionTime) / (1000 * 60 * 60);
-            if (hoursPassed > 1) {
-              // Only update timestamp when decay actually happens
-              const decayAmount = Math.floor(hoursPassed * 5); // 5 points per hour
-              pet.happiness = Math.max(0, pet.happiness - decayAmount);
-              pet.hunger = Math.min(100, pet.hunger + decayAmount);
-              pet.lastInteractionTime = now; // stamp only after decaying
-            }
-          });
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const nextStreak = p.lastRewardDate === today
+          ? Math.max(1, saved?.dailyStreak ?? 1)
+          : p.lastRewardDate === yesterday.toDateString()
+            ? Math.max(1, saved?.dailyStreak ?? 1) + 1
+            : 1;
+        if (p.lastRewardDate !== today) {
+          const bonus = nextStreak * 10;
+          p.coins += bonus;
+          p.lastRewardDate = today;
+          lastRewardProcessedRef.current = today;
+          setDailyRewardInfo({ streak: nextStreak, bonus });
         }
 
         setPlayer(p);
-        setDailyStreak(savedData.dailyStreak);
-      } else {
-        // First launch, generate challenges
-        setPlayer(prev => ({
-          ...prev,
-          dailyChallenges: generateDailyChallenges(),
-          lastChallengeDate: new Date().toDateString(),
-          pets: {
-            'alien': { id: 'alien', name: 'Astro', happiness: 100, hunger: 0, level: 1, xp: 0, lastInteractionTime: Date.now() }
-          },
-          activePetId: 'alien'
-        }));
+        setDailyStreak(nextStreak);
+        if (p.name.trim()) setScreen('dashboard');
+      } catch (error) {
+        console.error('Startup data migration failed; using in-memory defaults', error);
+        saveReadFailedRef.current = true;
+        setPlayer(previous => ({ ...previous, dailyChallenges: generateDailyChallenges(), lastChallengeDate: new Date().toDateString() }));
+      } finally {
+        setIsLoaded(true);
       }
-
-      setIsLoaded(true);
     };
 
     init();
@@ -312,14 +384,40 @@ const App: React.FC = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [screen]);
 
-  // Save Data
+  // Save data in a short, ordered queue. This avoids native Preferences write
+  // races while preserving the most recent in-memory snapshot.
   useEffect(() => {
-    if (isLoaded) {
-      storageService.saveData(player, dailyStreak).then(ok => {
-        if (!ok) nativeService.ui.showToast('Warning: Progress could not be saved.');
-      });
-    }
+    if (!isLoaded || saveReadFailedRef.current) return;
+    latestSaveRef.current = { player, dailyStreak };
+    if (saveTimerRef.current) return;
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      const flush = async () => {
+        if (saveInFlightRef.current) {
+          saveQueuedRef.current = true;
+          return;
+        }
+        saveInFlightRef.current = true;
+        do {
+          saveQueuedRef.current = false;
+          const snapshot = latestSaveRef.current;
+          if (!snapshot) continue;
+          const ok = await storageService.saveData(snapshot.player, snapshot.dailyStreak);
+          if (!ok && !saveErrorReportedRef.current) {
+            saveErrorReportedRef.current = true;
+            nativeService.ui.showToast('Progress could not be saved. Your current session is still safe.');
+          }
+          if (ok) saveErrorReportedRef.current = false;
+        } while (saveQueuedRef.current);
+        saveInFlightRef.current = false;
+      };
+      void flush();
+    }, 250);
   }, [player, dailyStreak, isLoaded]);
+
+  useEffect(() => () => {
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+  }, []);
 
   // Keep device feedback preferences in sync with the saved player settings.
   useEffect(() => {
@@ -353,11 +451,30 @@ const App: React.FC = () => {
     void adMobService.setBannerVisible(shouldShowBanner);
   }, [screen, isLoaded, isDocumentVisible, isPaused, powerUpAdTarget, lossContinueOpen]);
 
+  useEffect(() => {
+    const unsubscribe = adMobService.onBannerSizeChange(setBannerInset);
+    return () => { unsubscribe(); };
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty('--native-banner-inset', `${bannerInset}px`);
+    return () => { document.documentElement.style.removeProperty('--native-banner-inset'); };
+  }, [bannerInset]);
+
   // Handle Android Back Button
   // Keep screenRef in sync with screen state
   useEffect(() => {
     screenRef.current = screen;
   }, [screen]);
+
+  useEffect(() => {
+    modalStateRef.current = {
+      daily: dailyRewardInfo !== null,
+      paused: isPaused,
+      powerUp: powerUpAdTarget !== null,
+      continue: lossContinueOpen
+    };
+  }, [dailyRewardInfo, isPaused, powerUpAdTarget, lossContinueOpen]);
 
   // Keep feedbackRef in sync with feedback state
   useEffect(() => {
@@ -375,7 +492,21 @@ const App: React.FC = () => {
     const setupBackButton = async () => {
       try {
         listener = await CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-          if (screenRef.current === 'game') {
+          const dismissEvent = new Event(BACK_DISMISS_EVENT, { cancelable: true });
+          window.dispatchEvent(dismissEvent);
+          if (dismissEvent.defaultPrevented) return;
+
+          const modal = modalStateRef.current;
+          if (modal.daily) {
+            setDailyRewardInfo(null);
+          } else if (modal.powerUp) {
+            setPowerUpAdTarget(null);
+          } else if (modal.continue) {
+            setLossContinueOpen(false);
+            setIsPaused(true);
+          } else if (modal.paused) {
+            setIsPaused(false);
+          } else if (screenRef.current === 'game') {
             setIsPaused(true);
           } else if (screenRef.current === 'dashboard' || screenRef.current === 'splash') {
             CapacitorApp.exitApp();
@@ -405,7 +536,7 @@ const App: React.FC = () => {
   };
 
   const openSettingsFromNavigation = () => {
-    setSettingsOpenRequest(request => request + 1);
+    setSettingsOpenRequest(1);
     navigate('dashboard');
   };
 
@@ -440,6 +571,7 @@ const App: React.FC = () => {
     mapLevel?: number
   ) => {
     playSound.click();
+    beginGameSession();
     const mode = requestedMode === 'survival' ? 'quick-calc' : requestedMode;
     const survival = requestedSurvival || requestedMode === 'survival';
     setActiveMapRun(mapLevel === undefined ? null : { mode, level: clampMapLevel(mapLevel) });
@@ -495,7 +627,7 @@ const App: React.FC = () => {
       setSudokuBoard(null);
       setSudokuSolution(null);
       setSudokuGiven(null);
-      setQuestion(generateModeQuestion(mode, effectiveTier, rngRef.current, 1, survival, routeLevel));
+      setReadyQuestion(generateModeQuestion(mode, effectiveTier, rngRef.current, 1, survival, routeLevel));
       setTimer(settings.time);
     }
 
@@ -532,7 +664,15 @@ const App: React.FC = () => {
     }
   }, [player.achievements]);
 
+  useEffect(() => {
+    if (!dailyRewardInfo) return;
+    if (dailyRewardInfo.streak >= 3) unlockAchievement('daily_streak_3');
+    if (dailyRewardInfo.streak >= 7) unlockAchievement('daily_streak_7');
+  }, [dailyRewardInfo, unlockAchievement]);
+
   const handleGameCompletion = useCallback(async (completedScore = score, completedStreak = streak, outcome: 'won' | 'lost' = 'won') => {
+    if (screenRef.current !== 'game') return;
+    invalidateGameSession();
     setCompletionOutcome(outcome);
     const routeMode: PrimaryMode | null = activeMapRun && !isSurvivalMode && outcome === 'won' && isPrimaryMode(gameMode) && activeMapRun.mode === gameMode
       ? gameMode
@@ -568,53 +708,15 @@ const App: React.FC = () => {
       unlockAchievement('first_win');
     }
 
-    const today = new Date().toDateString();
-
-    if (player.lastRewardDate !== today && lastRewardProcessedRef.current !== today) {
-      lastRewardProcessedRef.current = today;
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayString = yesterday.toDateString();
-
-      let newStreak = dailyStreak;
-      if (player.lastRewardDate === yesterdayString) {
-        newStreak = dailyStreak + 1;
-      } else {
-        newStreak = 1;
-      }
-
-      const bonusCoins = newStreak * 10;
-
-      setDailyStreak(newStreak);
-
-      // Check Daily Streak Achievements
-      if (newStreak >= 3) setTimeout(() => unlockAchievement('daily_streak_3'), 100);
-      if (newStreak >= 7) setTimeout(() => unlockAchievement('daily_streak_7'), 200);
-
-      setTimeout(() => {
-        playSound.levelUp();
-        nativeService.haptics.notificationSuccess();
-        setDailyRewardInfo({ streak: newStreak, bonus: bonusCoins });
-      }, 800);
-
-      setPlayer(prev => {
-        if (prev.lastRewardDate === today) return prev;
-        return {
-          ...prev,
-          coins: prev.coins + bonusCoins,
-          lastRewardDate: today
-        };
-      });
-    }
-
     setScreen('complete');
-  }, [player.achievements, player.lastRewardDate, dailyStreak, unlockAchievement, gameMode, score, streak, isSurvivalMode, activeMapRun]);
+  }, [player.achievements, unlockAchievement, gameMode, score, streak, isSurvivalMode, activeMapRun]);
 
   const handleDoubleCoins = async (): Promise<boolean> => {
     if (completionOutcome !== 'won') return false;
+    const sessionId = gameSessionRef.current;
     playSound.click();
     const success = await adMobService.showRewardVideo('double-coins');
-    if (success) {
+    if (success && sessionId === gameSessionRef.current && screenRef.current === 'complete') {
       // Add the same amount again (doubling total) — don't double-count what's already added
       setPlayer(prev => ({ ...prev, coins: prev.coins + gameCoins }));
       setGameCoins(prev => prev * 2);
@@ -626,10 +728,11 @@ const App: React.FC = () => {
 
   const handleContinueAfterLoss = async (): Promise<boolean> => {
     if (hasUsedRewardContinue || currentLives === null) return false;
+    const sessionId = gameSessionRef.current;
 
     playSound.click();
     const rewarded = await adMobService.showRewardVideo('continue');
-    if (!rewarded) return false;
+    if (!rewarded || sessionId !== gameSessionRef.current || screenRef.current !== 'game') return false;
 
     const settings = getRunConfig(gameMode, modeDifficulty, currentWave, isSurvivalMode);
     setHasUsedRewardContinue(true);
@@ -637,10 +740,12 @@ const App: React.FC = () => {
     setCurrentLives(1);
     if (gameMode === 'mini-sudoku') {
       setSudokuMistakes(0);
+      sudokuMistakesRef.current = 0;
       setSudokuSelectedCell(null);
+      sudokuInputLockRef.current = false;
       setFeedback('');
     } else {
-      setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave, isSurvivalMode, activeMapRun?.level));
+      setReadyQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave, isSurvivalMode, activeMapRun?.level));
       setFeedback('');
       setTimer(settings.time);
     }
@@ -667,7 +772,10 @@ const App: React.FC = () => {
   };
 
   const checkAnswer = useCallback((answerStr: string) => {
-    if (!question || (feedbackRef.current !== '' && !feedbackRef.current.startsWith('Hint:'))) return;
+    if (screenRef.current !== 'game' || !question || answerLockedRef.current) return;
+    const sessionId = gameSessionRef.current;
+    answerLockedRef.current = true;
+    setIsAnswerResolving(true);
 
     const submittedValue = Number(answerStr);
     const correct = question.choices
@@ -793,6 +901,16 @@ const App: React.FC = () => {
       }
 
       const achievementsToUnlock: string[] = [];
+      achievementsToUnlock.push(...getSharedAchievementIds({
+        level: newLevel,
+        coins: newCoins,
+        totalScore: newTotalScore,
+        score: newScore,
+        streak: newStreak,
+        difficulty: modeDifficulty,
+        survival: isSurvivalMode,
+        wave: currentWave
+      }));
 
       // Existing Checks
       if (newStreak === 10) achievementsToUnlock.push('streak_10');
@@ -854,17 +972,17 @@ const App: React.FC = () => {
           music.stop();
           nativeService.haptics.notificationSuccess();
 
-          setTimeout(() => {
+          scheduleGameTask(() => {
             setIsWaveTransition(false);
-            setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, nextWave, true, activeMapRun?.level));
+            setReadyQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, nextWave, true, activeMapRun?.level));
             setFeedback('');
             setActivePowerUp(null);
             setTimer(getRunConfig(gameMode, modeDifficulty, nextWave, true).time);
-          }, 3000);
+          }, 3000, sessionId);
 
           setFeedback(`${['Awesome!', 'Perfect!', 'Amazing!'][Math.floor(Math.random() * 3)]} +${points}`);
           setShowConfetti(true);
-          setTimeout(() => setShowConfetti(false), 2000);
+          scheduleGameTask(() => setShowConfetti(false), 2000, sessionId);
 
           // Process achievements before returning
           if (achievementsToUnlock.length > 0) {
@@ -873,7 +991,7 @@ const App: React.FC = () => {
           return;
         }
       } else {
-        if (nextQ === settings.questions && newStreak === settings.questions) {
+        if (nextQ === settings.questions && !runHadMistakeRef.current) {
           achievementsToUnlock.push('perfect_game');
         }
         if (nextQ >= settings.questions) {
@@ -889,15 +1007,15 @@ const App: React.FC = () => {
 
       setFeedback(`${['Awesome!', 'Perfect!', 'Amazing!'][Math.floor(Math.random() * 3)]} +${points}`);
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 2000);
+      scheduleGameTask(() => setShowConfetti(false), 2000, sessionId);
 
       if (isGameComplete) {
         handleGameCompletion(newScore, newStreak);
       } else {
         // Capture currentWave in a local variable so the timeout closure doesn't use stale state
         const waveForNextQ = currentWave;
-        setTimeout(() => {
-          setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, waveForNextQ, isSurvivalMode, activeMapRun?.level));
+        scheduleGameTask(() => {
+          setReadyQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, waveForNextQ, isSurvivalMode, activeMapRun?.level));
           setFeedback('');
           setActivePowerUp(null);
           if (isSurvivalMode) {
@@ -905,16 +1023,17 @@ const App: React.FC = () => {
           } else if (settings.time) {
             setTimer(settings.time);
           }
-        }, 1500);
+        }, 1500, sessionId);
       }
     } else {
       playSound.wrong();
       nativeService.haptics.notificationError();
       setStreak(0);
       setCombo(0);
+      runHadMistakeRef.current = true;
       setFeedback(`Oops! Answer: ${question.answer}`);
       setShake(true);
-      setTimeout(() => setShake(false), 500);
+      scheduleGameTask(() => setShake(false), 500, sessionId);
 
       // Lives Logic
       let isGameOver = false;
@@ -926,7 +1045,7 @@ const App: React.FC = () => {
         }
       }
 
-      setTimeout(() => {
+      scheduleGameTask(() => {
         if (isGameOver) {
           if (hasUsedRewardContinue) {
             handleGameCompletion(score, 0, 'lost');
@@ -934,7 +1053,7 @@ const App: React.FC = () => {
             setLossContinueOpen(true);
           }
         } else {
-          setQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave, isSurvivalMode, activeMapRun?.level));
+          setReadyQuestion(generateModeQuestion(gameMode, modeDifficulty, rngRef.current, currentWave, isSurvivalMode, activeMapRun?.level));
           setFeedback('');
           if (isSurvivalMode) {
             setTimer(getRunConfig(gameMode, modeDifficulty, currentWave, true).time);
@@ -942,21 +1061,21 @@ const App: React.FC = () => {
             setTimer(settings.time);
           }
         }
-      }, isGameOver ? 1500 : 2000);
+      }, isGameOver ? 1500 : 2000, sessionId);
     }
   }, [question, difficulty, gameMode, modeDifficulty, score, streak, combo, questionsAnswered, timer, handleGameCompletion, currentWave, currentLives, unlockAchievement, isSurvivalMode, hasUsedRewardContinue, activeMapRun]);
 
   const handleSudokuSelectCell = (row: number, column: number) => {
-    if (!sudokuBoard || !sudokuGiven || sudokuCompleteRef.current || sudokuGiven[row]?.[column]) return;
+    if (!sudokuBoard || !sudokuGiven || sudokuCompleteRef.current || sudokuInputLockRef.current || sudokuGiven[row]?.[column] || sudokuBoard[row]?.[column] !== 0) return;
     playSound.click();
-    sudokuInputLockRef.current = false;
     setSudokuSelectedCell({ row, column });
     setFeedback('');
   };
 
   const handleSudokuInput = (value: number) => {
-    if (!sudokuBoard || !sudokuSolution || !sudokuGiven || !sudokuSelectedCell || sudokuCompleteRef.current) return;
+    if (screenRef.current !== 'game' || !sudokuBoard || !sudokuSolution || !sudokuGiven || !sudokuSelectedCell || sudokuCompleteRef.current) return;
     if (sudokuInputLockRef.current) return;
+    const sessionId = gameSessionRef.current;
 
     const { row, column } = sudokuSelectedCell;
     if (sudokuGiven[row]?.[column] || sudokuBoard[row]?.[column] !== 0) return;
@@ -1006,6 +1125,16 @@ const App: React.FC = () => {
         const nextScore = isSurvivalMode ? score + points : points;
         const nextGameCoins = isSurvivalMode ? gameCoins + earnedCoins : earnedCoins;
         const nextGameXp = isSurvivalMode ? gameXp + earnedXP : earnedXP;
+        const sharedAchievementIds = getSharedAchievementIds({
+          level: nextLevel,
+          coins: player.coins + earnedCoins,
+          totalScore: player.totalScore + points,
+          score: nextScore,
+          streak: nextStreak,
+          difficulty: modeDifficulty,
+          survival: isSurvivalMode,
+          wave: nextWave
+        });
 
         setScore(nextScore);
         setGameCoins(nextGameCoins);
@@ -1031,9 +1160,10 @@ const App: React.FC = () => {
             return { ...challenge, current, completed: current >= challenge.target };
           })
         }));
+        sharedAchievementIds.forEach(id => unlockAchievement(id));
 
         setShowConfetti(true);
-        setTimeout(() => setShowConfetti(false), 2000);
+        scheduleGameTask(() => setShowConfetti(false), 2000, sessionId);
         if (isSurvivalMode) {
           setCurrentWave(nextWave);
           setIsWaveTransition(true);
@@ -1041,19 +1171,22 @@ const App: React.FC = () => {
           nativeService.haptics.notificationSuccess();
           setProgress(0);
           setSudokuMistakes(0);
+          sudokuMistakesRef.current = 0;
           setSudokuSelectedCell(null);
           setFeedback(`Sector cleared! +${points}`);
-          setTimeout(() => {
+          scheduleGameTask(() => {
             const nextPuzzle = generateSudokuPuzzle(sudokuSize, modeDifficulty, rngRef.current, nextWave, true, activeMapRun?.level);
             setSudokuBoard(nextPuzzle.puzzle);
             setSudokuSolution(nextPuzzle.solution);
             setSudokuGiven(nextPuzzle.given);
+            sudokuMistakesRef.current = 0;
             sudokuCompleteRef.current = false;
+            sudokuInputLockRef.current = false;
             setIsWaveTransition(false);
             setFeedback('');
-          }, 3000);
+          }, 3000, sessionId);
         } else {
-          setTimeout(() => handleGameCompletion(points, nextStreak, 'won'), 900);
+          scheduleGameTask(() => handleGameCompletion(points, nextStreak, 'won'), 900, sessionId);
         }
       }
     } else {
@@ -1061,36 +1194,24 @@ const App: React.FC = () => {
       nativeService.haptics.notificationError();
       setStreak(0);
       setCombo(0);
-      sudokuInputLockRef.current = false;
-      setSudokuMistakes(previous => {
-        const nextMistakes = previous + 1;
-        if (isSurvivalMode && nextMistakes >= getSurvivalSudokuMistakeLimit(currentWave)) {
-          setTimeout(() => {
-            if (hasUsedRewardContinue) {
-              handleGameCompletion(score, 0, 'lost');
-            } else {
-              setLossContinueOpen(true);
-            }
-          }, 500);
-        }
-        return nextMistakes;
-      });
+      const nextMistakes = sudokuMistakesRef.current + 1;
+      sudokuMistakesRef.current = nextMistakes;
+      const terminalMistake = isSurvivalMode && nextMistakes >= getSurvivalSudokuMistakeLimit(currentWave);
+      sudokuInputLockRef.current = terminalMistake;
+      setSudokuMistakes(nextMistakes);
+      if (terminalMistake) {
+        scheduleGameTask(() => {
+          if (hasUsedRewardContinue) {
+            handleGameCompletion(score, 0, 'lost');
+          } else {
+            setLossContinueOpen(true);
+          }
+        }, 500, sessionId);
+      }
       setFeedback('Try another number.');
       setShake(true);
-      setTimeout(() => setShake(false), 500);
+      scheduleGameTask(() => setShake(false), 500, sessionId);
     }
-  };
-
-  const handleSudokuErase = () => {
-    if (!sudokuBoard || !sudokuGiven || !sudokuSelectedCell || sudokuCompleteRef.current) return;
-    const { row, column } = sudokuSelectedCell;
-    if (sudokuGiven[row]?.[column]) return;
-    if (sudokuBoard[row]?.[column] === 0) return;
-    const nextBoard = sudokuBoard.map(boardRow => [...boardRow]);
-    nextBoard[row][column] = 0;
-    setSudokuBoard(nextBoard);
-    setProgress((countFilledSudokuCells(nextBoard) / (sudokuSize * sudokuSize)) * 100);
-    setFeedback('Cell cleared.');
   };
 
   const checkAnswerRef = useRef(checkAnswer);
@@ -1116,7 +1237,9 @@ const App: React.FC = () => {
   }, [screen, activePowerUp, isWaveTransition, isPaused, powerUpAdTarget, lossContinueOpen, question]);
 
   const handleUsePowerUp = (type: 'hint' | 'timeFreeze') => {
-    if (player.powerUps[type] <= 0) return;
+    if (screenRef.current !== 'game' || !question || answerLockedRef.current || player.powerUps[type] <= 0) return;
+    if (type === 'hint' && hintedQuestionRef.current === questionVersionRef.current) return;
+    if (type === 'timeFreeze' && freezeActiveRef.current) return;
 
     playSound.powerUp();
     nativeService.haptics.impactLight();
@@ -1129,10 +1252,16 @@ const App: React.FC = () => {
     });
 
     if (type === 'hint' && question) {
+      hintedQuestionRef.current = questionVersionRef.current;
       setFeedback(`Hint: The answer is ${question.correctLabel ?? question.answer}`);
     } else if (type === 'timeFreeze') {
+      const sessionId = gameSessionRef.current;
+      freezeActiveRef.current = true;
       setActivePowerUp('timeFreeze');
-      setTimeout(() => setActivePowerUp(null), 10000);
+      scheduleGameTask(() => {
+        freezeActiveRef.current = false;
+        setActivePowerUp(null);
+      }, 10000, sessionId);
     }
   };
 
@@ -1145,8 +1274,9 @@ const App: React.FC = () => {
     if (!powerUpAdTarget) return false;
 
     const requestedPowerUp = powerUpAdTarget;
+    const sessionId = gameSessionRef.current;
     const success = await adMobService.showRewardVideo('power-up');
-    if (success) {
+    if (success && sessionId === gameSessionRef.current && screenRef.current === 'game') {
       setPlayer(prev => ({
         ...prev,
         powerUps: {
@@ -1175,6 +1305,19 @@ const App: React.FC = () => {
     if (!shared) {
       await nativeService.copyToClipboard(text);
       await nativeService.ui.showToast('Score & code copied to clipboard!');
+    }
+  };
+
+  const handleShareMission = async () => {
+    playSound.click();
+    const result = completionOutcome === 'won' ? 'cleared' : 'finished';
+    let text = `🚀 I ${result} a ${GAME_MODE_DEFINITIONS[gameMode].name} mission in Math Quest with ${score} points!`;
+    if (activeChallengeCode) text += `\nChallenge Code: ${activeChallengeCode}`;
+    text += '\n#MathQuest';
+    const shared = await nativeService.share('Math Quest mission score', text);
+    if (!shared) {
+      await nativeService.copyToClipboard(text);
+      await nativeService.ui.showToast('Mission score copied to clipboard!');
     }
   };
 
@@ -1275,6 +1418,7 @@ const App: React.FC = () => {
 
   const handleQuitGame = () => {
     playSound.click();
+    invalidateGameSession();
     setIsPaused(false);
     navigate('dashboard');
     music.stop();
@@ -1507,6 +1651,7 @@ const App: React.FC = () => {
             navigate(s as ScreenState);
           }}
           settingsOpenRequest={settingsOpenRequest}
+          onSettingsRequestConsumed={() => setSettingsOpenRequest(0)}
           onToggleHaptics={handleToggleHaptics}
           onToggleMusic={handleToggleMusic}
           onShare={handleShare}
@@ -1551,7 +1696,6 @@ const App: React.FC = () => {
           showAnimations={player.showAnimations ?? true}
           onSelectCell={handleSudokuSelectCell}
           onInput={handleSudokuInput}
-          onErase={handleSudokuErase}
           onExit={() => setIsPaused(true)}
           currentWave={isSurvivalMode ? currentWave : undefined}
           isWaveTransition={isSurvivalMode && isWaveTransition}
@@ -1583,6 +1727,7 @@ const App: React.FC = () => {
           showConfetti={showConfetti}
           currentWave={currentWave}
           isWaveTransition={isWaveTransition}
+          isAnswerResolving={isAnswerResolving}
           showAnimations={player.showAnimations ?? true}
         />
       )}
@@ -1604,7 +1749,7 @@ const App: React.FC = () => {
             if (completionOutcome === 'won') await adMobService.showInterstitial();
             navigate('dashboard');
           }}
-          onShare={handleShare}
+          onShare={handleShareMission}
           onDoubleCoins={handleDoubleCoins}
         />
       )}
