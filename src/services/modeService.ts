@@ -19,27 +19,27 @@ export const PRIMARY_GAME_MODES: Exclude<GameMode, 'survival'>[] = [
 
 export const GAME_MODE_DEFINITIONS: Record<GameMode, { name: string; description: string; statLabel: string }> = {
   'quick-calc': {
-    name: 'Quick Calc',
+    name: 'Quick Math',
     description: 'Solve math problems fast and build your streak.',
     statLabel: 'Best score'
   },
   'square-sprint': {
-    name: 'Square Sprint',
+    name: 'Squares & Roots',
     description: 'Race through squares and roots before the clock catches you.',
     statLabel: 'Best score'
   },
   'log-lab': {
-    name: 'Log Lab',
+    name: 'Powers & Logs',
     description: 'Crack logarithms, powers, and patterns across the galaxy.',
     statLabel: 'Best score'
   },
   'mini-sudoku': {
-    name: 'Mini Sudoku',
+    name: 'Sudoku',
     description: 'Fill the grid, spot the pattern, and clear the sector.',
     statLabel: 'Best score'
   },
   'target-puzzle': {
-    name: 'Target Puzzle',
+    name: 'Equation Match',
     description: 'Pick the equation that hits the target exactly.',
     statLabel: 'Best score'
   },

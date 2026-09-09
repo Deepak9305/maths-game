@@ -24,11 +24,11 @@ const MODE_HOTSPOTS: Record<PrimaryMode, string> = {
 };
 
 const MODE_NAMES: Record<PrimaryMode, string> = {
-  'quick-calc': 'Quick Calc',
-  'square-sprint': 'Square Sprint',
-  'log-lab': 'Log Lab',
-  'mini-sudoku': 'Mini Sudoku',
-  'target-puzzle': 'Target Puzzle'
+  'quick-calc': 'Quick Math',
+  'square-sprint': 'Squares & Roots',
+  'log-lab': 'Powers & Logs',
+  'mini-sudoku': 'Sudoku',
+  'target-puzzle': 'Equation Match'
 };
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -99,7 +99,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           }
         `}</style>
         <img
-          src="/assets/orbit-selector-reference.png"
+          src="/assets/orbit-selector-labeled.png"
           alt=""
           aria-hidden="true"
           draggable={false}
@@ -108,54 +108,63 @@ const Dashboard: React.FC<DashboardProps> = ({
 
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
           <img
-            src="/assets/orbit-selector-reference.png"
+            src="/assets/orbit-selector-labeled.png"
             alt=""
             draggable={false}
             className="mq-float-gentle absolute inset-0 h-full w-full select-none object-fill"
             style={{ clipPath: 'circle(9% at 50% 32%)' }}
           />
           <img
-            src="/assets/orbit-selector-reference.png"
+            src="/assets/orbit-selector-labeled.png"
             alt=""
             draggable={false}
             className="mq-selected-pulse absolute inset-0 h-full w-full select-none object-fill"
             style={{ clipPath: 'circle(14% at 20% 41%)' }}
           />
           <img
-            src="/assets/orbit-selector-reference.png"
+            src="/assets/orbit-selector-labeled.png"
             alt=""
             draggable={false}
             className="mq-float-reverse absolute inset-0 h-full w-full select-none object-fill"
             style={{ clipPath: 'circle(10% at 79% 41%)' }}
           />
           <img
-            src="/assets/orbit-selector-reference.png"
+            src="/assets/orbit-selector-labeled.png"
             alt=""
             draggable={false}
             className="mq-float-gentle absolute inset-0 h-full w-full select-none object-fill"
             style={{ animationDelay: '-1.3s', clipPath: 'circle(11% at 22% 56%)' }}
           />
           <img
-            src="/assets/orbit-selector-reference.png"
+            src="/assets/orbit-selector-labeled.png"
             alt=""
             draggable={false}
             className="mq-float-reverse absolute inset-0 h-full w-full select-none object-fill"
             style={{ animationDelay: '-2.1s', clipPath: 'circle(11% at 78% 56%)' }}
           />
           <img
-            src="/assets/orbit-selector-reference.png"
+            src="/assets/orbit-selector-labeled.png"
             alt=""
             draggable={false}
             className="mq-console-charge absolute inset-0 h-full w-full select-none object-fill"
             style={{ clipPath: 'circle(15% at 50% 48%)' }}
           />
           <img
-            src="/assets/orbit-selector-reference.png"
+            src="/assets/orbit-selector-labeled.png"
             alt=""
             draggable={false}
             className="mq-launch-breathe absolute inset-0 h-full w-full select-none object-fill"
             style={{ clipPath: 'inset(77% 13% 12% 13% round 5%)' }}
           />
+        </div>
+
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[5] font-['Press_Start_2P'] text-[6px] leading-[1.35] text-white drop-shadow-[0_1px_0_#071238]">
+          <span className="absolute left-[37%] top-[34.8%] flex h-[2.8%] w-[26%] items-center justify-center px-0.5 text-center">Squares &amp; Roots</span>
+          <span className="absolute left-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center px-0.5 text-center">Quick Math</span>
+          <span className="absolute right-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center px-0.5 text-center">Powers &amp; Logs</span>
+          <span className="absolute left-[7%] top-[60.7%] flex h-[2.8%] w-[26%] items-center justify-center px-0.5 text-center">Sudoku</span>
+          <span className="absolute right-[7%] top-[60.7%] flex h-[2.8%] w-[30%] items-center justify-center px-0.5 text-center">Equation Match</span>
+          <span className="absolute left-[31%] top-[66.5%] flex h-[2.7%] w-[28%] items-center px-0.5 text-left text-[9px] leading-none">Quick Math</span>
         </div>
 
         <section aria-label="Choose a mission" className="absolute inset-0">

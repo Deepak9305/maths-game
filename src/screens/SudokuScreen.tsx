@@ -82,7 +82,7 @@ const SudokuScreen: React.FC<SudokuScreenProps> = ({
           <div className="flex items-center gap-2">
             <Grid2X2 className="h-5 w-5 text-orange-300" />
             <div>
-              <p className="font-['Press_Start_2P'] text-sm text-white">Mini Sudoku</p>
+              <p className="font-['Press_Start_2P'] text-sm text-white">Sudoku</p>
               <p className="mt-1 text-center text-xs font-bold uppercase tracking-wider text-cyan-200/60">{size} × {size} grid{currentWave ? ` · Wave ${currentWave}` : ''}</p>
             </div>
           </div>
