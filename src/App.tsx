@@ -171,6 +171,7 @@ const App: React.FC = () => {
   const screenRef = useRef<ScreenState>('splash');
   const playerRef = useRef<PlayerState>(player);
   const [activeChallengeCode, setActiveChallengeCode] = useState<string | null>(null);
+  const [activeMapRun, setActiveMapRun] = useState<{ mode: PrimaryMode; level: number } | null>(null);
 
   // Feedback UI State
   const [feedback, setFeedback] = useState('');
@@ -401,11 +402,13 @@ const App: React.FC = () => {
     tier: ModeDifficulty,
     selectedSudokuSize: SudokuSize = 4,
     challengeCode?: string,
-    requestedSurvival = requestedMode === 'survival'
+    requestedSurvival = requestedMode === 'survival',
+    mapLevel?: number
   ) => {
     playSound.click();
     const mode = requestedMode === 'survival' ? 'quick-calc' : requestedMode;
     const survival = requestedSurvival || requestedMode === 'survival';
+    setActiveMapRun(mapLevel === undefined ? null : { mode, level: clampMapLevel(mapLevel) });
     setGameMode(mode);
     setIsSurvivalMode(survival);
     setModeDifficulty(tier);
@@ -495,13 +498,15 @@ const App: React.FC = () => {
 
   const handleGameCompletion = useCallback(async (completedScore = score, completedStreak = streak, outcome: 'won' | 'lost' = 'won') => {
     setCompletionOutcome(outcome);
-    const routeMode: PrimaryMode | null = !isSurvivalMode && outcome === 'won' && isPrimaryMode(gameMode)
+    const routeMode: PrimaryMode | null = activeMapRun && !isSurvivalMode && outcome === 'won' && isPrimaryMode(gameMode) && activeMapRun.mode === gameMode
       ? gameMode
       : null;
 
     setPlayer(prev => {
       const previousStats = prev.modeStats?.[gameMode] ?? { bestScore: 0, bestStreak: 0, gamesPlayed: 0 };
-      const nextModeProgress = routeMode
+      const currentRouteLevel = routeMode ? clampMapLevel(prev.modeProgress?.[routeMode]) : null;
+      const shouldAdvanceMap = routeMode !== null && activeMapRun?.level === currentRouteLevel;
+      const nextModeProgress = shouldAdvanceMap
         ? {
             ...getInitialModeProgress(prev),
             [routeMode]: clampMapLevel((prev.modeProgress?.[routeMode] ?? 1) + 1)
@@ -519,7 +524,7 @@ const App: React.FC = () => {
             gamesPlayed: previousStats.gamesPlayed + 1
           }
         },
-        ...(routeMode ? { modeProgress: nextModeProgress } : {})
+        ...(shouldAdvanceMap ? { modeProgress: nextModeProgress } : {})
       };
     });
 
@@ -567,7 +572,7 @@ const App: React.FC = () => {
     }
 
     setScreen('complete');
-  }, [player.achievements, player.lastRewardDate, dailyStreak, unlockAchievement, gameMode, score, streak, isSurvivalMode]);
+  }, [player.achievements, player.lastRewardDate, dailyStreak, unlockAchievement, gameMode, score, streak, isSurvivalMode, activeMapRun]);
 
   const handleDoubleCoins = async (): Promise<boolean> => {
     if (completionOutcome !== 'won') return false;
@@ -1467,7 +1472,7 @@ const App: React.FC = () => {
       {screen === 'map' && (
         <MapScreen
           player={player}
-          onStartMode={(mode, tier, selectedSize, survival) => startMode(mode, tier, selectedSize, undefined, survival)}
+          onStartMode={(mode, tier, selectedSize, survival, routeLevel) => startMode(mode, tier, selectedSize, undefined, survival, routeLevel)}
           onClose={() => navigate('dashboard')}
         />
       )}
@@ -1543,7 +1548,7 @@ const App: React.FC = () => {
           didWin={completionOutcome === 'won'}
           onPlayAgain={async () => {
             if (completionOutcome === 'won') await adMobService.showInterstitial();
-            startMode(gameMode, modeDifficulty, sudokuSize, activeChallengeCode || undefined, isSurvivalMode);
+            startMode(gameMode, modeDifficulty, sudokuSize, activeChallengeCode || undefined, isSurvivalMode, activeMapRun?.level);
           }}
           onDashboard={async () => {
             if (completionOutcome === 'won') await adMobService.showInterstitial();

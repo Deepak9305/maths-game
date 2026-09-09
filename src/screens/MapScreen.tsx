@@ -7,7 +7,7 @@ type PrimaryMode = Exclude<GameMode, 'survival'>;
 
 interface MapScreenProps {
   player: PlayerState;
-  onStartMode: (mode: PrimaryMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize, survival: boolean) => void;
+  onStartMode: (mode: PrimaryMode, difficulty: ModeDifficulty, sudokuSize: SudokuSize, survival: boolean, routeLevel?: number) => void;
   onClose: () => void;
 }
 
@@ -640,7 +640,7 @@ const MapScreen: React.FC<MapScreenProps> = ({ player, onStartMode, onClose }) =
             <button
               type="button"
               onClick={() => {
-                onStartMode(selectedMode, selectedDifficulty, sudokuSize, survivalMode);
+                onStartMode(selectedMode, selectedDifficulty, sudokuSize, survivalMode, launchLevel);
                 setLaunchLevel(null);
               }}
               className="mt-4 w-full rounded-xl border-b-4 border-orange-700 bg-gradient-to-b from-yellow-300 to-orange-400 px-4 py-3 font-['Press_Start_2P'] text-xs text-[#071238] shadow-[0_0_24px_rgba(251,191,36,.42)] transition hover:brightness-110 active:translate-y-0.5"
