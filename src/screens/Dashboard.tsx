@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Award, PawPrint, ShoppingBag } from 'lucide-react';
 import { GameMode, ModeDifficulty, PlayerState, SudokuSize } from '../types';
 import { GAME_MODE_DEFINITIONS, MODE_DIFFICULTY_LABELS } from '../services/modeService';
 
@@ -128,6 +129,10 @@ const Dashboard: React.FC<DashboardProps> = ({
             55% { opacity: .12; }
             100% { transform: translate3d(220%, 0, 0) rotate(18deg); opacity: 0; }
           }
+          @keyframes mq-shortcut-dock {
+            0%, 100% { transform: translate3d(0, 0, 0); }
+            50% { transform: translate3d(0, -1px, 0); }
+          }
           .mq-float-gentle { animation: mq-float-gentle 3.8s ease-in-out infinite; }
           .mq-float-reverse { animation: mq-float-reverse 4.6s ease-in-out infinite; }
           .mq-logo-float { animation: mq-logo-float 4.8s ease-in-out infinite; transform-origin: 50% 17%; }
@@ -138,8 +143,9 @@ const Dashboard: React.FC<DashboardProps> = ({
           .mq-mode-label { animation: mq-label-drift 3.2s ease-in-out infinite; }
           .mq-star-twinkle { animation: mq-star-twinkle 2.8s ease-in-out infinite; }
           .mq-energy-sweep { animation: mq-energy-sweep 6.5s ease-in-out infinite; }
+          .mq-shortcut-dock { animation: mq-shortcut-dock 4.2s ease-in-out infinite; }
           @media (prefers-reduced-motion: reduce) {
-            .mq-float-gentle, .mq-float-reverse, .mq-logo-float, .mq-hud-breathe, .mq-console-charge, .mq-selected-pulse, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep { animation: none !important; }
+            .mq-float-gentle, .mq-float-reverse, .mq-logo-float, .mq-hud-breathe, .mq-console-charge, .mq-selected-pulse, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock { animation: none !important; }
           }
         `}</style>
         <img
@@ -256,6 +262,39 @@ const Dashboard: React.FC<DashboardProps> = ({
             className="absolute left-[16%] top-[77%] z-10 h-[9%] w-[68%] rounded-[18px] outline-none focus-visible:ring-4 focus-visible:ring-yellow-300/90"
           />
         </section>
+
+        <div
+          aria-label="Quick access"
+          className={`absolute left-[4%] right-[4%] top-[86.3%] z-30 grid grid-cols-3 gap-1.5 ${showAnimations ? 'mq-shortcut-dock' : ''}`}
+        >
+          <button
+            type="button"
+            aria-label="Open badges"
+            onClick={() => onNavigate('achievements')}
+            className="flex min-w-0 items-center justify-center gap-1 rounded-xl border border-violet-200/35 bg-[#0b1b48]/95 px-1.5 py-2 text-[9px] font-black text-violet-100 shadow-[0_0_14px_rgba(167,139,250,.2)] backdrop-blur-sm transition hover:border-violet-100 hover:bg-violet-400/20 active:scale-95 focus-visible:ring-2 focus-visible:ring-violet-200"
+          >
+            <Award className="h-3.5 w-3.5 shrink-0 text-violet-200" />
+            <span className="truncate">Badges</span>
+          </button>
+          <button
+            type="button"
+            aria-label="Open pet lab"
+            onClick={() => onNavigate('pet')}
+            className="flex min-w-0 items-center justify-center gap-1 rounded-xl border border-emerald-200/35 bg-[#0b1b48]/95 px-1.5 py-2 text-[9px] font-black text-emerald-100 shadow-[0_0_14px_rgba(52,211,153,.18)] backdrop-blur-sm transition hover:border-emerald-100 hover:bg-emerald-400/20 active:scale-95 focus-visible:ring-2 focus-visible:ring-emerald-200"
+          >
+            <PawPrint className="h-3.5 w-3.5 shrink-0 text-emerald-200" />
+            <span className="truncate">Pet Lab</span>
+          </button>
+          <button
+            type="button"
+            aria-label={`Open shop with ${player.coins} coins`}
+            onClick={() => onNavigate('shop')}
+            className="flex min-w-0 items-center justify-center gap-1 rounded-xl border border-yellow-200/40 bg-[#0b1b48]/95 px-1.5 py-2 text-[9px] font-black text-yellow-100 shadow-[0_0_14px_rgba(250,204,21,.18)] backdrop-blur-sm transition hover:border-yellow-100 hover:bg-yellow-400/20 active:scale-95 focus-visible:ring-2 focus-visible:ring-yellow-200"
+          >
+            <ShoppingBag className="h-3.5 w-3.5 shrink-0 text-yellow-200" />
+            <span className="truncate">Shop · {player.coins}</span>
+          </button>
+        </div>
 
         <nav aria-label="Primary navigation" className="absolute inset-x-0 bottom-0 z-20 h-[12%]">
           <button
