@@ -69,6 +69,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   const selectedDefinition = GAME_MODE_DEFINITIONS[selectedMode];
   const nextChallenge = player.dailyChallenges?.find(challenge => !challenge.claimed);
   const showAnimations = player.showAnimations ?? true;
+  const modeLabelMotion = showAnimations ? 'mq-mode-label' : '';
 
   const startSelectedMission = () => {
     setMissionSetupOpen(false);
@@ -89,35 +90,35 @@ const Dashboard: React.FC<DashboardProps> = ({
         <style>{`
           @keyframes mq-float-gentle {
             0%, 100% { transform: translate3d(0, 0, 0); }
-            50% { transform: translate3d(0, -3px, 0); }
+            50% { transform: translate3d(0, -6px, 0); }
           }
           @keyframes mq-float-reverse {
             0%, 100% { transform: translate3d(0, 0, 0); }
-            50% { transform: translate3d(0, 2px, 0); }
+            50% { transform: translate3d(0, 4px, 0); }
           }
           @keyframes mq-logo-float {
             0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
-            50% { transform: translate3d(0, -2px, 0) scale(1.008); }
+            50% { transform: translate3d(0, -4px, 0) scale(1.018); }
           }
           @keyframes mq-hud-breathe {
             0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(125, 211, 252, 0)); }
-            50% { filter: brightness(1.045) drop-shadow(0 0 7px rgba(125, 211, 252, .34)); }
+            50% { filter: brightness(1.08) drop-shadow(0 0 11px rgba(125, 211, 252, .46)); }
           }
           @keyframes mq-console-charge {
             0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(34, 211, 238, 0)); transform: scale(1); }
-            50% { filter: brightness(1.12) drop-shadow(0 0 10px rgba(34, 211, 238, .65)); transform: scale(1.012); }
+            50% { filter: brightness(1.18) drop-shadow(0 0 17px rgba(34, 211, 238, .8)); transform: scale(1.028); }
           }
           @keyframes mq-selected-pulse {
             0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(251, 191, 36, 0)); transform: scale(1); }
-            50% { filter: brightness(1.08) drop-shadow(0 0 11px rgba(251, 191, 36, .68)); transform: scale(1.016); }
+            50% { filter: brightness(1.14) drop-shadow(0 0 17px rgba(251, 191, 36, .82)); transform: scale(1.03); }
           }
           @keyframes mq-launch-breathe {
             0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(251, 146, 60, 0)); }
-            50% { filter: brightness(1.12) drop-shadow(0 0 13px rgba(251, 146, 60, .75)); }
+            50% { filter: brightness(1.18) drop-shadow(0 0 19px rgba(251, 146, 60, .9)); }
           }
           @keyframes mq-label-drift {
-            0%, 100% { transform: translate3d(0, 0, 0); opacity: .92; }
-            50% { transform: translate3d(0, -1px, 0); opacity: 1; }
+            0%, 100% { transform: translate3d(0, 0, 0); opacity: .78; }
+            50% { transform: translate3d(0, -2px, 0); opacity: 1; }
           }
           @keyframes mq-star-twinkle {
             0%, 100% { opacity: .18; transform: scale(.65); }
@@ -131,7 +132,11 @@ const Dashboard: React.FC<DashboardProps> = ({
           }
           @keyframes mq-shortcut-dock {
             0%, 100% { transform: translate3d(0, 0, 0); }
-            50% { transform: translate3d(0, -1px, 0); }
+            50% { transform: translate3d(0, -2px, 0); }
+          }
+          @keyframes mq-console-ping {
+            0%, 100% { opacity: .12; transform: scale(.88); }
+            50% { opacity: .7; transform: scale(1.12); }
           }
           .mq-float-gentle { animation: mq-float-gentle 3.8s ease-in-out infinite; }
           .mq-float-reverse { animation: mq-float-reverse 4.6s ease-in-out infinite; }
@@ -144,8 +149,9 @@ const Dashboard: React.FC<DashboardProps> = ({
           .mq-star-twinkle { animation: mq-star-twinkle 2.8s ease-in-out infinite; }
           .mq-energy-sweep { animation: mq-energy-sweep 6.5s ease-in-out infinite; }
           .mq-shortcut-dock { animation: mq-shortcut-dock 4.2s ease-in-out infinite; }
+          .mq-console-ping { animation: mq-console-ping 2.8s ease-in-out infinite; transform-origin: center; }
           @media (prefers-reduced-motion: reduce) {
-            .mq-float-gentle, .mq-float-reverse, .mq-logo-float, .mq-hud-breathe, .mq-console-charge, .mq-selected-pulse, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock { animation: none !important; }
+            .mq-float-gentle, .mq-float-reverse, .mq-logo-float, .mq-hud-breathe, .mq-console-charge, .mq-selected-pulse, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep, .mq-shortcut-dock, .mq-console-ping { animation: none !important; }
           }
         `}</style>
         <img
@@ -213,6 +219,8 @@ const Dashboard: React.FC<DashboardProps> = ({
             className="mq-console-charge absolute inset-0 h-full w-full select-none object-fill"
             style={{ clipPath: 'circle(15% at 50% 48%)' }}
           />
+          <div className="mq-console-ping absolute left-[38%] top-[40%] aspect-square w-[24%] rounded-full border border-cyan-200/55 shadow-[0_0_18px_rgba(103,232,249,.35)]" />
+          <div className="mq-console-ping absolute left-[35%] top-[37%] aspect-square w-[30%] rounded-full border border-cyan-200/20" style={{ animationDelay: '-1.4s' }} />
           <img
             src="/assets/orbit-selector-labeled.png"
             alt=""
@@ -227,13 +235,13 @@ const Dashboard: React.FC<DashboardProps> = ({
           <span className="mq-star-twinkle absolute right-[31%] top-[57%] h-1 w-1 rounded-full bg-cyan-100 shadow-[0_0_8px_2px_rgba(165,243,252,.65)]" style={{ animationDelay: '-1.1s' }} />
         </div>}
 
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[5] font-['Press_Start_2P'] text-[6px] leading-[1.35] text-white drop-shadow-[0_1px_0_#071238]">
-          <span className="mq-mode-label absolute left-[37%] top-[34.8%] flex h-[2.8%] w-[26%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-.4s' }}>Squares &amp; Roots</span>
-          <span className="mq-mode-label absolute left-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-1.1s' }}>Quick Math</span>
-          <span className="mq-mode-label absolute right-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-1.8s' }}>Powers &amp; Logs</span>
-          <span className="mq-mode-label absolute left-[7%] top-[60.7%] flex h-[2.8%] w-[26%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-2.4s' }}>Sudoku</span>
-          <span className="mq-mode-label absolute right-[7%] top-[60.7%] flex h-[2.8%] w-[30%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-3s' }}>Equation Match</span>
-          <span className="mq-mode-label absolute left-[31%] top-[66.5%] flex h-[2.7%] w-[28%] items-center px-0.5 text-left text-[9px] leading-none" style={{ animationDelay: '-1.5s' }}>Quick Math</span>
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[5] font-['Lexend'] text-[8px] font-black leading-none tracking-tight text-white drop-shadow-[0_1px_0_#071238]">
+          <span className={`${modeLabelMotion} absolute left-[37%] top-[34.8%] flex h-[2.8%] w-[26%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-.4s' }}>Squares &amp; Roots</span>
+          <span className={`${modeLabelMotion} absolute left-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-1.1s' }}>Quick Math</span>
+          <span className={`${modeLabelMotion} absolute right-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-1.8s' }}>Powers &amp; Logs</span>
+          <span className={`${modeLabelMotion} absolute left-[7%] top-[60.7%] flex h-[2.8%] w-[26%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-2.4s' }}>Sudoku</span>
+          <span className={`${modeLabelMotion} absolute right-[7%] top-[60.7%] flex h-[2.8%] w-[30%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-3s' }}>Equation Match</span>
+          <span className={`${modeLabelMotion} absolute left-[31%] top-[66.5%] flex h-[2.7%] w-[28%] items-center px-1 text-left text-[10px] leading-none`} style={{ animationDelay: '-1.5s' }}>Quick Math</span>
         </div>
 
         <section aria-label="Choose a mission" className="absolute inset-0">
