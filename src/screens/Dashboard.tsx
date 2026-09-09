@@ -32,6 +32,14 @@ const MODE_NAMES: Record<PrimaryMode, string> = {
   'target-puzzle': 'Equation Match'
 };
 
+const MODE_CARD_DESCRIPTIONS: Record<PrimaryMode, string> = {
+  'quick-calc': 'Race the clock and build your streak.',
+  'square-sprint': 'Solve squares and roots at top speed.',
+  'log-lab': 'Crack powers, logs, and patterns.',
+  'mini-sudoku': 'Fill the grid and clear the sector.',
+  'target-puzzle': 'Match the equation to the target.'
+};
+
 const MODE_ART_CLIPS: Record<PrimaryMode, string> = {
   'square-sprint': 'circle(10% at 50% 32%)',
   'quick-calc': 'circle(14% at 20% 41%)',
@@ -259,7 +267,28 @@ const Dashboard: React.FC<DashboardProps> = ({
           <span className={`${modeLabelMotion} absolute right-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-1.8s' }}>Powers &amp; Logs</span>
           <span className={`${modeLabelMotion} absolute left-[7%] top-[60.7%] flex h-[2.8%] w-[26%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-2.4s' }}>Sudoku</span>
           <span className={`${modeLabelMotion} absolute right-[7%] top-[60.7%] flex h-[2.8%] w-[30%] items-center justify-center whitespace-nowrap rounded-md border border-cyan-100/20 bg-[#061638]/75 px-1 text-center shadow-[0_2px_8px_rgba(0,0,0,.38)] backdrop-blur-[1px]`} style={{ animationDelay: '-3s' }}>Equation Match</span>
-          <span className={`${modeLabelMotion} absolute left-[31%] top-[66.5%] flex h-[2.7%] w-[28%] items-center px-1 text-left text-[10px] leading-none`} style={{ animationDelay: '-1.5s' }}>Quick Math</span>
+        </div>
+
+        <div
+          data-testid="mission-preview"
+          aria-label={`${selectedDefinition.name}: ${MODE_CARD_DESCRIPTIONS[selectedMode]} Speed, accuracy, high score`}
+          className="pointer-events-none absolute left-[28.5%] right-[7.5%] top-[65.2%] z-[6] h-[11.7%] overflow-hidden rounded-[10px] bg-[#071b4a] px-[3.5%] py-[3%] shadow-[0_0_18px_rgba(8,47,107,.35)]"
+        >
+          <div className="flex h-full min-h-0 items-stretch gap-[4%]">
+            <div className="min-w-0 flex-1">
+              <h2 className="font-['Press_Start_2P'] text-[clamp(12px,3.1vw,16px)] font-black leading-[1.25] text-white">
+                {selectedDefinition.name}
+              </h2>
+              <p className="mt-[4%] max-w-[27ch] text-[clamp(10px,2.4vw,13px)] font-bold leading-[1.2] text-blue-100/90">
+                {MODE_CARD_DESCRIPTIONS[selectedMode]}
+              </p>
+            </div>
+            <div className="flex w-[25%] shrink-0 flex-col justify-center gap-[9%] border-l border-cyan-200/30 pl-[4%] text-[clamp(8px,1.9vw,10px)] font-black leading-[1.15] tracking-[0.08em] text-cyan-100/85">
+              <span>SPEED</span>
+              <span>ACCURACY</span>
+              <span>HIGH SCORE</span>
+            </div>
+          </div>
         </div>
 
         <section aria-label="Choose a mission" className="absolute inset-0">
