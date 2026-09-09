@@ -31,6 +31,22 @@ const MODE_NAMES: Record<PrimaryMode, string> = {
   'target-puzzle': 'Equation Match'
 };
 
+const MODE_ART_CLIPS: Record<PrimaryMode, string> = {
+  'square-sprint': 'circle(10% at 50% 32%)',
+  'quick-calc': 'circle(14% at 20% 41%)',
+  'log-lab': 'circle(10% at 79% 41%)',
+  'mini-sudoku': 'circle(11% at 22% 56%)',
+  'target-puzzle': 'circle(11% at 78% 56%)'
+};
+
+const MODE_ART_ORIGINS: Record<PrimaryMode, string> = {
+  'square-sprint': '50% 32%',
+  'quick-calc': '20% 41%',
+  'log-lab': '79% 41%',
+  'mini-sudoku': '22% 56%',
+  'target-puzzle': '78% 56%'
+};
+
 const Dashboard: React.FC<DashboardProps> = ({
   player,
   dailyStreak,
@@ -41,7 +57,7 @@ const Dashboard: React.FC<DashboardProps> = ({
   onJoinChallenge,
   onClaimChallenge
 }) => {
-  const [selectedMode, setSelectedMode] = useState<GameMode>('quick-calc');
+  const [selectedMode, setSelectedMode] = useState<PrimaryMode>('quick-calc');
   const [selectedDifficulty, setSelectedDifficulty] = useState<ModeDifficulty>('standard');
   const [sudokuSize, setSudokuSize] = useState<SudokuSize>(4);
   const [survivalMode, setSurvivalMode] = useState(false);
@@ -51,6 +67,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const selectedDefinition = GAME_MODE_DEFINITIONS[selectedMode];
   const nextChallenge = player.dailyChallenges?.find(challenge => !challenge.claimed);
+  const showAnimations = player.showAnimations ?? true;
 
   const startSelectedMission = () => {
     setMissionSetupOpen(false);
@@ -77,6 +94,14 @@ const Dashboard: React.FC<DashboardProps> = ({
             0%, 100% { transform: translate3d(0, 0, 0); }
             50% { transform: translate3d(0, 2px, 0); }
           }
+          @keyframes mq-logo-float {
+            0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+            50% { transform: translate3d(0, -2px, 0) scale(1.008); }
+          }
+          @keyframes mq-hud-breathe {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(125, 211, 252, 0)); }
+            50% { filter: brightness(1.045) drop-shadow(0 0 7px rgba(125, 211, 252, .34)); }
+          }
           @keyframes mq-console-charge {
             0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(34, 211, 238, 0)); transform: scale(1); }
             50% { filter: brightness(1.12) drop-shadow(0 0 10px rgba(34, 211, 238, .65)); transform: scale(1.012); }
@@ -89,13 +114,32 @@ const Dashboard: React.FC<DashboardProps> = ({
             0%, 100% { filter: brightness(1) drop-shadow(0 0 0 rgba(251, 146, 60, 0)); }
             50% { filter: brightness(1.12) drop-shadow(0 0 13px rgba(251, 146, 60, .75)); }
           }
+          @keyframes mq-label-drift {
+            0%, 100% { transform: translate3d(0, 0, 0); opacity: .92; }
+            50% { transform: translate3d(0, -1px, 0); opacity: 1; }
+          }
+          @keyframes mq-star-twinkle {
+            0%, 100% { opacity: .18; transform: scale(.65); }
+            50% { opacity: .95; transform: scale(1.25); }
+          }
+          @keyframes mq-energy-sweep {
+            0% { transform: translate3d(-160%, 0, 0) rotate(18deg); opacity: 0; }
+            18% { opacity: .35; }
+            55% { opacity: .12; }
+            100% { transform: translate3d(220%, 0, 0) rotate(18deg); opacity: 0; }
+          }
           .mq-float-gentle { animation: mq-float-gentle 3.8s ease-in-out infinite; }
           .mq-float-reverse { animation: mq-float-reverse 4.6s ease-in-out infinite; }
+          .mq-logo-float { animation: mq-logo-float 4.8s ease-in-out infinite; transform-origin: 50% 17%; }
+          .mq-hud-breathe { animation: mq-hud-breathe 3.6s ease-in-out infinite; }
           .mq-console-charge { animation: mq-console-charge 2.8s ease-in-out infinite; transform-origin: 50% 48%; }
-          .mq-selected-pulse { animation: mq-selected-pulse 2.2s ease-in-out infinite; transform-origin: 20% 41%; }
+          .mq-selected-pulse { animation: mq-selected-pulse 2.2s ease-in-out infinite; }
           .mq-launch-breathe { animation: mq-launch-breathe 2.4s ease-in-out infinite; }
+          .mq-mode-label { animation: mq-label-drift 3.2s ease-in-out infinite; }
+          .mq-star-twinkle { animation: mq-star-twinkle 2.8s ease-in-out infinite; }
+          .mq-energy-sweep { animation: mq-energy-sweep 6.5s ease-in-out infinite; }
           @media (prefers-reduced-motion: reduce) {
-            .mq-float-gentle, .mq-float-reverse, .mq-console-charge, .mq-selected-pulse, .mq-launch-breathe { animation: none !important; }
+            .mq-float-gentle, .mq-float-reverse, .mq-logo-float, .mq-hud-breathe, .mq-console-charge, .mq-selected-pulse, .mq-launch-breathe, .mq-mode-label, .mq-star-twinkle, .mq-energy-sweep { animation: none !important; }
           }
         `}</style>
         <img
@@ -106,7 +150,21 @@ const Dashboard: React.FC<DashboardProps> = ({
           className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
         />
 
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        {showAnimations && <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+          <img
+            src="/assets/orbit-selector-labeled.png"
+            alt=""
+            draggable={false}
+            className="mq-hud-breathe absolute inset-0 h-full w-full select-none object-fill"
+            style={{ clipPath: 'inset(0 0 86% 0)' }}
+          />
+          <img
+            src="/assets/orbit-selector-labeled.png"
+            alt=""
+            draggable={false}
+            className="mq-logo-float absolute inset-0 h-full w-full select-none object-fill"
+            style={{ clipPath: 'circle(13% at 50% 17%)' }}
+          />
           <img
             src="/assets/orbit-selector-labeled.png"
             alt=""
@@ -119,7 +177,7 @@ const Dashboard: React.FC<DashboardProps> = ({
             alt=""
             draggable={false}
             className="mq-selected-pulse absolute inset-0 h-full w-full select-none object-fill"
-            style={{ clipPath: 'circle(14% at 20% 41%)' }}
+            style={{ clipPath: MODE_ART_CLIPS[selectedMode], transformOrigin: MODE_ART_ORIGINS[selectedMode] }}
           />
           <img
             src="/assets/orbit-selector-labeled.png"
@@ -156,15 +214,20 @@ const Dashboard: React.FC<DashboardProps> = ({
             className="mq-launch-breathe absolute inset-0 h-full w-full select-none object-fill"
             style={{ clipPath: 'inset(77% 13% 12% 13% round 5%)' }}
           />
-        </div>
+          <div className="mq-energy-sweep absolute left-[18%] top-[27%] h-[38%] w-[64%] bg-gradient-to-r from-transparent via-cyan-200/20 to-transparent blur-sm" />
+          <span className="mq-star-twinkle absolute left-[14%] top-[28%] h-1 w-1 rounded-full bg-cyan-200 shadow-[0_0_8px_2px_rgba(103,232,249,.7)]" style={{ animationDelay: '-.8s' }} />
+          <span className="mq-star-twinkle absolute right-[16%] top-[23%] h-1.5 w-1.5 rounded-full bg-violet-200 shadow-[0_0_8px_2px_rgba(196,181,253,.65)]" style={{ animationDelay: '-1.7s' }} />
+          <span className="mq-star-twinkle absolute left-[31%] top-[54%] h-1 w-1 rounded-full bg-yellow-200 shadow-[0_0_8px_2px_rgba(253,224,71,.65)]" style={{ animationDelay: '-2.2s' }} />
+          <span className="mq-star-twinkle absolute right-[31%] top-[57%] h-1 w-1 rounded-full bg-cyan-100 shadow-[0_0_8px_2px_rgba(165,243,252,.65)]" style={{ animationDelay: '-1.1s' }} />
+        </div>}
 
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[5] font-['Press_Start_2P'] text-[6px] leading-[1.35] text-white drop-shadow-[0_1px_0_#071238]">
-          <span className="absolute left-[37%] top-[34.8%] flex h-[2.8%] w-[26%] items-center justify-center px-0.5 text-center">Squares &amp; Roots</span>
-          <span className="absolute left-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center px-0.5 text-center">Quick Math</span>
-          <span className="absolute right-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center px-0.5 text-center">Powers &amp; Logs</span>
-          <span className="absolute left-[7%] top-[60.7%] flex h-[2.8%] w-[26%] items-center justify-center px-0.5 text-center">Sudoku</span>
-          <span className="absolute right-[7%] top-[60.7%] flex h-[2.8%] w-[30%] items-center justify-center px-0.5 text-center">Equation Match</span>
-          <span className="absolute left-[31%] top-[66.5%] flex h-[2.7%] w-[28%] items-center px-0.5 text-left text-[9px] leading-none">Quick Math</span>
+          <span className="mq-mode-label absolute left-[37%] top-[34.8%] flex h-[2.8%] w-[26%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-.4s' }}>Squares &amp; Roots</span>
+          <span className="mq-mode-label absolute left-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-1.1s' }}>Quick Math</span>
+          <span className="mq-mode-label absolute right-[5%] top-[45.5%] flex h-[2.7%] w-[30%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-1.8s' }}>Powers &amp; Logs</span>
+          <span className="mq-mode-label absolute left-[7%] top-[60.7%] flex h-[2.8%] w-[26%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-2.4s' }}>Sudoku</span>
+          <span className="mq-mode-label absolute right-[7%] top-[60.7%] flex h-[2.8%] w-[30%] items-center justify-center px-0.5 text-center" style={{ animationDelay: '-3s' }}>Equation Match</span>
+          <span className="mq-mode-label absolute left-[31%] top-[66.5%] flex h-[2.7%] w-[28%] items-center px-0.5 text-left text-[9px] leading-none" style={{ animationDelay: '-1.5s' }}>Quick Math</span>
         </div>
 
         <section aria-label="Choose a mission" className="absolute inset-0">
